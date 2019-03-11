@@ -221,6 +221,7 @@ Changes since 1.3.8-test1
 - Adopted car1-ow1 for tire wear (Bernhard).
 - Fixed a bug regarding TRB result submission (Wolf-Dieter, Bernhard).
 - Cleanup of endrace.ixml template (Wolf-Dieter, Bernhard).
+- Fixed broken png's (cause is unknown, maybe the CVS to git migration?) (Bernhard).
 
 
 Changes since 1.3.7
