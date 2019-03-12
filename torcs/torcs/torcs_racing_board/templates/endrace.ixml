@@ -2,9 +2,8 @@
 <!-- 
 file        : endrace.xml
 created     : Thu Jan 23 22:50:09 CET 2003
-copyright   : (C) 2003-2017 by Eric Espie, Bernhard Wymann                         
+copyright   : (C) 2003-2019 by Eric Espie, Bernhard Wymann                         
 email       : Eric.Espie@torcs.org   
-version     : $Id$                                  
 -->
 
 <!--    This program is free software; you can redistribute it and/or modify  -->
@@ -58,6 +57,9 @@ version     : $Id$
 		<attnum name="fuel consumption factor" min="0.0" max="5.0" val="1.0"/>
 		<attnum name="damage factor" min="0.0" max="5.0" val="1.0"/>
 
+		<attnum name="tire factor" min="0" max="5" val="2.0"/>
+		<attnum name="all tires change time" min="0" max="60" val="35.0"/>
+		
 		<attnum name="random number seed" val="{PC_RNG_SEED_Q}"/>
 		
 		<section name="Starting Grid">
@@ -84,8 +86,8 @@ version     : $Id$
 		<attnum name="fuel consumption factor" min="0.0" max="5.0" val="1.0"/>
 		<attnum name="damage factor" min="0.0" max="5.0" val="1.0"/>
 		
-		<attnum name="tire factor" min="0" max="5" val="1.0"/>
-		<attnum name="all tire change time" min="0" max="60" val="16.0"/>
+		<attnum name="tire factor" min="0" max="5" val="2.0"/>
+		<attnum name="all tires change time" min="0" max="60" val="35.0"/>
 		
 		<attnum name="cars per pit" val="2"/>
 
