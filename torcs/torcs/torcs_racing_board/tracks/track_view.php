@@ -126,7 +126,7 @@
 			// Define the block template for a table row (fastest qualy times).
 			$page->set_block("PAGE_CONTENT_T", "timerow", "timerows");
 	
-			$sql = "SELECT  v.name AS vname, c.name AS cname, p.carid, e.name AS ename, r.raceid, d.name AS dname, d.teamid, p.quali_laptime FROM " .
+			$sql = "SELECT  v.name AS vname, ANY_VALUE(c.name) AS cname, ANY_VALUE(p.carid) AS carid, e.name AS ename, r.raceid, ANY_VALUE(d.name) AS dname, d.teamid, p.quali_laptime FROM " .
 				" $race_report_driver_table AS p, $driver_tablename AS d, $event_tablename AS e, $car_tablename AS c, " .
 				" $race_tablename AS r JOIN (SELECT uu.raceid, MIN(p.quali_laptime) AS quali_laptime FROM " .
 				" $race_tablename AS uu JOIN (SELECT driverid, raceid, MIN(quali_laptime) AS qlt FROM " .
