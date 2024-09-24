@@ -129,7 +129,7 @@ ReManage(tCarElt *car)
 	int i, pitok;
 	tTrackSeg *sseg;
 	tdble wseg;
-	static float color[] = {0.0, 0.0, 1.0, 1.0};
+	static float color[] = {0.5, 0.5, 1.0, 1.0};
 	tSituation *s = ReInfo->s;
 	const int BUFSIZE = 1024;
 	char buf[BUFSIZE];
@@ -160,9 +160,7 @@ ReManage(tCarElt *car)
 				snprintf(car->ctrl.msg[2], 32, "Pit Occupied");
 			}
 
-			if (car->ctrl.msgColor == NULL) {
-				memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
-			}
+			memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
 		}
 		
 		if (car->_state & RM_CAR_STATE_PIT) {
@@ -522,9 +520,7 @@ ReRaceRules(tCarElt *car)
 				break;
 		}
 		
-		if (car->ctrl.msgColor == NULL) {
-			memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
-		}
+		memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
 	}
     
 	if (prevSeg->raceInfo & TR_PITSTART) {
