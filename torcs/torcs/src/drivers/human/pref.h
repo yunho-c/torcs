@@ -2,9 +2,8 @@
 
     file                 : pref.h
     created              : Sat Apr 29 16:52:41 CEST 2000
-    copyright            : (C) 2000-2014 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -69,7 +68,8 @@ extern const char *Yn[];
 #define CMD_LIGHT1	16
 #define CMD_CLUTCH	17
 #define CMD_SPDLIM	18
-
+#define CMD_BRAKE_TOFRONT 19
+#define CMD_BRAKE_TOREAR 20
 
 extern void HmReadPrefs(int index);
 

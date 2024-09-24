@@ -2,9 +2,8 @@
 
     file                 : human.cpp
     created              : Sat Mar 18 23:16:38 CET 2000
-    copyright            : (C) 2000-2013 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -20,7 +19,6 @@
 /** @file
 	Human driver
 	@author	Bernhard Wymann, Eric Espie
-	@version	$Id$
 */
 
 
@@ -61,7 +59,7 @@ int joyPresent = 0;
 
 static tTrack	*curTrack;
 
-static float color[] = {0.0, 0.0, 1.0, 1.0};
+static float color[] = {0.5, 0.5, 1.0, 1.0};
 
 static tCtrlJoyInfo	*joyInfo = NULL;
 static tCtrlMouseInfo	*mouseInfo = NULL;
@@ -122,7 +120,7 @@ shutdown(int index)
  *	InitFuncPt
  *
  * Description
- *	Robot functions initialisation
+ *	Robot functions initialization
  *
  * Parameters
  *	pt	pointer on functions structure
@@ -219,7 +217,7 @@ human(tModInfo *modInfo)
 			}
 
 			modInfo->name    = strdup(driver);	/* name of the module (short) */
-			modInfo->desc    = strdup("Joystick controlable driver");	/* description of the module (can be long) */
+			modInfo->desc    = strdup("Joystick controllable driver");	/* description of the module (can be long) */
 			modInfo->fctInit = InitFuncPt;	/* init function */
 			modInfo->gfId    = ROB_IDENT;	/* supported framework version */
 			modInfo->index   = i+1;
@@ -500,6 +498,28 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 		lastKeyUpdate = s->currentTime;
 	}
 
+
+	// Brake repartition offset, init with former value 
+	car->ctrl.brakeRepartitionCmd = car->priv.brakeRepartitionCmd;
+
+	if (((cmd[CMD_BRAKE_TOFRONT].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_BRAKE_TOFRONT].val]) ||
+		((cmd[CMD_BRAKE_TOFRONT].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_BRAKE_TOFRONT].val].edgeUp) ||
+		((cmd[CMD_BRAKE_TOFRONT].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_BRAKE_TOFRONT].val].edgeUp))
+	{
+		if (car->priv.brakeRepartitionCmd < car->priv.repCmdMaxClicks) {
+			car->ctrl.brakeRepartitionCmd = car->priv.brakeRepartitionCmd + 1;
+		}
+	}
+
+	if (((cmd[CMD_BRAKE_TOREAR].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_BRAKE_TOREAR].val]) ||
+		((cmd[CMD_BRAKE_TOREAR].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_BRAKE_TOREAR].val].edgeUp) ||
+		((cmd[CMD_BRAKE_TOREAR].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_BRAKE_TOREAR].val].edgeUp))
+	{
+		if (car->priv.brakeRepartitionCmd > -car->priv.repCmdMaxClicks) {
+			car->ctrl.brakeRepartitionCmd = car->priv.brakeRepartitionCmd - 1;
+		}
+	}
+
 	if (((cmd[CMD_ABS].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_ABS].val]) ||
 		((cmd[CMD_ABS].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_ABS].val].edgeUp) ||
 		((cmd[CMD_ABS].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_ABS].val].edgeUp))
@@ -521,7 +541,13 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 	}
 
 	const int bufsize = sizeof(car->_msgCmd[0]);
-	snprintf(car->_msgCmd[0], bufsize, "%s %s", (HCtx[idx]->ParamAbs ? "ABS" : ""), (HCtx[idx]->ParamAsr ? "ASR" : ""));
+
+	snprintf(car->_msgCmd[0], bufsize, "BIAS: %+d %s%s%s",
+		car->ctrl.brakeRepartitionCmd,
+		(HCtx[idx]->ParamAbs ? "ABS" : ""),
+		(HCtx[idx]->ParamAbs && HCtx[idx]->ParamAsr ? " " : ""),
+		(HCtx[idx]->ParamAsr ? "ASR" : ""));
+
 	memcpy(car->_msgColorCmd, color, sizeof(car->_msgColorCmd));
 
 	if (((cmd[CMD_SPDLIM].type == GFCTRL_TYPE_JOY_BUT) && (joyInfo->levelup[cmd[CMD_SPDLIM].val] == 1)) ||

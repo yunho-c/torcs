@@ -159,7 +159,10 @@ ReManage(tCarElt *car)
 			} else {
 				snprintf(car->ctrl.msg[2], 32, "Pit Occupied");
 			}
-			memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
+
+			if (car->ctrl.msgColor == NULL) {
+				memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
+			}
 		}
 		
 		if (car->_state & RM_CAR_STATE_PIT) {
@@ -519,7 +522,9 @@ ReRaceRules(tCarElt *car)
 				break;
 		}
 		
-		memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
+		if (car->ctrl.msgColor == NULL) {
+			memcpy(car->ctrl.msgColor, color, sizeof(car->ctrl.msgColor));
+		}
 	}
     
 	if (prevSeg->raceInfo & TR_PITSTART) {

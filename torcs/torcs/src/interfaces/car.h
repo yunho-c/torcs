@@ -2,9 +2,8 @@
 
     file                 : car.h
     created              : Sun Jan 30 12:00:15 CET 2000
-    copyright            : (C) 2000-2017 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -20,7 +19,6 @@
 /** @file
     		This is the car structure.
     @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
     @ingroup	carstruct
     @note	Short cuts are to be used with the carElt structure.
 */
@@ -314,6 +312,8 @@ typedef struct {
     int		debug;
 	tCollisionState collision_state; /**< collision state */
 	tdble localPressure;	// Environment pressure at cars location
+	int repCmdMaxClicks;	// Driver adjustable range for brake repartition during driving
+	int brakeRepartitionCmd; // Current clicks 
 } tPrivCar;
 /* structure access */
 #define _driverIndex	priv.driverIndex
@@ -353,6 +353,7 @@ typedef struct {
     int		lightCmd;    /**< Lights command */
 #define RM_LIGHT_HEAD1		0x00000001	/**< head light 1 */
 #define RM_LIGHT_HEAD2		0x00000002	/**< head light 2 */
+	int brakeRepartitionCmd;	/**< Brake balance "clicks", positive is to the front */
 } tCarCtrl;
 #define _steerCmd	ctrl.steer
 #define _accelCmd	ctrl.accelCmd
@@ -568,6 +569,8 @@ typedef struct CarElt
 #define PRM_BRKAREA		"piston area"
 #define PRM_BRKREP		"front-rear brake repartition"
 #define PRM_BRKPRESS		"max pressure"
+#define PRM_BRKREPCMD_MAXCLICKS	"brake repartition max clicks"
+#define PRM_BRKREPCMD_CLICKVALUE "brake repartition offset per click"
 
 #define PRM_CX			"Cx"
 #define PRM_FCL			"front Clift"

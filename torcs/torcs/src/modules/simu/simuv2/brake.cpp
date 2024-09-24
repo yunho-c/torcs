@@ -2,9 +2,8 @@
 
     file                 : brake.cpp
     created              : Sun Mar 19 00:05:26 CET 2000
-    copyright            : (C) 2000-2013 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -48,8 +47,10 @@ void SimBrakeSystemConfig(tCar *car)
 {
 	void *hdle = car->params;
 
-	car->brkSyst.rep   = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREP, (char*)NULL, 0.5);
-	car->brkSyst.coeff = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKPRESS, (char*)NULL, 1000000);    
+	car->brkSyst.rep   = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREP, (char*)NULL, 0.5f);
+	car->brkSyst.coeff = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKPRESS, (char*)NULL, 1000000);
+	car->brkSyst.repCmdClickValue = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREPCMD_CLICKVALUE, (char*)NULL, 0.0025f);
+	car->brkSyst.repCmdMaxClicks = (int) GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREPCMD_MAXCLICKS, (char*)NULL, 20);
 }
 
 
@@ -71,8 +72,24 @@ void SimBrakeSystemUpdate(tCar *car)
 {
 	tBrakeSyst	*brkSyst = &(car->brkSyst);
 	tdble	ctrl = car->ctrl->brakeCmd;
+	int	brakeRepartitionCmd = car->ctrl->brakeRepartitionCmd;
+
+	// Check boundaries of allowed adjustment, adjust if out of bounds
+	if (brakeRepartitionCmd > brkSyst->repCmdMaxClicks) {
+		brakeRepartitionCmd = brkSyst->repCmdMaxClicks;
+	} else if (brakeRepartitionCmd < -brkSyst->repCmdMaxClicks) {
+		brakeRepartitionCmd = -brkSyst->repCmdMaxClicks;
+	}
+
+	// Calculate effective brake repartition considering the driver input, checking boundaries of final repartition
+	tdble repartition = brkSyst->rep + brakeRepartitionCmd*car->brkSyst.repCmdClickValue;
+	if (repartition > 1.0) {
+		repartition = 1.0;
+	} else if (repartition < 0.0) {
+		repartition = 0.0;
+	}
 
 	ctrl *= brkSyst->coeff;
-	car->wheel[FRNT_RGT].brake.pressure = car->wheel[FRNT_LFT].brake.pressure = ctrl * brkSyst->rep;
-	car->wheel[REAR_RGT].brake.pressure = car->wheel[REAR_LFT].brake.pressure = ctrl * (1 - brkSyst->rep);
+	car->wheel[FRNT_RGT].brake.pressure = car->wheel[FRNT_LFT].brake.pressure = ctrl * repartition;
+	car->wheel[REAR_RGT].brake.pressure = car->wheel[REAR_LFT].brake.pressure = ctrl * (1 - repartition);
 }

@@ -453,6 +453,8 @@ SimUpdate(tSituation *s, double deltaTime, int telemetry)
 		carElt->priv.simcollision = car->collision;
 		carElt->_dammage = car->dammage;
 		carElt->priv.localPressure = car->localPressure;
+		carElt->priv.repCmdMaxClicks = car->brkSyst.repCmdMaxClicks;
+		carElt->priv.brakeRepartitionCmd = car->ctrl->brakeRepartitionCmd;
 	}
 }
 

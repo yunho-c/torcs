@@ -2,9 +2,8 @@
 
     file                 : playerpref.h
     created              : Wed Mar 21 21:50:23 CET 2001
-    copyright            : (C) 2001-2014 by Eric Espie, Bernhard Wymann
-    email                : Eric.Espie@torcs.org
-    version              : $Id$
+    copyright            : (C) 2001-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -20,7 +19,6 @@
 /** @file    
     		
     @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
 */
 
 #ifndef _PLAYERPREF_H_
@@ -39,6 +37,9 @@
 #define HM_ATT_DN_SHFT		"down shift"
 #define HM_ATT_ASR_CMD		"ASR cmd"
 #define HM_ATT_ABS_CMD		"ABS cmd"
+
+#define HM_ATT_BRAKE_TOFRONT	"brake bias +"
+#define HM_ATT_BRAKE_TOREAR		"brake bias -"
 
 #define HM_ATT_LIGHT1_CMD	"Light1 cmd"
 #define HM_ATT_SPDLIM_CMD	"Speed Limiter"

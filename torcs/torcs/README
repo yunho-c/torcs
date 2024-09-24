@@ -225,6 +225,8 @@ Changes since 1.3.8-test1
 - Adjusted tire parameters for new TRB season (Bernhard).
 - Fixed trb query for best track laptimes regarding MySQL ONLY_FULL_GROUP_BY (Bernhard).
 - Fixed trb default timestamps for MySQL strict mode (Bernhard).
+- Brake balance adjustable during ride (Bernhard).
+
 
 Changes since 1.3.7
 -------------------
@@ -266,8 +268,7 @@ Changes since 1.3.7
 TODO for 1.3.8 "worn & blown"
 --------------
 - Car adjustments (tire wear, performance balance)
-- Improve ranking with penalties if cars are not taken out of the race because of damage (e.g. out of fuel).
-- Brake balance adjustable during ride
+- Material Interpolation on surface boundaries over tire width (less abrupt grip change)
 - Curb sound
 - Dynamic track
 - Wind/Temp
@@ -284,6 +285,7 @@ TODO for 1.3.10 "ruled"
 - Rules
 - Timed races (e.g. 24h).
 - Rules/Modes which do not requrie 1.4 changes
+- Improve ranking with penalties if cars are not taken out of the race because of damage (e.g. out of fuel).
 
 TODO for 1.3.11 "tutored"
 ---------------
