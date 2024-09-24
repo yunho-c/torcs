@@ -226,6 +226,11 @@ Changes since 1.3.8-test1
 - Fixed trb query for best track laptimes regarding MySQL ONLY_FULL_GROUP_BY (Bernhard).
 - Fixed trb default timestamps for MySQL strict mode (Bernhard).
 - Brake balance adjustable during ride (Bernhard).
+- Added surface property blending for tires transitioning over two different surfaces
+  laterally. The idea is to have less abrupt grip changes when driving extremly close
+  on surface boundaries (Bernhard).
+- Side surfaces now back-reference the surfaces towards the center of the track. Further
+  checking for side effects is required (Bernhard).
 
 
 Changes since 1.3.7
@@ -268,7 +273,6 @@ Changes since 1.3.7
 TODO for 1.3.8 "worn & blown"
 --------------
 - Car adjustments (tire wear, performance balance)
-- Material Interpolation on surface boundaries over tire width (less abrupt grip change)
 - Curb sound
 - Dynamic track
 - Wind/Temp

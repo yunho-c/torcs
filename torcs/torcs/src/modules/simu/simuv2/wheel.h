@@ -75,6 +75,7 @@ typedef struct
     tdble	camber;		/* camber, negative toward exterior on both sides */
     tdble	pressure;	/* initial tire pressure, environment temperature */
 	tdble   rel_vel;    /* relative velocity - used for realstic suspension movement*/
+	tdble	tirewidth;	/* width of tire, used for surface property blending */
 
     tDynAxis	in;
     tDynAxis	feedBack;

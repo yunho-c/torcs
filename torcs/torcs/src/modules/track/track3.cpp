@@ -485,11 +485,13 @@ AddSides(tTrackSeg *curSeg, void *TrackHandle, tTrack *theTrack, int curStep, in
 		curSide->vertex[TR_SR] = curSeg->vertex[TR_SL];
 		curSide->vertex[TR_ER] = curSeg->vertex[TR_EL];
 		curSide->type2 = TR_LSIDE;
+		curSide->rside = curSeg;
 	    } else {
 		curSeg->rside = curSide;
 		curSide->vertex[TR_SL] = curSeg->vertex[TR_SR];
 		curSide->vertex[TR_EL] = curSeg->vertex[TR_ER];
 		curSide->type2 = TR_RSIDE;
+		curSide->lside = curSeg;
 	    }
 
 	    type = sideBankType[side];

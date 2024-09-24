@@ -196,9 +196,11 @@ freeSeg(tTrackSeg *seg)
 		free(seg->ext);
 	}
 	if (seg->lside) {
+		seg->lside->rside = NULL;
 		freeSeg(seg->lside);
 	}
 	if (seg->rside) {
+		seg->rside->lside = NULL;
 		freeSeg(seg->rside);
 	}
 	free(seg);

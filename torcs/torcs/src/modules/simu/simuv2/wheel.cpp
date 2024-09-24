@@ -2,9 +2,8 @@
 
     file                 : wheel.cpp
     created              : Sun Mar 19 00:09:06 CET 2000
-    copyright            : (C) 2000-2017 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -29,12 +28,12 @@ void SimWheelConfig(tCar *car, int index)
 	void *hdle = car->params;
 	tCarElt *carElt = car->carElt;
 	tWheel *wheel = &(car->wheel[index]);
-	tdble rimdiam, tirewidth, tireratio, pressure;
+	tdble rimdiam, tireratio, pressure;
 	tdble x0, Ca, RFactor, EFactor, patchLen;
 
 	pressure              = GfParmGetNum(hdle, WheelSect[index], PRM_PRESSURE, (char*)NULL, 275600);
 	rimdiam               = GfParmGetNum(hdle, WheelSect[index], PRM_RIMDIAM, (char*)NULL, 0.33f);
-	tirewidth             = GfParmGetNum(hdle, WheelSect[index], PRM_TIREWIDTH, (char*)NULL, 0.145f);
+	wheel->tirewidth      = GfParmGetNum(hdle, WheelSect[index], PRM_TIREWIDTH, (char*)NULL, 0.145f);
 	tireratio             = GfParmGetNum(hdle, WheelSect[index], PRM_TIRERATIO, (char*)NULL, 0.75f);
 	wheel->mu             = GfParmGetNum(hdle, WheelSect[index], PRM_MU, (char*)NULL, 1.0f);
 	wheel->I              = GfParmGetNum(hdle, WheelSect[index], PRM_INERTIA, (char*)NULL, 1.5f);
@@ -63,11 +62,11 @@ void SimWheelConfig(tCar *car, int index)
 	RFactor = MAX(0.1f, RFactor);
 	EFactor = MIN(1.0f, EFactor);
 
-	patchLen = wheel->weight0 / (tirewidth * pressure);
+	patchLen = wheel->weight0 / (wheel->tirewidth * pressure);
 
 	wheel->staticPos.z = -car->statGC.z;
 	
-	wheel->radius = rimdiam / 2.0f + tirewidth * tireratio;
+	wheel->radius = rimdiam / 2.0f + wheel->tirewidth * tireratio;
 	wheel->tireSpringRate = wheel->weight0 / (wheel->radius * (1.0f - cos(asin(patchLen / (2.0f * wheel->radius)))));
 	wheel->relPos.x = wheel->staticPos.x = car->axle[index/2].xpos;
 	wheel->relPos.y = wheel->staticPos.y;
@@ -80,8 +79,8 @@ void SimWheelConfig(tCar *car, int index)
 	SimBrakeConfig(hdle, BrkSect[index], &(wheel->brake));
 
 	carElt->_rimRadius(index) = rimdiam / 2.0f;
-	carElt->_tireHeight(index) = tirewidth * tireratio;
-	carElt->_tireWidth(index) = tirewidth;
+	carElt->_tireHeight(index) = wheel->tirewidth * tireratio;
+	carElt->_tireWidth(index) = wheel->tirewidth;
 	carElt->_brakeDiskRadius(index) = wheel->brake.radius;
 	carElt->_wheelRadius(index) = wheel->radius;
 
@@ -107,7 +106,7 @@ void SimWheelConfig(tCar *car, int index)
 	carElt->info.wheel[index].idealTemperature = wheel->idealTemperature;
 	
 	const tdble rubberDensity = 930.0f;	// Density of Rubber (NR) in [kg/m^3].	
-	wheel->treadMass = (2.0f*wheel->radius - wheel->treadThinkness)*PI*tirewidth*wheel->treadThinkness*rubberDensity;
+	wheel->treadMass = (2.0f*wheel->radius - wheel->treadThinkness)*PI*wheel->tirewidth*wheel->treadThinkness*rubberDensity;
 	wheel->baseMass = wheel->mass - wheel->treadMass - rimmass;
 	if (wheel->baseMass < 0.0f) {
 		wheel->baseMass = 3.0f;
@@ -117,11 +116,11 @@ void SimWheelConfig(tCar *car, int index)
 	// Surface area for convection model
 	tdble innerRadius = rimdiam / 2.0f;
 	tdble tireSideArea = PI*(wheel->radius*wheel->radius - innerRadius*innerRadius);
-	wheel->tireConvectionSurface = 2.0f*(PI*tirewidth*wheel->radius + tireSideArea);
+	wheel->tireConvectionSurface = 2.0f*(PI*wheel->tirewidth*wheel->radius + tireSideArea);
 	
 	// Mass of gas in the tire m=P*V/(R*T)
 	tdble temperature = 273.15f + 20.0f;		// Kelvin
-	tdble volume = tireSideArea*tirewidth;		// meter*meter*meter
+	tdble volume = tireSideArea*wheel->tirewidth;		// meter*meter*meter
 	tdble nitrogenR = 296.8f;					// Joule/(kg*Kelvin), N2
 	
 	wheel->tireGasMass = (wheel->pressure * volume) / (nitrogenR * temperature);	// kg
@@ -308,10 +307,34 @@ void SimWheelUpdateForce(tCar *car, int index)
 	// load sensitivity
 	mu = wheel->mu * (wheel->lfMin + (wheel->lfMax - wheel->lfMin) * exp(wheel->lfK * zforce / wheel->opLoad));
 
-	F *= zforce * mu * wheel->trkPos.seg->surface->kFriction * (1.0f + 0.05f * sin((-wheel->staticPos.ax + camberDelta) * 18.0f));	/* coeff */
+	// Surface property blending if tire overlaps. The tire overlaps if its center is closer than half the width from the edge.
+	tTrackSeg *otherSurface = NULL;
+	tdble halfTireWidth = wheel->tirewidth/2.0f;
+	tdble otherSurfaceContribution = 0.0f; // Contribution of the other surface, [0..1], effectively [0..0.5]
+
+	if (wheel->trkPos.toLeft < halfTireWidth) {
+		otherSurface = wheel->trkPos.seg->lside;
+		otherSurfaceContribution = 1.0f/2.0f - wheel->trkPos.toLeft/wheel->tirewidth;
+	} else if (wheel->trkPos.toRight < halfTireWidth) {
+		otherSurface = wheel->trkPos.seg->rside;
+		otherSurfaceContribution = 1.0f/2.0f - wheel->trkPos.toRight/wheel->tirewidth;
+	}
+
+	tdble surfaceFriction = wheel->trkPos.seg->surface->kFriction;
+	tdble rollRes = wheel->trkPos.seg->surface->kRollRes;
+
+	if (otherSurface != NULL && otherSurfaceContribution > 0.0f) {
+		surfaceFriction = surfaceFriction*(1.0f - otherSurfaceContribution) + otherSurface->surface->kFriction*otherSurfaceContribution;
+		rollRes = rollRes*(1.0f - otherSurfaceContribution) + otherSurface->surface->kRollRes*otherSurfaceContribution;
+		//if (index == FRNT_RGT || index == FRNT_LFT) {
+		//	printf("f: %.2f, orig: %.2f, otherCortib: %.4f\n", surfaceFriction, wheel->trkPos.seg->surface->kFriction, otherSurfaceContribution);
+		//}
+	}
+
+	F *= zforce * mu * surfaceFriction * (1.0f + 0.05f * sin((-wheel->staticPos.ax + camberDelta) * 18.0f));	/* coeff */
 	F *= wheel->currentGripFactor;
 	
-	wheel->rollRes = zforce * wheel->trkPos.seg->surface->kRollRes;
+	wheel->rollRes = zforce * rollRes;
     car->carElt->priv.wheel[index].rollRes = wheel->rollRes;
 
 	if (s > 0.000001f) {
