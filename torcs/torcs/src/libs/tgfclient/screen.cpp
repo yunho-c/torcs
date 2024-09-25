@@ -2,9 +2,8 @@
                            screen.cpp -- screen init
                              -------------------
     created              : Fri Aug 13 22:29:56 CEST 1999
-    copyright            : (C) 1999, 2014 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 1999-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 ***************************************************************************/
 
 /***************************************************************************
@@ -19,7 +18,6 @@
 /** @file
     Screen management.
     @author bernhard Wymann, Eric Espie
-    @version $Id$
 */
 
 #include <stdio.h>
@@ -73,7 +71,32 @@ static int usedFG = 0;
 static char	**Res = NULL;
 static int nbRes = 0;
 #else // USE_RANDR_EXT
-static char	*Res[] = {"640x480", "800x600", "1024x768", "1152x768", "1152x864", "1200x854", "1200x960", "1280x720", "1280x1024", "1400x900", "1600x900", "1600x1200", "1680x1050", "1920x1200", "320x200"};
+static char	*Res[] = {
+	"640x480",
+	"800x600",
+	"1024x768",
+	"1152x768",
+	"1152x864",
+	"1200x854",
+	"1200x960",
+	"1280x720",
+	"1280x1024",
+	"1400x900",
+	"1600x900",
+	"1600x1200",
+	"1680x1050",
+	"1920x1080",
+	"2520x1080",
+	"3840x1080",
+	"1920x1200",
+	"2560x1440",
+	"3360x1440",
+	"5120x1440",
+	"4096x2160",
+	"5040x2160",
+	"8192x2160",
+	"320x200"
+};
 static const int nbRes = sizeof(Res) / sizeof(Res[0]);
 #endif // USE_RANDR_EXT
 

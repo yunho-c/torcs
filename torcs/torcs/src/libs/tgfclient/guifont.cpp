@@ -2,9 +2,9 @@
                          guifont.cpp -- GLTT fonts management
                              -------------------
     created              : Fri Aug 13 22:19:09 CEST 1999
-    copyright            : (C) 1999 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 1999-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
+
  ***************************************************************************/
 
 /***************************************************************************
@@ -121,9 +121,8 @@ GfuiFontClass::GfuiFontClass(char *FileName)
 		return;
 	}
 
-	//Read glFont structure
-	//fread(font, sizeof(GLFONT), 1, Input);
-	fread(font, 24, 1, Input); // for IA64...
+	//Read glFont structure. On IA64 sizeof(GLFONT) gives the wrong result, so we use 24 here instead
+	fread(font, 24, 1, Input);
 
 #ifndef WIN32
 #if BYTE_ORDER == BIG_ENDIAN
@@ -160,6 +159,15 @@ GfuiFontClass::GfuiFontClass(char *FileName)
 		return;
 	}
 
+	GfOut("font: %s, %d, %d, %d, %d, %d\n",
+		FileName,
+		font->IntStart,
+		font->IntEnd,
+		font->IntEnd - font->IntStart + 1,
+		font->TexWidth,
+		font->TexHeight
+	);
+
 	//Read texture data
 	fread(TexBytes, sizeof(char), Num, Input);
 
@@ -168,18 +176,19 @@ GfuiFontClass::GfuiFontClass(char *FileName)
 	//Save texture number
 	glGenTextures(1, &Tex);
 	font->Tex = Tex;
-	//Set texture attributes
+
+	// Set texture attributes
 	glBindTexture(GL_TEXTURE_2D, Tex);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	// Use trilinear filtering for minification
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
-	//Create texture
-	glTexImage2D(GL_TEXTURE_2D, 0, 2, font->TexWidth,
-		 font->TexHeight, 0, GL_LUMINANCE_ALPHA,
-		 GL_UNSIGNED_BYTE, (void *)TexBytes);
+	// Create mipmaps
+	gluBuild2DMipmaps(GL_TEXTURE_2D, GL_LUMINANCE_ALPHA, font->TexWidth,
+		font->TexHeight, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE, TexBytes);
 
 	//Clean up
 	free(TexBytes);
@@ -201,7 +210,12 @@ GfuiFontClass::~GfuiFontClass()
 
 void GfuiFontClass::create(int point_size)
 {
-	size = point_size;
+	if (font->TexWidth > 256) {
+		// Different scaling of in new file format, to keep it compatible "58" seems to be the right factor
+		size = point_size/58.0*1024.0f/font->TexWidth;
+	} else {
+		size = point_size;
+	}
 }
 
 
@@ -220,11 +234,24 @@ int GfuiFontClass::getWidth(const char* text)
 
 	//Loop through characters
 	for (i = 0; i < Length; i++) {
-		//Get pointer to glFont character
-		Char = &font->Char[(int)text[i] - font->IntStart];
-		float w2 = Char->dx * size;
-		width = width + w2;
-		//width += Char->dx * size;
+
+		//Make sure character is contained in texture
+		if ((int)text[i] < font->IntStart || (int)text[i] > font->IntEnd)
+			continue;
+
+		if (text[i] == ' ' && font->TexWidth > 256) {
+			// Use the width of "!" for space the space character, hack for broken width data of space
+			Char = &font->Char['!' - font->IntStart];
+		} else {
+			//Get pointer to glFont character
+			Char = &font->Char[(int)text[i] - font->IntStart];
+		}
+
+		if (font->TexWidth > 256) {
+			width += Char->dx * font->TexWidth * size;
+		} else {
+			width += Char->dx * size;
+		}
 	}
 
 	return (int)width;
@@ -234,7 +261,11 @@ int GfuiFontClass::getWidth(const char* text)
 int GfuiFontClass::getHeight() const
 {
 	if (font == NULL) return 0;
-	return (const int)(font->Char[0].dy * size);
+	if (font->TexWidth > 256) {
+		return (const int)(font->Char[0].dy* font->TexHeight * size);
+	} else {
+		return (const int)(font->Char[0].dy * size);
+	}
 }
 
 
@@ -242,7 +273,7 @@ int GfuiFontClass::getDescender() const
 {
 	if (font == NULL) return 0;
 	return 0;
-	return (const int)(font->Char[0].dy * size / 2.0);
+//	return (const int)(font->Char[0].dy * size / 2.0);
 }
 
 
@@ -252,6 +283,7 @@ void GfuiFontClass::output(int X, int Y, const char* text)
 	GLFONTCHAR	*Char;
 	float	x = (float)X;
 	float	y = (float)Y;
+	float width, height;
 
 	//Return if we don't have a valid glFont
 	if (font == NULL) return;
@@ -266,21 +298,40 @@ void GfuiFontClass::output(int X, int Y, const char* text)
 	//Loop through characters
 	for (i = 0; i < Length; i++)
 	{
-		//Get pointer to glFont character
-		Char = &font->Char[(int)text[i] - font->IntStart];
+		//Make sure character is contained in texture
+		if ((int)text[i] < font->IntStart || (int)text[i] > font->IntEnd)
+			continue;
 
-		//Specify vertices and texture coordinates
-		glTexCoord2f(Char->tx1, Char->ty1);
-		glVertex2f(x, y + Char->dy * size);
-		glTexCoord2f(Char->tx1, Char->ty2);
-		glVertex2f(x, y);
-		glTexCoord2f(Char->tx2, Char->ty2);
-		glVertex2f(x + Char->dx * size, y);
-		glTexCoord2f(Char->tx2, Char->ty1);
-		glVertex2f(x + Char->dx * size, y + Char->dy * size);
+		if (text[i] == ' ' && font->TexWidth > 256) {
+			// Use the width of "!" for space, hack for broken width data of space character
+			Char = &font->Char['!' - font->IntStart];
+			width = (Char->dx * font->TexWidth)*size;
+		} else {
+			//Get pointer to glFont character
+			Char = &font->Char[(int)text[i] - font->IntStart];
+
+			//Get width and height
+			if (font->TexWidth > 256) {
+				width = (Char->dx * font->TexWidth)*size;
+				height = (Char->dy * font->TexHeight)*size;
+			} else {
+				width = (Char->dx)*size;
+				height = (Char->dy)*size;
+			}
+
+			//Specify vertices and texture coordinates
+			glTexCoord2f(Char->tx1, Char->ty1);
+			glVertex2f(x, y + height);
+			glTexCoord2f(Char->tx1, Char->ty2);
+			glVertex2f(x, y);
+			glTexCoord2f(Char->tx2, Char->ty2);
+			glVertex2f(x + width, y);
+			glTexCoord2f(Char->tx2, Char->ty1);
+			glVertex2f(x + width, y + height);
+		}
 
 		//Move to next character
-		x += Char->dx*size;
+		x += width;
 	}
 
 	//Stop rendering quads

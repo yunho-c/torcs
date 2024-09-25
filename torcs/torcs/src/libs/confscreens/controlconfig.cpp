@@ -2,9 +2,8 @@
 
     file        : controlconfig.cpp
     created     : Wed Mar 12 21:20:34 CET 2003
-    copyright   : (C) 2003-2014 by Eric Espie, Bernhard Wymann                        
-    email       : eric.espie@torcs.org   
-    version     : $Id$                                  
+    copyright   : (C) 2003-2024 by Eric Espie, Bernhard Wymann                        
+    email       : berniw@bluewin.ch   
 
  ***************************************************************************/
 
@@ -20,7 +19,6 @@
 /** @file   
     		
     @author	<a href=mailto:eric.espie@torcs.org>Eric Espie</a>
-    @version	$Id$
 */
 
 
