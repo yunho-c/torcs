@@ -3,8 +3,7 @@
     file                 : robottools.h
     created              : Mon Feb 28 22:31:13 CET 2000
     copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -20,7 +19,6 @@
 /** @file   
     		Robots Tools
     @author	<a href=mailto:eric.espie@torcs.org>Eric Espie</a>
-    @version	$Id$
 */
 
 #ifndef _ROBOTTOOLS_H_
@@ -162,9 +160,9 @@ extern void RtTelemInit(tdble ymin, tdble ymax);
 
 /** Get the current segment
  */
-tTrackSeg *RtTrackGetSeg(tTrkLocPos *p);
+extern tTrackSeg *RtTrackGetSeg(tTrkLocPos *p);
 
-
+extern tTrackSeg *RtTrackGetSideNeighbourSeg(tTrackSeg *main, tTrackSeg *current, int tr_side);
 
 /** Create a new telemetry channel.
     @param	name	Name of the channel.

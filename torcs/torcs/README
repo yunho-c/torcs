@@ -229,8 +229,6 @@ Changes since 1.3.8-test1
 - Added surface property blending for tires transitioning over two different surfaces
   laterally. The idea is to have less abrupt grip changes when driving extremly close
   to surface boundaries (Bernhard).
-- Side surfaces now back-reference the surfaces towards the center of the track. Further
-  checking for side effects is required (Bernhard).
 - Added more common screen resolutions for fallback (Bernhard).
 - Made font reading code compatible with glfont2 files. Everything with a resolution of 256 or
   smaller is interpreted as glfont 1 file, everything else as glfont 2 (Bernhard).

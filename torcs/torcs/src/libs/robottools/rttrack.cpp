@@ -2,10 +2,10 @@
                       rttrack.cpp -- Track utilities functions                              
                              -------------------                                         
     created              : Sat Aug 14 23:03:22 CEST 1999
-    copyright            : (C) 1999-2014 by Eric Espie, Bernhard Wymann                         
-    email                : torcs@free.fr   
-    version              : $Id$                                  
- ***************************************************************************/
+    copyright            : (C) 1999-2024 by Eric Espie, Bernhard Wymann                         
+    email                : berniw@bluewin.ch
+
+***************************************************************************/
 
 /***************************************************************************
  *                                                                         *
@@ -19,7 +19,6 @@
 /** @file	
     Common functions for robots.
     @author Bernhard Wymann, Eric Espie
-    @version	$Id$
 */
 
 /** @defgroup tracktools Robot Track Tools API
@@ -461,7 +460,45 @@ RtTrackHeightL(tTrkLocPos *p)
 	seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * tr) * sin(seg->surface->kRoughWaveLen * lg);
 }
 
-/* get the real segment */
+
+/** Get the neighbour segment of the given current segment. This is required, because the lside and rside
+    members only point to segments on the outside, the inside pointer is always NULL and this is implied in various
+	code locations.
+	@ingroup	tracktools
+	@param	main	Main segment to serach for neighbour from the inside (must be of type TR_MAIN)
+	@param	current	Segment to find the neighbour for
+	@param  tr_side	Neighbour we are looking for, either left or right, TR_SIDE_LFT or TR_SIDE_RGT
+	@return	neighbour found or outermost segment or NULL
+ */
+tTrackSeg *RtTrackGetSideNeighbourSeg(tTrackSeg *main, tTrackSeg *current, int tr_side)
+{
+	if (current->side[tr_side] != NULL) {
+		return current->side[tr_side];
+	}
+
+	// Because of the above guard the neighbour has now to be on the inside. Switching direction because we
+	// are searching from the inside; we need to traverse the opposite side to find the matching segment.
+	int tr_other_side = (tr_side == TR_SIDE_LFT) ? TR_SIDE_RGT : TR_SIDE_LFT;
+	tTrackSeg *neighbour = main;
+	tTrackSeg *otherSurface = main;
+	while (neighbour->side[tr_other_side] != NULL) {
+		otherSurface = neighbour;
+		if (neighbour->side[tr_other_side] == current) {
+			break;
+		}
+		neighbour = neighbour->side[tr_other_side];
+	}
+
+	return otherSurface;
+}
+
+
+/** Get the effective segment of the given position starting from a segment of type TR_MAIN, searching
+	to the sides. It does not search along the previous and next segments on the track.
+	@ingroup	tracktools
+    @param	p	Current position relative to the main segment
+	@return	segment for the given position
+ */
 tTrackSeg *
 RtTrackGetSeg(tTrkLocPos *p)
 {
@@ -473,13 +510,11 @@ RtTrackGetSeg(tTrkLocPos *p)
 		tr += seg->width;
 		if ((tr < 0) && (seg->rside != NULL)) {
 			seg = seg->rside;
-			tr += RtTrackGetWidth(seg, p->toStart);
 		}   
 	} else if ((tr > seg->width) && (seg->lside != NULL)) {
 		tr -= seg->width;
 		seg = seg->lside;
 		if ((tr > seg->width) && (seg->lside != NULL)) {
-			tr -= RtTrackGetWidth(seg, p->toStart);
 			seg = seg->lside;
 		}
 	}

@@ -1454,13 +1454,11 @@ static tTrackSeg* commonSideInit(
 		curBorder->vertex[TR_SR] = curSeg->vertex[TR_SL];
 		curBorder->vertex[TR_ER] = curSeg->vertex[TR_EL];
 		curBorder->type2 = lefttype;
-		curBorder->rside = curSeg;
 	} else {
 		curSeg->rside = curBorder;
 		curBorder->vertex[TR_SL] = curSeg->vertex[TR_SR];
 		curBorder->vertex[TR_EL] = curSeg->vertex[TR_ER];
 		curBorder->type2 = righttype;
-		curBorder->lside = curSeg;
 	}
 
 	curBorder->startWidth = startwidth;

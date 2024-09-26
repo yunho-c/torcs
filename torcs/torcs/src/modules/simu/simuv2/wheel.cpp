@@ -313,10 +313,10 @@ void SimWheelUpdateForce(tCar *car, int index)
 	tdble otherSurfaceContribution = 0.0f; // Contribution of the other surface, [0..1], effectively [0..0.5]
 
 	if (wheel->trkPos.toLeft < halfTireWidth) {
-		otherSurface = wheel->trkPos.seg->lside;
+ 		otherSurface = RtTrackGetSideNeighbourSeg(car->trkPos.seg, wheel->trkPos.seg, TR_SIDE_LFT);
 		otherSurfaceContribution = 1.0f/2.0f - wheel->trkPos.toLeft/wheel->tirewidth;
 	} else if (wheel->trkPos.toRight < halfTireWidth) {
-		otherSurface = wheel->trkPos.seg->rside;
+		otherSurface = RtTrackGetSideNeighbourSeg(car->trkPos.seg, wheel->trkPos.seg, TR_SIDE_RGT);
 		otherSurfaceContribution = 1.0f/2.0f - wheel->trkPos.toRight/wheel->tirewidth;
 	}
 
@@ -327,7 +327,7 @@ void SimWheelUpdateForce(tCar *car, int index)
 		surfaceFriction = surfaceFriction*(1.0f - otherSurfaceContribution) + otherSurface->surface->kFriction*otherSurfaceContribution;
 		rollRes = rollRes*(1.0f - otherSurfaceContribution) + otherSurface->surface->kRollRes*otherSurfaceContribution;
 		//if (index == FRNT_RGT || index == FRNT_LFT) {
-		//	printf("f: %.2f, orig: %.2f, otherCortib: %.4f\n", surfaceFriction, wheel->trkPos.seg->surface->kFriction, otherSurfaceContribution);
+		//	printf("f: %.2f, orig: %.2f, otherCortib: %.4f, toMiddle: %.2f, type2: %d\n", surfaceFriction, wheel->trkPos.seg->surface->kFriction, otherSurfaceContribution, car->trkPos.toMiddle, otherSurface->type2);
 		//}
 	}
 
