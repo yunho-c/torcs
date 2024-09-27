@@ -39,7 +39,8 @@ static void 	*scrHandle2 = NULL;
 
 static tCtrlMouseInfo	mouseInfo;
 
-#define CMD_OFFSET	6
+// TODO: refactor, this is horrible, depends on the order in controlconfig.cpp, static tCmdInfo Cmd[]
+#define CMD_OFFSET	7
 
 /*
  * Mouse calibration

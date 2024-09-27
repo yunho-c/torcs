@@ -45,7 +45,8 @@ static int rawb[NUM_JOY] = {0};
 
 #define NB_STEPS 6
 
-#define OFFSET_CMD 5
+// TODO: refactor, this is horrible, depends on the order in controlconfig.cpp, static tCmdInfo Cmd[]
+#define OFFSET_CMD 6
 
 static const char *Instructions[] = {
     "Center the joystick then press a button",
