@@ -313,7 +313,10 @@ typedef struct {
 	tCollisionState collision_state; /**< collision state */
 	tdble localPressure;	// Environment pressure at cars location
 	int repCmdMaxClicks;	// Driver adjustable range for brake repartition during driving
-	int brakeRepartitionCmd; // Current clicks 
+	int brakeRepartitionCmd; // Current clicks
+	tdble otherSurfaceContribution[4]; // Tire overlap to other surface [0..0.5]
+	tTrackSeg* otherSurfaceSeg[4];		// Other segment where the tire overlaps to
+
 } tPrivCar;
 /* structure access */
 #define _driverIndex	priv.driverIndex

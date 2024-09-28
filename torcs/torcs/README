@@ -235,6 +235,9 @@ Changes since 1.3.8-test1
 - Updated the fonts b5 and b7 with higher resolution (Bernhard).
 - Downscaling the fonts fizzled them out on rendering, added mipmap generation and filtering
   for better results (Bernhard).
+- Curb sound, inspired by implementation of speeddreams/beaglejoe, but enhanced with
+  material blending from above (Bernhard, Beaglejoe).
+
 
 Changes since 1.3.7
 -------------------
@@ -276,7 +279,6 @@ Changes since 1.3.7
 TODO for 1.3.8 "worn & blown"
 --------------
 - Car adjustments (tire wear, performance balance)
-- Curb sound
 - Dynamic track
 - Wind/Temp
 - Mouse steering calibration seems to be broken, verify
