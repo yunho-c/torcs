@@ -944,6 +944,7 @@ if exist .\data\data\sound\crash3.wav copy .\data\data\sound\crash3.wav .\%RUNTI
 if exist .\data\data\sound\crash4.wav copy .\data\data\sound\crash4.wav .\%RUNTIMEDIR%\data\sound\crash4.wav
 if exist .\data\data\sound\crash5.wav copy .\data\data\sound\crash5.wav .\%RUNTIMEDIR%\data\sound\crash5.wav
 if exist .\data\data\sound\crash6.wav copy .\data\data\sound\crash6.wav .\%RUNTIMEDIR%\data\sound\crash6.wav
+if exist .\data\data\sound\curb_ride.wav copy .\data\data\sound\curb_ride.wav .\%RUNTIMEDIR%\data\sound\curb_ride.wav
 if exist .\data\data\sound\engine-10.wav copy .\data\data\sound\engine-10.wav .\%RUNTIMEDIR%\data\sound\engine-10.wav
 if exist .\data\data\sound\engine-11.wav copy .\data\data\sound\engine-11.wav .\%RUNTIMEDIR%\data\sound\engine-11.wav
 if exist .\data\data\sound\engine-12.wav copy .\data\data\sound\engine-12.wav .\%RUNTIMEDIR%\data\sound\engine-12.wav

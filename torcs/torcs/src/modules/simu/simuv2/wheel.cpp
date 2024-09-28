@@ -326,9 +326,11 @@ void SimWheelUpdateForce(tCar *car, int index)
 	if (otherSurface != NULL && otherSurfaceContribution > 0.0f) {
 		surfaceFriction = surfaceFriction*(1.0f - otherSurfaceContribution) + otherSurface->surface->kFriction*otherSurfaceContribution;
 		rollRes = rollRes*(1.0f - otherSurfaceContribution) + otherSurface->surface->kRollRes*otherSurfaceContribution;
-		//if (index == FRNT_RGT || index == FRNT_LFT) {
-		//	printf("f: %.2f, orig: %.2f, otherCortib: %.4f, toMiddle: %.2f, type2: %d\n", surfaceFriction, wheel->trkPos.seg->surface->kFriction, otherSurfaceContribution, car->trkPos.toMiddle, otherSurface->type2);
-		//}
+		car->carElt->priv.otherSurfaceContribution[index] = otherSurfaceContribution;
+		car->carElt->priv.otherSurfaceSeg[index] = otherSurface;
+	} else {
+		car->carElt->priv.otherSurfaceContribution[index] = 0.0f;
+		car->carElt->priv.otherSurfaceSeg[index] = NULL;
 	}
 
 	F *= zforce * mu * surfaceFriction * (1.0f + 0.05f * sin((-wheel->staticPos.ax + camberDelta) * 18.0f));	/* coeff */

@@ -2,9 +2,8 @@
 /***************************************************************************
     file                 : CarSoundData.cpp
     created              : Tue Apr 5 19:57:35 CEST 2005
-    copyright            : (C) 2005-2014 Christos Dimitrakakis, Bernhard Wymann
-    email                : dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2005-2024 Christos Dimitrakakis, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
 ***************************************************************************/
 
@@ -69,7 +68,10 @@ CarSoundData::CarSoundData(int id, SoundInterface* sound_interface)
     attenuation = 0.0f;
     grass_skid.a=0.0f;
     grass_skid.f=0.0f;
-    grass_skid.lp=0.0f;	
+    grass_skid.lp=0.0f;
+	curb.a = 0.0f;
+	curb.f = 0.0f;
+	curb.lp =0.0f;
     grass.a=0.0f;
     grass.f=0.0f;
     grass.lp=0.0f;
@@ -200,6 +202,8 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
     grass_skid.a = 0.0;
     grass.a = 0.0;
     grass.f = 1.0f;
+	curb.a = 0.0;
+	curb.f = 1.0f;
     road.a = 0.0;
     road.f = 0.0f;
     bool flag = false;
@@ -228,6 +232,9 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
 	}
 
     for (i = 0; i<4; i++) {
+		if (car->_reaction[i] <= 0.0f) {
+			continue;
+		}
         const char* s = NULL;
         tdble roughness = 0.0f;
         tdble roughnessFreq = 1.0f;
@@ -255,37 +262,63 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
             if (roughnessFreq>2.0f) {
                 roughnessFreq = 2.0f + tanh(roughnessFreq-2.0f);
             }
-            //ride = car->priv.wheel[i].rollRes;
             ride = 0.001f * car->_reaction[i];
         }
 
+		// Get information about tire overlapping another surface.
+		bool onOtherSurface = car->priv.otherSurfaceContribution[i] > 0.0f && car->priv.otherSurfaceSeg[i] != NULL;
+
+
+		tdble curbContribution = 0.0f;
+		tdble curbRoughnessFreq = roughnessFreq;
+
+		if (car->priv.wheel[i].seg->style == TR_CURB) {
+			curbContribution = 1.0f - car->priv.otherSurfaceContribution[i];
+		} else if (onOtherSurface && car->priv.otherSurfaceSeg[i]->style == TR_CURB) {
+			curbContribution = car->priv.otherSurfaceContribution[i];
+			curbRoughnessFreq = 2.0f*EX_PI * car->priv.otherSurfaceSeg[i]->surface->kRoughWaveLen;
+			if (curbRoughnessFreq>2.0f) {
+				curbRoughnessFreq = 2.0f + tanh(curbRoughnessFreq-2.0f);
+			}
+		}
+
+		if (curbContribution > 0.0f) {
+			float curbpitch = tmpvol*(0.75f+0.25f*curbRoughnessFreq);
+			float curbvol = tmpvol*(5.0f + ride/3.0f)*curbContribution;
+			if (curb.a < curbvol) {
+				curb.a = curbvol;
+				curb.f = curbpitch;
+			}
+		}
+
         int out_of_road = false;
 
-        if ((s)
-            &&((strcmp(s, TRK_VAL_GRASS)==0)
-               ||(strcmp(s, TRK_VAL_SAND)==0)
-               ||(strcmp(s, TRK_VAL_DIRT)==0)
-               ||(strstr(s, "sand"))
-               ||(strstr(s, "dirt"))
-               ||(strstr(s, "grass"))
-               ||(strstr(s, "gravel"))
-               ||(strstr(s, "mud"))
-               )) {
-            out_of_road = true;
-        }
+		if (s && 
+			(strcmp(s, TRK_VAL_GRASS)==0)
+			||(strcmp(s, TRK_VAL_SAND)==0)
+			||(strcmp(s, TRK_VAL_DIRT)==0)
+			||(strstr(s, "sand"))
+			||(strstr(s, "dirt"))
+			||(strstr(s, "grass"))
+			||(strstr(s, "gravel"))
+			||(strstr(s, "mud"))
+			)						
+		{
+			out_of_road = true;
+		}
 
         wheel[i].skid.a = 0.0f;
         wheel[i].skid.f = 1.0f;
 
         if (out_of_road==false) {
             float tmppitch = tmpvol*(0.75f+0.25f*roughnessFreq);
-            float wind_noise = 1.0f;
-            float road_noise = 0.25f;
-            tmpvol = tmpvol*(wind_noise + ride*road_noise);
-            if (road.a < tmpvol) {
-                road.a = tmpvol;
-                road.f = tmppitch;
-            }
+			float wind_noise = 1.0f;
+			float road_noise = 0.25f;
+			tmpvol = tmpvol*(wind_noise + ride*road_noise);
+			if (road.a < tmpvol) {
+				road.a = tmpvol;
+				road.f = tmppitch;
+			}
 
             if (car->_skid[i] > 0.05f) {
                 //skvol[i] = (float)car->_skid[i];

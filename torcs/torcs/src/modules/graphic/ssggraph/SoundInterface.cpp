@@ -2,9 +2,8 @@
 
     file                 : PlibSoundInterface.cpp
     created              : Thu Apr 7 04:21 CEST 2005
-    copyright            : (C) 2005-2013 Christos Dimitrakakis, Bernhard Wymann
-    email                : dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2005-2024 Christos Dimitrakakis, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
 ***************************************************************************/
 
@@ -31,6 +30,7 @@ SoundInterface::SoundInterface(float sampling_rate, int n_channels)
 	road_ride_sound=NULL;
 	grass_ride_sound=NULL;
 	grass_skid_sound=NULL;
+	curb_ride_sound =NULL;
 	metal_skid_sound=NULL;
 	axle_sound=NULL;
 	turbo_sound=NULL;
@@ -42,7 +42,7 @@ SoundInterface::SoundInterface(float sampling_rate, int n_channels)
 	bang_sound=NULL;
 	bottom_crash_sound=NULL;
 	gear_change_sound=NULL;
-	
+
 	n_engine_sounds = n_channels - 12;
 
 	int MAX_N_ENGINE_SOUNDS = 8;

@@ -2,9 +2,8 @@
 /***************************************************************************
     file                 : CarSoundData.h
     created              : Tue Apr 5 19:57:35 CEST 2005
-    copyright            : (C) 2005 Christos Dimitrakakis
-    email                : dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2005 Christos Dimitrakakis, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -52,6 +51,7 @@ public:
 	QSoundChar axle;
 	QSoundChar engine_backfire;
 	QSoundChar grass_skid;
+	QSoundChar curb;
 	QSoundChar grass;
 	QSoundChar road;
 	QSoundChar skid_metal;

@@ -2,9 +2,8 @@
 
     file                 : grsound.cpp
     created              : Thu Aug 17 23:57:10 CEST 2000
-    copyright            : (C) 2000-2013 by Eric Espie, Christos Dimitrakakis, Bernhard Wymann
-    email                : torcs@free.fr, dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Christos Dimitrakakis, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
 ***************************************************************************/
 
@@ -145,6 +144,7 @@ void grInitSound(tSituation* s, int ncars)
 	sound_interface->setSkidSound("data/sound/skid_tyres.wav");
 	sound_interface->setRoadRideSound("data/sound/road-ride.wav");
 	sound_interface->setGrassRideSound("data/sound/out_of_road.wav");
+	sound_interface->setCurbRideSound("data/sound/curb_ride.wav");
 	sound_interface->setGrassSkidSound("data/sound/out_of_road-3.wav");
 	sound_interface->setMetalSkidSound("data/sound/skid_metal.wav");
 	sound_interface->setAxleSound("data/sound/axle.wav");
