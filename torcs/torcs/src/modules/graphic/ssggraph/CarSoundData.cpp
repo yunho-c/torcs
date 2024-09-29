@@ -199,181 +199,256 @@ void CarSoundData::calculateBackfireSound (tCarElt* car)
 
 void CarSoundData::calculateTyreSound(tCarElt* car)
 {
-    grass_skid.a = 0.0;
-    grass.a = 0.0;
-    grass.f = 1.0f;
-	curb.a = 0.0;
-	curb.f = 1.0f;
-    road.a = 0.0;
-    road.f = 0.0f;
-    bool flag = false;
-    int i;
-    for (i = 0; i<4; i++) {
-        wheel[i].skid.a = 0.0f;
-        wheel[i].skid.f = 1.0f;
-    }
-    if (car->_state & RM_CAR_STATE_NO_SIMU) {
-        return;
-    }
+	// Initialize sound parameters
+	grass_skid.a = grass.a = 0.0f;
+	grass.f = curb.f = 1.0f;
+	curb.a = 0.0f;
+	road.a = road.f = 0.0f;
+	
+	// Initialize wheel sounds
+	int wheelIndex;
+	for (wheelIndex = 0; wheelIndex < 4; wheelIndex++) {
+		wheel[wheelIndex].skid.a = 0.0f;
+		wheel[wheelIndex].skid.f = 1.0f;
+	}
 
-    for (i = 0; i<4; i++) {
-        if (car->_wheelSpinVel(i) > 0.1f) {
-            flag = true;
-            break;
-        }
-    }
-    
-	if (
-		(car->_state & RM_CAR_STATE_NO_SIMU) || 
-		((car->pub.speed < 0.3f) &&
-		(flag == false))
-	) {
+	// Early exit if the car simulation is not active
+	if (car->_state & RM_CAR_STATE_NO_SIMU) {
 		return;
 	}
 
-    for (i = 0; i<4; i++) {
-		if (car->_reaction[i] <= 0.0f) {
-			continue;
+	// Check if any wheel is spinning significantly
+	bool wheelSpinning = false;
+	for (wheelIndex = 0; wheelIndex < 4; wheelIndex++) {
+		if (car->_wheelSpinVel(wheelIndex) > 0.1f) {
+			wheelSpinning = true;
+			break;
 		}
-        const char* s = NULL;
-        tdble roughness = 0.0f;
-        tdble roughnessFreq = 1.0f;
-        float ride  = 0.0001f;
-        float tmpvol = car->pub.speed*0.01f;
-        if (car==NULL) {
-            fprintf (stderr, "Error: (grsound.c) no car\n");
-            continue;
-        } else if (car->priv.wheel==NULL) {
-            fprintf (stderr, "Error: (grsound.c) no wheels\n");
-            continue;
-        } else if (car->priv.wheel[i].seg==NULL) {
-            fprintf (stderr, "Error: (grsound.c) no seg\n");
-            continue;
-        } else if (car->priv.wheel[i].seg->surface==NULL) {
-            fprintf (stderr, "Error: (grsound.c) no surface\n");
-            continue;
-        } else if (car->priv.wheel[i].seg->surface->material==NULL) {
-            fprintf (stderr, "Error: (grsound.c) no material\n");
-            continue;
-        } else {
-            s = car->priv.wheel[i].seg->surface->material;
-            roughness = car->priv.wheel[i].seg->surface->kRoughness;
-            roughnessFreq = 2.0f*EX_PI * car->priv.wheel[i].seg->surface->kRoughWaveLen;
-            if (roughnessFreq>2.0f) {
-                roughnessFreq = 2.0f + tanh(roughnessFreq-2.0f);
-            }
-            ride = 0.001f * car->_reaction[i];
-        }
+	}
 
-		// Get information about tire overlapping another surface.
-		bool onOtherSurface = car->priv.otherSurfaceContribution[i] > 0.0f && car->priv.otherSurfaceSeg[i] != NULL;
+	// Early exit if the car is stationary and wheels are not spinning
+	if ((car->pub.speed < 0.3f) && !wheelSpinning) {
+		return;
+	}
 
+    for (wheelIndex = 0; wheelIndex<4; wheelIndex++) {
+		// I do not skip here for car->_reaction[i] <= 0, because the road sample currently also includes airflow noise
+        tdble tmpvol = car->pub.speed*0.01f;
+        tdble roughnessFreq = calculateRoughnessFreqency(car->priv.wheel[wheelIndex].seg);
+        tdble ride = 0.001f * car->_reaction[wheelIndex];
 
+		// Get information about tire overlapping another surface (e.g. at road edge to the curb).
+		tdble otherSurfaceContribution = 0.0f;
+		tdble otherRoughnessFreq = 1.0f;
+		bool onOtherSurface = car->priv.otherSurfaceContribution[wheelIndex] > 0.0f && car->priv.otherSurfaceSeg[wheelIndex] != NULL;
+
+		if (onOtherSurface) {
+			otherSurfaceContribution = car->priv.otherSurfaceContribution[wheelIndex];
+			otherRoughnessFreq = calculateRoughnessFreqency(car->priv.otherSurfaceSeg[wheelIndex]);
+		}
+
+		// Curb handling, implicit assumption that there are never two curbs directly side by side. This
+		// is currently guaranteed.
 		tdble curbContribution = 0.0f;
-		tdble curbRoughnessFreq = roughnessFreq;
 
-		if (car->priv.wheel[i].seg->style == TR_CURB) {
-			curbContribution = 1.0f - car->priv.otherSurfaceContribution[i];
-		} else if (onOtherSurface && car->priv.otherSurfaceSeg[i]->style == TR_CURB) {
-			curbContribution = car->priv.otherSurfaceContribution[i];
-			curbRoughnessFreq = 2.0f*EX_PI * car->priv.otherSurfaceSeg[i]->surface->kRoughWaveLen;
-			if (curbRoughnessFreq>2.0f) {
-				curbRoughnessFreq = 2.0f + tanh(curbRoughnessFreq-2.0f);
+		// Check curb sound contribution, skip calculation if there is no load on the wheel (no sound)
+		// The Curb effect is an "addon" effect, it does not exclude the road or dirt effects, e.g. you
+		// can have the tires skid on the curbs and have wind noise.
+		if (car->_reaction[wheelIndex] > 0.0f) {
+			tdble curbRoughnessFreq = roughnessFreq;
+
+			if (car->priv.wheel[wheelIndex].seg->style == TR_CURB) {
+				curbContribution = 1.0f - otherSurfaceContribution;
+			} else if (onOtherSurface && car->priv.otherSurfaceSeg[wheelIndex]->style == TR_CURB) {
+				curbContribution = otherSurfaceContribution;
+				curbRoughnessFreq = otherRoughnessFreq;
+			}
+
+			if (curbContribution > 0.0f) {
+				// Constants by trial and error, there is no deeper reasoning behind it
+				float curbpitch = tmpvol*(0.75f+0.25f*curbRoughnessFreq);
+				float curbvol = tmpvol*(5.0f + ride/3.0f)*curbContribution;
+				// There is only one effect for the car, take the loudest wheel
+				if (curb.a < curbvol) {
+					curb.a = curbvol;
+					curb.f = curbpitch;
+				}
 			}
 		}
 
-		if (curbContribution > 0.0f) {
-			float curbpitch = tmpvol*(0.75f+0.25f*curbRoughnessFreq);
-			float curbvol = tmpvol*(5.0f + ride/3.0f)*curbContribution;
-			if (curb.a < curbvol) {
-				curb.a = curbvol;
-				curb.f = curbpitch;
+		// Handling of dirt and normal surfaces, here we can have an overlapping tire spanning either
+		// two surfaces of the same type or a different type.
+		bool mainSurfaceIsOffroad = isOffRoadSurface(car->priv.wheel[wheelIndex].seg);
+		bool onOtherDifferentSurface =
+			onOtherSurface && (mainSurfaceIsOffroad != isOffRoadSurface(car->priv.otherSurfaceSeg[wheelIndex]));
+
+		tdble roadContribution = 0.0f;
+		tdble dirtContribution = 0.0f;
+
+		if (onOtherDifferentSurface) {
+			// Mixed cases, two different surfaces
+			if (mainSurfaceIsOffroad) {
+				dirtContribution = 1.0f - otherSurfaceContribution;
+				roadContribution = otherSurfaceContribution;
+			} else {
+				roadContribution = 1.0f - otherSurfaceContribution;
+				dirtContribution = otherSurfaceContribution;
+			}
+		} else {
+			// Both surfaces of the same type
+			if (mainSurfaceIsOffroad) {
+				dirtContribution = 1.0;
+			} else {
+				roadContribution = 1.0f;
 			}
 		}
 
-        int out_of_road = false;
-
-		if (s && 
-			(strcmp(s, TRK_VAL_GRASS)==0)
-			||(strcmp(s, TRK_VAL_SAND)==0)
-			||(strcmp(s, TRK_VAL_DIRT)==0)
-			||(strstr(s, "sand"))
-			||(strstr(s, "dirt"))
-			||(strstr(s, "grass"))
-			||(strstr(s, "gravel"))
-			||(strstr(s, "mud"))
-			)						
-		{
-			out_of_road = true;
+		// Normal road handling
+		if (roadContribution > 0.0f) {
+			handleRoadContribution(mainSurfaceIsOffroad, roadContribution, roughnessFreq, otherRoughnessFreq, tmpvol, ride, wheelIndex, car->_skid[wheelIndex], car->_wheelSlipAccel(wheelIndex), car->_reaction[wheelIndex]);
 		}
 
-        wheel[i].skid.a = 0.0f;
-        wheel[i].skid.f = 1.0f;
+		// Dirt handling
+		if (dirtContribution > 0.0f) {
+			tdble dirtRoughnessFreq = 0.0f;
+			tdble dirtRoughness = 0.0f;
 
-        if (out_of_road==false) {
-            float tmppitch = tmpvol*(0.75f+0.25f*roughnessFreq);
-			float wind_noise = 1.0f;
-			float road_noise = 0.25f;
-			tmpvol = tmpvol*(wind_noise + ride*road_noise);
-			if (road.a < tmpvol) {
-				road.a = tmpvol;
-				road.f = tmppitch;
-			}
+			getDirtRoughnessParams(car, wheelIndex, mainSurfaceIsOffroad, roughnessFreq, otherRoughnessFreq, dirtRoughnessFreq, dirtRoughness);
+			handleDirtContribution(dirtContribution, dirtRoughnessFreq, dirtRoughness, car->_skid[wheelIndex], tmpvol, ride);
+		}
+	}
 
-            if (car->_skid[i] > 0.05f) {
-                //skvol[i] = (float)car->_skid[i];
-                //skpitch[i] = 0.7+0.3*roughnessFreq;
-                wheel[i].skid.a = (float)car->_skid[i]-0.05f;
-                float wsa = tanh((car->_wheelSlipAccel(i)+10.0f)*0.01f);
-                wheel[i].skid.f = (0.3f - 0.3f*wsa + 0.3f*roughnessFreq)/(1.0f+0.5f*tanh(car->_reaction[i]*0.0001f));
-            } else {
-                wheel[i].skid.a = 0.0f;
-                wheel[i].skid.f = 1.0f;
-            }
-            //printf ("%d %f %f\n", i, wheel[i].skid.a, wheel[i].skid.f);
-        } else {
-            float tmppitch = tmpvol*(0.5f + 0.5f*roughnessFreq);
-
-            tmpvol = (0.5f+0.2f*tanh(0.5f*roughness))*tmpvol * ride;
-
-            if (grass.a < tmpvol) {
-                grass.a = tmpvol;
-                grass.f = tmppitch;
-            }
-            if (grass_skid.a < car->_skid[i]) {
-                grass_skid.a = (float) car->_skid[i];
-                grass_skid.f = 1.0f;
-            }
-        }
-
-    }
-
-    for (i = 0; i<4; i++) {
+    for (wheelIndex = 0; wheelIndex<4; wheelIndex++) {
         tdble az = car->_yaw;
         tdble Sinz = sin(az);
         tdble Cosz = cos(az);
                 
-        tdble x = car->priv.wheel[i].relPos.x;
-        tdble y = car->priv.wheel[i].relPos.y;
+        tdble x = car->priv.wheel[wheelIndex].relPos.x;
+        tdble y = car->priv.wheel[wheelIndex].relPos.y;
                 
         tdble dx = x * Cosz - y * Sinz;
         tdble dy = x * Sinz + y * Cosz;
                 
-        tdble dux = -car->_yaw_rate * y;
-        tdble duy = car->_yaw_rate * x;
+        tdble dux_initial = -car->_yaw_rate * y;
+        tdble duy_initial = car->_yaw_rate * x;
+
+		tdble dux = dux_initial * Cosz - duy_initial * Sinz;
+		tdble duy = dux_initial * Sinz + duy_initial * Cosz;
                 
-        dux = dux * Cosz - duy * Sinz;
-        duy = dux * Sinz + duy * Cosz;
-                
-        wheel[i].u[0] = car->pub.DynGCg.vel.x + dux;
-        wheel[i].u[1] = car->pub.DynGCg.vel.y + duy;
-        wheel[i].u[2] = car->pub.DynGCg.vel.z;
-        wheel[i].p[0] = car->pub.DynGCg.pos.x + dx;
-        wheel[i].p[1] = car->pub.DynGCg.pos.y + dy;
-        wheel[i].p[2] = car->pub.DynGCg.pos.z;
+        wheel[wheelIndex].u[0] = car->pub.DynGCg.vel.x + dux;
+        wheel[wheelIndex].u[1] = car->pub.DynGCg.vel.y + duy;
+        wheel[wheelIndex].u[2] = car->pub.DynGCg.vel.z;
+        wheel[wheelIndex].p[0] = car->pub.DynGCg.pos.x + dx;
+        wheel[wheelIndex].p[1] = car->pub.DynGCg.pos.y + dy;
+        wheel[wheelIndex].p[2] = car->pub.DynGCg.pos.z;
     }
 }
 
+bool CarSoundData::isOffRoadSurface(const tTrackSeg* const seg) {
+	const char* const materialName = seg->surface->material;
+	return materialName &&
+		(strstr(materialName, TRK_VAL_SAND))
+		||(strstr(materialName, TRK_VAL_DIRT))
+		||(strstr(materialName, TRK_VAL_GRASS))
+		||(strstr(materialName, "gravel"))
+		||(strstr(materialName, "mud"));								
+}
+
+
+tdble CarSoundData::calculateRoughnessFreqency(const tTrackSeg* const seg)
+{
+	tdble roughnessFreq = 2.0f*EX_PI*seg->surface->kRoughWaveLen;
+	if (roughnessFreq>2.0f) {
+		roughnessFreq = 2.0f + tanh(roughnessFreq-2.0f);
+	}
+	return roughnessFreq;
+}
+
+
+void CarSoundData::getDirtRoughnessParams(
+	tCarElt* car,
+	int wheelIndex,
+	bool mainSurfaceIsOffroad,
+	tdble roughnessFreq,
+	tdble otherRoughnessFreq,
+	tdble& dirtRoughnessFreq,
+	tdble& dirtRoughness
+) {
+	if (mainSurfaceIsOffroad) {
+		dirtRoughnessFreq = roughnessFreq;
+		dirtRoughness = car->priv.wheel[wheelIndex].seg->surface->kRoughness;
+	} else {
+		dirtRoughnessFreq = otherRoughnessFreq;
+		dirtRoughness = car->priv.otherSurfaceSeg[wheelIndex]->surface->kRoughness;
+	}
+}
+
+
+void CarSoundData::handleDirtContribution(
+	tdble dirtContribution,
+	tdble dirtRoughnessFreq,
+	tdble dirtRoughness,
+	tdble wheelSkid,
+	tdble tmpvol,
+	tdble ride
+) {
+	if (dirtContribution > 0.0f) {
+		tdble dirtpitch = tmpvol * (0.5f + 0.5f*dirtRoughnessFreq);
+		tdble dirtvol = (0.5f + 0.2f*tanh(0.5f*dirtRoughness))*tmpvol*ride*dirtContribution;
+
+		if (grass.a < dirtvol) {
+			grass.a = dirtvol;
+			grass.f = dirtpitch;
+		}
+
+		tdble grassvol = wheelSkid*dirtContribution;
+		if (grass_skid.a < grassvol) {
+			grass_skid.a = static_cast<float>(grassvol);
+			grass_skid.f = 1.0f;
+		}
+	}
+}
+
+
+void CarSoundData::handleRoadContribution(
+	bool mainSurfaceIsOffroad,
+	tdble roadContribution,
+	tdble roughnessFreq,
+	tdble otherRoughnessFreq,
+	tdble tmpvol,
+	tdble ride,
+	int wheelIndex,
+	tdble wheelSkid,
+	tdble wheelSlipAccel,
+	tdble wheelReaction
+) {
+	if (roadContribution > 0.0f) {
+		tdble roadRoughnessFreq;
+		if (!mainSurfaceIsOffroad) {
+			roadRoughnessFreq = roughnessFreq;
+		} else {
+			roadRoughnessFreq = otherRoughnessFreq;
+		}
+
+		tdble roadpitch = tmpvol*(0.75f+0.25f*roadRoughnessFreq);
+		tdble wind_noise = 1.0f;
+		tdble road_noise = 0.25f;
+		tdble roadvol = tmpvol*(wind_noise + ride*road_noise)*roadContribution;
+		if (road.a < roadvol) {
+			road.a = roadvol;
+			road.f = roadpitch;
+		}
+
+		if (wheelSkid > 0.05f) {
+			wheel[wheelIndex].skid.a = (float)(wheelSkid-0.05f)*roadContribution;
+			float wsa = tanh((wheelSlipAccel+10.0f)*0.01f);
+			wheel[wheelIndex].skid.f = (0.3f - 0.3f*wsa + 0.3f*roadRoughnessFreq)/(1.0f+0.5f*tanh(wheelReaction*0.0001f));
+		} else {
+			wheel[wheelIndex].skid.a = 0.0f;
+			wheel[wheelIndex].skid.f = 1.0f;
+		}
+	}
+}
 
 void CarSoundData::calculateGearChangeSound (tCarElt* car) {
     if (car->_gear != prev_gear) {

@@ -207,8 +207,8 @@ grRefreshSound(tSituation *s, cGrCamera	*camera)
 		return 0.0f;
 	}
 
-	// Update sound at most 50 times a second.
-	const double UPDATE_DT = 0.02;
+	// Update sound at most 100 times a second.
+	const double UPDATE_DT = 0.01;
 	if (s->currentTime - lastUpdated < UPDATE_DT) {
 		return 0.0f;
 	}

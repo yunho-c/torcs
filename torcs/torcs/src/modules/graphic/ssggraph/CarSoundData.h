@@ -2,7 +2,7 @@
 /***************************************************************************
     file                 : CarSoundData.h
     created              : Tue Apr 5 19:57:35 CEST 2005
-    copyright            : (C) 2005 Christos Dimitrakakis, Bernhard Wymann
+    copyright            : (C) 2005-2024 Christos Dimitrakakis, Bernhard Wymann
     email                : berniw@bluewin.ch
 
  ***************************************************************************/
@@ -35,6 +35,38 @@ protected:
 	void calculateTyreSound (tCarElt* car);
 	void calculateGearChangeSound (tCarElt* car);
 	void calculateCollisionSound (tCarElt* car);
+	bool isOffRoadSurface(const tTrackSeg* const seg);
+	tdble calculateRoughnessFreqency(const tTrackSeg* const seg);
+	void getDirtRoughnessParams(
+		tCarElt* car,
+		int wheelIndex,
+		bool mainSurfaceIsOffroad,
+		tdble roughnessFreq,
+		tdble otherRoughnessFreq,
+		tdble& dirtRoughnessFreq,
+		tdble& dirtRoughness
+	);
+	void handleDirtContribution(
+		tdble dirtContribution,
+		tdble dirtRoughnessFreq,
+		tdble dirtRoughness,
+		tdble wheelSkid,
+		tdble tmpvol,
+		tdble ride
+	);
+	void handleRoadContribution(
+		bool mainSurfaceIsOffroad,
+		tdble roadContribution,
+		tdble roughnessFreq,
+		tdble otherRoughnessFreq,
+		tdble tmpvol,
+		tdble ride,
+		int wheelIndex,
+		tdble wheelSkid,
+		tdble wheelSlipAccel,
+		tdble wheelReaction
+	);
+
 public:
 	SoundPri eng_pri;
 	WheelSoundData wheel[4];

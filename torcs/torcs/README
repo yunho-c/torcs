@@ -237,6 +237,9 @@ Changes since 1.3.8-test1
   for better results (Bernhard).
 - Curb sound, inspired by implementation of speeddreams/beaglejoe, but enhanced with
   material blending from above (Bernhard, Beaglejoe).
+- Implemented sound blending also for other surface transitions (Bernhard).
+- Fixed a minor coordinate bug in the tire sound code, nobody has ever noticed (Bernhard).
+- Increased the sound engine evaluation limit from 50 to 100 Hz, CPU's got faster (Bernhard).
 
 
 Changes since 1.3.7
