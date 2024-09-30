@@ -66,6 +66,18 @@ protected:
 		tdble wheelSlipAccel,
 		tdble wheelReaction
 	);
+	void handleCurbContribution(
+		tPrivCar* car,
+		bool onOtherSurface,
+		tdble otherSurfaceContribution,
+		tdble curbRoughnessFreq,
+		tdble otherRoughnessFreq,
+		tdble tmpvol,
+		tdble ride,
+		int wheelIndex,
+		tdble wheelReaction
+	);
+
 
 public:
 	SoundPri eng_pri;

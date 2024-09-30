@@ -254,28 +254,9 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
 		// Check curb sound contribution, skip calculation if there is no load on the wheel (no sound)
 		// The Curb effect is an "addon" effect, it does not exclude the road or dirt effects, e.g. you
 		// can have the tires skid on the curbs and have wind noise.
-		if (car->_reaction[wheelIndex] > 0.0f) {
-			tdble curbRoughnessFreq = roughnessFreq;
-
-			if (car->priv.wheel[wheelIndex].seg->style == TR_CURB) {
-				curbContribution = 1.0f - otherSurfaceContribution;
-			} else if (onOtherSurface && car->priv.otherSurfaceSeg[wheelIndex]->style == TR_CURB) {
-				curbContribution = otherSurfaceContribution;
-				curbRoughnessFreq = otherRoughnessFreq;
-			}
-
-			if (curbContribution > 0.0f) {
-				// Constants by trial and error, there is no deeper reasoning behind it
-				float curbpitch = tmpvol*(0.75f+0.25f*curbRoughnessFreq);
-				float curbvol = tmpvol*(5.0f + ride/3.0f)*curbContribution;
-				// There is only one effect for the car, take the loudest wheel
-				if (curb.a < curbvol) {
-					curb.a = curbvol;
-					curb.f = curbpitch;
-				}
-			}
-		}
-
+		handleCurbContribution(&car->priv, onOtherSurface, otherSurfaceContribution, roughnessFreq,
+			otherRoughnessFreq, tmpvol, ride, wheelIndex, car->_reaction[wheelIndex]);
+		
 		// Handling of dirt and normal surfaces, here we can have an overlapping tire spanning either
 		// two surfaces of the same type or a different type.
 		bool mainSurfaceIsOffroad = isOffRoadSurface(car->priv.wheel[wheelIndex].seg);
@@ -297,7 +278,7 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
 		} else {
 			// Both surfaces of the same type
 			if (mainSurfaceIsOffroad) {
-				dirtContribution = 1.0;
+				dirtContribution = 1.0f;
 			} else {
 				roadContribution = 1.0f;
 			}
@@ -305,7 +286,9 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
 
 		// Normal road handling
 		if (roadContribution > 0.0f) {
-			handleRoadContribution(mainSurfaceIsOffroad, roadContribution, roughnessFreq, otherRoughnessFreq, tmpvol, ride, wheelIndex, car->_skid[wheelIndex], car->_wheelSlipAccel(wheelIndex), car->_reaction[wheelIndex]);
+			handleRoadContribution(mainSurfaceIsOffroad, roadContribution, roughnessFreq,
+				otherRoughnessFreq, tmpvol, ride, wheelIndex, car->_skid[wheelIndex],
+				car->_wheelSlipAccel(wheelIndex), car->_reaction[wheelIndex]);
 		}
 
 		// Dirt handling
@@ -443,12 +426,44 @@ void CarSoundData::handleRoadContribution(
 			wheel[wheelIndex].skid.a = (float)(wheelSkid-0.05f)*roadContribution;
 			float wsa = tanh((wheelSlipAccel+10.0f)*0.01f);
 			wheel[wheelIndex].skid.f = (0.3f - 0.3f*wsa + 0.3f*roadRoughnessFreq)/(1.0f+0.5f*tanh(wheelReaction*0.0001f));
-		} else {
-			wheel[wheelIndex].skid.a = 0.0f;
-			wheel[wheelIndex].skid.f = 1.0f;
 		}
 	}
 }
+
+
+void CarSoundData::handleCurbContribution(
+	tPrivCar* car,
+	bool onOtherSurface,
+	tdble otherSurfaceContribution,
+	tdble curbRoughnessFreq,
+	tdble otherRoughnessFreq,
+	tdble tmpvol,
+	tdble ride,
+	int wheelIndex,
+	tdble wheelReaction
+) {
+	if (wheelReaction > 0.0f) {
+		tdble curbContribution = 0.0f;
+		if (car->wheel[wheelIndex].seg->style == TR_CURB) {
+			curbContribution = 1.0f - otherSurfaceContribution;
+		} else if (onOtherSurface && car->otherSurfaceSeg[wheelIndex]->style == TR_CURB) {
+			curbContribution = otherSurfaceContribution;
+			curbRoughnessFreq = otherRoughnessFreq;
+		}
+
+		if (curbContribution > 0.0f) {
+			// Constants by trial and error, there is no deeper reasoning behind it
+			float curbpitch = tmpvol*(0.75f+0.25f*curbRoughnessFreq);
+			float curbvol = tmpvol*(5.0f + ride/3.0f)*curbContribution;
+			// There is only one effect for the car, take the loudest wheel
+			if (curb.a < curbvol) {
+				curb.a = curbvol;
+				curb.f = curbpitch;
+			}
+		}
+	}
+}
+
 
 void CarSoundData::calculateGearChangeSound (tCarElt* car) {
     if (car->_gear != prev_gear) {
