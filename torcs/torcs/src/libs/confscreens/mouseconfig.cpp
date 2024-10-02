@@ -2,7 +2,7 @@
 
     file        : mouseconfig.cpp
     created     : Thu Mar 13 21:27:03 CET 2003
-    copyright   : (C) 2003 by Eric Espi�                        
+    copyright   : (C) 2003 by Eric Espié                        
     email       : eric.espie@torcs.org   
     version     : $Id$                                  
 
@@ -98,7 +98,7 @@ MouseCalAutomaton(void)
 		case 3:
 			GfctrlMouseGetCurrent(&mouseInfo);
 			axv = mouseInfo.ax[Cmd[CMD_OFFSET + CalState].ref.index];
-				if (fabs(axv) < 0.01) {
+			if (fabs(axv) < 0.01) {
 				return;		/* ignore no move input */
 			}
 			Cmd[CMD_OFFSET + CalState].max = axv;

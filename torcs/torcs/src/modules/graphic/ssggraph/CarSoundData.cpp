@@ -249,7 +249,6 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
 
 		// Curb handling, implicit assumption that there are never two curbs directly side by side. This
 		// is currently guaranteed.
-		tdble curbContribution = 0.0f;
 
 		// Check curb sound contribution, skip calculation if there is no load on the wheel (no sound)
 		// The Curb effect is an "addon" effect, it does not exclude the road or dirt effects, e.g. you
