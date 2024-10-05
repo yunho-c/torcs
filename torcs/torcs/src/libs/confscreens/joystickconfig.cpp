@@ -2,9 +2,8 @@
 
     file                 : joystickconfig.cpp
     created              : Wed Mar 21 21:46:11 CET 2001
-    copyright            : (C) 2001-2015 by Eric Espie, Bernhard Wymann
-    email                : eric.espie@torcs.org
-    version              : $Id$
+    copyright            : (C) 2001-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -43,19 +42,23 @@ static jsJoystick *js[NUM_JOY] = {NULL};
 static float ax[_JS_MAX_AXES * NUM_JOY] = {0};
 static int rawb[NUM_JOY] = {0};
 
+// Variable to give a small delay for axis registration which might be overlapped by a button.
+// This is e.g. the case for my ps4 gamepad, L2 and R2 are a button and an axis.
+static double axisPressedTime = 0.0;
+
 #define NB_STEPS 6
 
 // TODO: refactor, this is horrible, depends on the order in controlconfig.cpp, static tCmdInfo Cmd[]
 #define OFFSET_CMD 6
 
 static const char *Instructions[] = {
-    "Center the joystick then press a button",
-    "Steer left then press a button",
-    "Steer right then press a button",
-    "Apply full throttle then press a button",
-    "Apply full brake then press a button",
-    "Apply full clutch then press a button",
-    "Calibration terminated",
+    "Center the joystick then press a button for more than 0.2s",
+    "Steer left then press a button for more than 0.2s",
+    "Steer right then press a button for more than 0.2s",
+    "Apply full throttle then press a button for more than 0.2s",
+    "Apply full brake then press a button for more than 0.2s",
+    "Apply full clutch then press a button for more than 0.2s",
+    "Calibration successfully done",
     "Calibration failed"
 };
 
@@ -90,6 +93,8 @@ static void JoyCalAutomaton(void)
 	const int BUFSIZE = 1024;
 	char buf[BUFSIZE];
 	
+	axisPressedTime = 0.0;
+
     switch (CalState) {
 		case 0:
 			memcpy(axCenter, ax, sizeof(axCenter));
@@ -136,28 +141,39 @@ static void Idle2(void)
 	int mask;
 	int b, i;
 	int index;
+	double currentTime = GfTimeClock();
+	const double delay = 0.2;
 
 	for (index = 0; index < NUM_JOY; index++) {
 		if (js[index]) {
 			js[index]->read(&b, &ax[index * _JS_MAX_AXES]);
 			
-			/* Joystick buttons */
-			for (i = 0, mask = 1; i < 32; i++, mask *= 2) {
-				if (((b & mask) != 0) && ((rawb[index] & mask) == 0)) {
-					const char *str = GfctrlGetNameByRef(GFCTRL_TYPE_JOY_BUT, i + 32 * index);
-					if (!GfctrlIsEventBlacklisted(parmHandle, driverSection, str)) {
-						/* Button fired */
-						JoyCalAutomaton();
-						if (CalState >= NB_STEPS) {
-							glutIdleFunc(GfuiIdle);
+			if (currentTime - axisPressedTime > delay) {
+				/* Joystick buttons */
+				for (i = 0, mask = 1; i < 32; i++, mask *= 2) {
+					if (((b & mask) != 0) && ((rawb[index] & mask) == 0)) {
+						if (axisPressedTime == 0.0) {
+							axisPressedTime = currentTime;
+						} else {
+							const char *str = GfctrlGetNameByRef(GFCTRL_TYPE_JOY_BUT, i + 32 * index);
+							if (!GfctrlIsEventBlacklisted(parmHandle, driverSection, str)) {
+								/* Button fired */
+								JoyCalAutomaton();
+								if (CalState >= NB_STEPS) {
+									glutIdleFunc(GfuiIdle);
+								}
+								glutPostRedisplay();
+								rawb[index] = b;
+								return;
+							}
 						}
-						glutPostRedisplay();
-						rawb[index] = b;
-						return;
 					}
 				}
+
+				if (currentTime - axisPressedTime > delay) {
+					rawb[index] = b;
+				}
 			}
-			rawb[index] = b;
 		}
 	}
 }
@@ -178,6 +194,8 @@ static void onActivate(void * /* dummy */)
 			js[index]->read(&rawb[index], &ax[index * _JS_MAX_AXES]); /* initial value */
 		}
 	}
+
+	axisPressedTime = 0.0;
 
 	for (i = 0; i < 4; i++) {
 		if (i > 0) {

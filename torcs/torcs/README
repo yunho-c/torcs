@@ -240,6 +240,9 @@ Changes since 1.3.8-test1
 - Implemented sound blending also for other surface transitions (Bernhard).
 - Fixed a minor coordinate bug in the tire sound code, nobody has ever noticed (Bernhard).
 - Increased the sound engine evaluation limit from 50 to 100 Hz, CPU's got faster (Bernhard).
+- Updated OpenAL dll to openal-soft-1.23.1 to get rid of some crackling (Bernhard).
+- Updated controller configuration, such that axis which are also buttons (like L2 and R2 on
+  PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
 
 
 Changes since 1.3.7

@@ -73,6 +73,10 @@ static float axCenter[_JS_MAX_AXES * NUM_JOY];
 static int rawb[NUM_JOY] = {0};
 static int ReloadValues = 1;
 
+// Variable to give a small delay for axis registration which might be overlapped by a button.
+// This is e.g. the case for my ps4 gamepad, L2 and R2 are a button and an axis.
+static double axisPressedTime = 0.0;
+
 
 typedef struct {
 	const char *key;
@@ -260,14 +264,77 @@ static int getMovedAxis(void)
 			Index = i;
 		}
 	}
+
 	return Index;
+}
+
+
+// Returns true if the preferred input is an axis
+static bool isAxisPreffered(tCmdInfo* cmd) {
+	return strcmp(cmd->name, HM_ATT_LEFTSTEER) == 0
+		|| strcmp(cmd->name, HM_ATT_RIGHTSTEER) == 0
+		|| strcmp(cmd->name, HM_ATT_THROTTLE) == 0
+		|| strcmp(cmd->name, HM_ATT_BRAKE) == 0
+		|| strcmp(cmd->name, HM_ATT_CLUTCH) == 0;
+}
+
+
+static bool checkJoystickButtonPressed(tCmdInfo* cmd, int b[], bool checkOnly) 
+{
+	int mask, i, index;
+	
+	for (index = 0; index < NUM_JOY; index++) {
+		if (js[index]) {
+			/* Joystick buttons */
+			for (i = 0, mask = 1; i < 32; i++, mask *= 2) {
+				if (((b[index] & mask) != 0) && ((rawb[index] & mask) == 0)) {
+					/* Button i fired */
+					const char *str = GfctrlGetNameByRef(GFCTRL_TYPE_JOY_BUT, i + 32 * index);
+					if (!GfctrlIsEventBlacklisted(PrefHdle, CurrentSection, str)) {
+						if (checkOnly) {
+							return true;
+						}
+
+						glutIdleFunc(GfuiIdle);
+						InputWaited = 0;
+						cmd->ref.index = i + 32 * index;
+						cmd->ref.type = GFCTRL_TYPE_JOY_BUT;
+						GfuiButtonSetText (scrHandle, cmd->Id, str);
+						glutPostRedisplay();
+						rawb[index] = b[index];
+						return true;
+					}
+				}
+			}
+		}
+		rawb[index] = b[index];
+	}
+	return false;
+}
+
+static bool checkJoystickMovedAxis(tCmdInfo* cmd) 
+{	
+	int	axis = getMovedAxis();
+
+	if (axis != -1) {
+		glutIdleFunc(GfuiIdle);
+		InputWaited = 0;
+		cmd->ref.type = GFCTRL_TYPE_JOY_AXIS;
+		cmd->ref.index = axis;
+		const char *str = GfctrlGetNameByRef(GFCTRL_TYPE_JOY_AXIS, axis);
+		GfuiButtonSetText (scrHandle, cmd->Id, str);
+		glutPostRedisplay();
+		return true;
+	}
+
+	return false;
 }
 
 
 static void Idle(void)
 {
 	int mask;
-	int	b, i;
+	int i;
 	int	index;
 	const char *str;
 	int	axis;
@@ -302,43 +369,30 @@ static void Idle(void)
 		}
 	}
 	
-	/* Check for a Joystick button pressed */
+	int b[NUM_JOY] = {0};
 	for (index = 0; index < NUM_JOY; index++) {
 		if (js[index]) {
-			js[index]->read(&b, &ax[index * _JS_MAX_AXES]);
-		
-			/* Joystick buttons */
-			for (i = 0, mask = 1; i < 32; i++, mask *= 2) {
-				if (((b & mask) != 0) && ((rawb[index] & mask) == 0)) {
-					/* Button i fired */
-					str = GfctrlGetNameByRef(GFCTRL_TYPE_JOY_BUT, i + 32 * index);
-					if (!GfctrlIsEventBlacklisted(PrefHdle, CurrentSection, str)) {
-						glutIdleFunc(GfuiIdle);
-						InputWaited = 0;
-						CurrentCmd->ref.index = i + 32 * index;
-						CurrentCmd->ref.type = GFCTRL_TYPE_JOY_BUT;
-						GfuiButtonSetText (scrHandle, CurrentCmd->Id, str);
-						glutPostRedisplay();
-						rawb[index] = b;
-						return;
-					}
-				}
-			}
-			rawb[index] = b;
+			js[index]->read(&b[index], &ax[index * _JS_MAX_AXES]);
 		}
 	}
+	
+	if (isAxisPreffered(CurrentCmd)) {
+		const double delay = 0.2;
+		double currentTime = GfTimeClock();
 
-	/* detect joystick movement */
-	axis = getMovedAxis();
-	if (axis != -1) {
-		glutIdleFunc(GfuiIdle);
-		InputWaited = 0;
-		CurrentCmd->ref.type = GFCTRL_TYPE_JOY_AXIS;
-		CurrentCmd->ref.index = axis;
-		str = GfctrlGetNameByRef(GFCTRL_TYPE_JOY_AXIS, axis);
-		GfuiButtonSetText (scrHandle, CurrentCmd->Id, str);
-		glutPostRedisplay();
-		return;
+		if (!checkJoystickMovedAxis(CurrentCmd) && (currentTime - axisPressedTime > delay)) {
+			if (axisPressedTime == 0.0) {
+				if (checkJoystickButtonPressed(CurrentCmd, b, true)) {
+					axisPressedTime = currentTime;
+				}
+			} else {
+				checkJoystickButtonPressed(CurrentCmd, b, false);
+			}
+		}
+	} else {
+		if (!checkJoystickButtonPressed(CurrentCmd, b, false)) {
+			checkJoystickMovedAxis(CurrentCmd);
+		}
 	}
 }
 
@@ -356,6 +410,8 @@ static void onPush(void *vi)
 	if (CurrentCmd->keyboardPossible) {
 		InputWaited = 1;
 	}
+
+	axisPressedTime = 0.0;
 	
 	glutIdleFunc(Idle);
 	GfctrlMouseInitCenter();
