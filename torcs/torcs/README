@@ -243,6 +243,7 @@ Changes since 1.3.8-test1
 - Updated OpenAL dll to openal-soft-1.23.1 to get rid of some crackling (Bernhard).
 - Updated controller configuration, such that axis which are also buttons (like L2 and R2 on
   PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
+- Adopted 2000 GT for tire temperature model (Bernhard).
 
 
 Changes since 1.3.7
@@ -322,8 +323,6 @@ TODO for 1.3.13 or 1.4.x "artistic"
 TODO for 1.3.14 or 1.4.x "everywhere"
 ------------------------
 - Merge simuv3 parts into simuv2
-- Review and eventually apply mac os x build
-- Review MorphOS changes
 - Review WD's ABS suggestion, apply.
 - Review WD's 4WD analysis/patch.
 - Remove circular dependency (raceman.h, simu.h).
@@ -383,7 +382,7 @@ convert force units internally from lbs to lbf
 Later:
 -------------------
 - Decide about plib (not maintained anymore?) -> integration of minimal subset as base
-  for own engine?
+  for own engine? Vulkan with RT?
 - Refactor trackgen (left/right -> half the code, maybe more)
 - GUI for event blacklisting.
 - Ongoing for every release: rework free car models (several holes, no
@@ -451,7 +450,7 @@ IDEAS FOR MUCH LATER
 - Nicer trees etc, terrain LOD.
 - Inside view.
 - Animated driver.
-- Dirt on cars, inside view.
+- Dirt on cars.
 - free terrain.
 - Open track dynamically generated when driving.
 - Random track generator.
