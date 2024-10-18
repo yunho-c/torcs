@@ -2,9 +2,8 @@
 <!-- 
     file        : kc-corvette-ttop.xml
     created     : Sat Aug 30 20:25:50 CEST 2003
-    copyright   : (C) 2003 by Eric Espie, Bernhard Wymann                       
-    email       : Eric.Espie@torcs.org   
-    version     : $Id$                                  
+    copyright   : (C) 2003-2024 by Eric Espie, Bernhard Wymann                       
+    email       : berniw@bluewin.ch
 -->
 
 <!--    This program is free software; you can redistribute it and/or modify  -->
@@ -308,13 +307,13 @@
   </section>
 
   <section name="Steer">
-    <attnum name="steer lock" min="9" max="45" unit="deg" val="23"/>
+    <attnum name="steer lock" min="9" max="45" unit="deg" val="21"/>
     <attnum name="max steer speed" min="1" max="360" unit="deg/s" val="360"/>
   </section>
 
   <section name="Brake System">
         <attnum name="front-rear brake repartition" min="0.3" max="0.8" val="0.73"/>
-        <attnum name="max pressure" min="5000" max="40000" unit="kPa" val="26000"/>
+        <attnum name="max pressure" min="5000" max="40000" unit="kPa" val="25000"/>
   </section>
 
   <section name="Front Axle">
@@ -348,6 +347,7 @@
     <attnum name="stiffness" min="1" max="30" val="20"/>
     <attnum name="dynamic friction" min="50" max="100" unit="%" val="80"/>
     <attnum name="mu" val="1.3"/>
+	<attnum name="hysteresis" val="0.9"/>
   </section>
 
   <section name="Front Left Wheel">
@@ -362,6 +362,7 @@
     <attnum name="stiffness" min="1" max="30" val="20"/>
     <attnum name="dynamic friction" min="50" max="100" unit="%" val="80"/>
     <attnum name="mu" val="1.3"/>
+	<attnum name="hysteresis" val="0.9"/>
   </section>
 
   <section name="Rear Right Wheel">
@@ -393,7 +394,7 @@
   </section>
 
   <section name="Front Anti-Roll Bar">
-    <attnum name="spring" min="0" max="5000" unit="lbs/in" val="0"/>
+    <attnum name="spring" min="0" max="5000" unit="lbs/in" val="1000"/>
   </section>
 
   <section name="Rear Anti-Roll Bar">
@@ -401,53 +402,53 @@
   </section>
 
   <section name="Front Right Suspension">
-    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="2500"/>
+    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="3500"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.25"/>
-    <attnum name="packers" unit="mm" min="50" max="50" val="50"/>
+    <attnum name="packers" unit="mm" min="40" max="40" val="40"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="200"/>
-    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="300"/>
-    <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="30"/>
-    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="30"/>
+    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="250"/>
+    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="320"/>
+    <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="40"/>
+    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="90"/>
     <attnum name="fast bump threshold" unit="m/s" val="0.15"/>
     <attnum name="fast rebound threshold" unit="m/s" val="0.15"/>
   </section>
 
   <section name="Front Left Suspension">
-    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="2500"/>
+    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="3500"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.25"/>
-    <attnum name="packers" unit="mm" min="50" max="50" val="50"/>
+    <attnum name="packers" unit="mm" min="40" max="40" val="40"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="200"/>
-    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="300"/>
-    <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="30"/>
-    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="30"/>
+    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="250"/>
+    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="320"/>
+    <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="40"/>
+    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="90"/>
     <attnum name="fast bump threshold" unit="m/s" val="0.15"/>
     <attnum name="fast rebound threshold" unit="m/s" val="0.15"/>
   </section>
 
   <section name="Rear Right Suspension">
-    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="2200"/>
+    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="2700"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.25"/>
-    <attnum name="packers" unit="mm" min="50" max="50" val="50"/>
+    <attnum name="packers" unit="mm" min="40" max="40" val="40"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="180"/>
-    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="280"/>
+    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="190"/>
+    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="260"/>
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="30"/>
-    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="30"/>
+    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="80"/>
     <attnum name="fast bump threshold" unit="m/s" val="0.15"/>
     <attnum name="fast rebound threshold" unit="m/s" val="0.15"/>
   </section>
 
   <section name="Rear Left Suspension">
-    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="2200"/>
+    <attnum name="spring" min="500" max="10000" unit="lbs/in" val="2700"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.25"/>
-    <attnum name="packers" unit="mm" min="50" max="50" val="50"/>
+    <attnum name="packers" unit="mm" min="40" max="40" val="40"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="180"/>
-    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="280"/>
+    <attnum name="slow bump" min="20" max="1000" unit="lbs/in/s" val="190"/>
+    <attnum name="slow rebound" min="20" max="1000" unit="lbs/in/s" val="260"/>
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="30"/>
-    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="30"/>
+    <attnum name="fast rebound" min="10" max="200" unit="lbs/in/s" val="80"/>
     <attnum name="fast bump threshold" unit="m/s" val="0.15"/>
     <attnum name="fast rebound threshold" unit="m/s" val="0.15"/>
   </section>

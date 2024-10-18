@@ -244,7 +244,7 @@ Changes since 1.3.8-test1
 - Updated controller configuration, such that axis which are also buttons (like L2 and R2 on
   PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
 - Adopted cars for tire temperature model: 2000 GT, 5300 GT, A110, TZ2, AH 3000 Mk II,
-  Cobra 427, Cobra DS, GT Conrero (Bernhard).
+  Cobra 427, Cobra DS, GT Conrero, T-Top (Bernhard).
 
 
 Changes since 1.3.7
@@ -293,7 +293,6 @@ kc-dino
 kc-dbs
 kc-db4z
 kc-daytona
-kc-corvette-ttop
 
 - Mouse steering calibration seems to be broken, verify
 
