@@ -313,7 +313,7 @@
   </section>
 
   <section name="Brake System">
-        <attnum name="front-rear brake repartition" min="0.3" max="0.8" val="0.68"/>
+        <attnum name="front-rear brake repartition" min="0.3" max="0.8" val="0.72"/>
         <attnum name="max pressure" min="5000" max="40000" unit="kPa" val="20000"/>
   </section>
 
@@ -401,7 +401,7 @@
     </section>
 
     <section name="Front Anti-Roll Bar">
-      <attnum name="spring" min="0" max="5000" unit="lbs/in" val="1000"/>
+      <attnum name="spring" min="0" max="5000" unit="lbs/in" val="2000"/>
     </section>
 
     <section name="Rear Anti-Roll Bar">
