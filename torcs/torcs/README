@@ -244,7 +244,7 @@ Changes since 1.3.8-test1
 - Updated controller configuration, such that axis which are also buttons (like L2 and R2 on
   PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
 - Adopted cars for tire temperature model: 2000 GT, 5300 GT, A110, TZ2, AH 3000 Mk II,
-  Cobra 427, Cobra DS, GT Conrero, T-Top (Bernhard).
+  Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona (Bernhard).
 
 
 Changes since 1.3.7
@@ -292,9 +292,16 @@ kc-ghibli
 kc-dino
 kc-dbs
 kc-db4z
-kc-daytona
-
+- Fix build warnings in Linux
 - Mouse steering calibration seems to be broken, verify
+
+TODO for 1.3.9
+--------------
+- New Visual Studio Version
+- Remove all VS 6 compatibility defines etc.
+- Use vs redistributable for heap mamagement (required rebuilding libraries and adoption
+  of installer)
+- Move plib into TORCS, strip it down to ease later refactoring
 
 TODO for 1.3.9 "analysed"
 --------------
@@ -304,7 +311,8 @@ TODO for 1.3.9 "analysed"
 - Replay?
 - Dynamic track
 - Wind/Temp
-- VS 2022
+- Brake migration (e.g. 55:45 at 0% brakes, 56.25:43.75 at 50% brakes, 57.5:42.5 at 100% brakes)
+
 
 TODO for 1.3.10 "ruled"
 ---------------
@@ -316,8 +324,7 @@ TODO for 1.3.10 "ruled"
 TODO for 1.3.11 "tutored"
 ---------------
 - Starting/race modes (multi-class for TRB?)
-- VS update
-- Robot Tutorial update
+- Robot Tutorial update (move to doxygen)
 
 TODO for 1.3.12 "managed"
 ---------------
@@ -327,7 +334,6 @@ TODO for 1.3.12 "managed"
 TODO for 1.3.13 or 1.4.x "artistic"
 ------------------------
 - Ingame track generation wizard (themed)
-- Ingame car livery design (themed)
 
 TODO for 1.3.14 or 1.4.x "everywhere"
 ------------------------
@@ -344,22 +350,22 @@ TODO for 1.3.15+
 - Compiler and library adoptions, fixes, compatible content updates
 - Docker image for headless simulation and cross build evaluation
 
-TODO for 1.4.x
+TODO for 2.0.x
 --------------
 - Robot interface adoptions (maybe askfeatures, callonce, grid, postprocess, we will see...).
   How to identify robots, get rid of Index (name only)?
+- Make it possible for a robot module to carry any arbitrary number of
+  drivers (instead of static 10).
+- Pre race setup (fuel, tire selection, with UI for human player)
 - More Rules.
 - Brake/Engine Wear (with cooling)
 - Apply SDL patch from Brian Gavin but moving directly to SDL 2.0.
 - Update OpenAL to 1.1, fix use of deprecated stuff.
 - Car asignment for human players.
 - Sound (alut depricated/scheduling for lots of cars)
-- Make it possible for a robot module to carry any arbitrary number of
-  drivers (instead of static 10).
 - Pace car and trucks to remove wrecks (remove "virtual" crane?).
 - Replace wav sounds with ogg?
 - Track extensions (crossings, split/join, variable width)
-- Replays
 - Skidmarks/shadows masking with stencil
 - Phong specular highlights/in shadow occlusion
 - Skidmarks to simu/persistency (get rid of frame rate dependency)
@@ -407,20 +413,6 @@ Later:
 - (add proper init/shutdown to every module which is not bound to anything else
   but the loading/init/shutdown/unloading process.)
 - Blind mode should not load graphics engine.
-- Brake migration (e.g. 55:45 at 0% brakes, 56.25:43.75 at 50% brakes, 57.5:42.5 at 100% brakes)
-
-
-TODO for 1.9.x (pre 2.0 series, no release)
---------------
-- Design networking, how to embed it into TORCS?
-- Networking prototype.
-- Gaming modes suitable for online races.
-- Cockpit inside view.
-- Set up infrastructure for reading binary data files bit with and endianness independent.
-
-TODO for 2.0.0
---------------
-- Initial Networking.
 
 
 TODO LATER
@@ -429,10 +421,6 @@ TODO LATER
   console.
 - Networking (2.0).
 - SMP simulaton core (for myself).
-- Replays.
-- Telemetry recorder/viewer.
-- Phong specular highlights (optional env, cube or GLSL).
-- Shadowmapped/Stenciled dynamic car shadows.
 - so/dll with libtool, common code?
 - 3d-grass.
 - Dynamic sky.
@@ -468,3 +456,4 @@ IDEAS FOR MUCH LATER
 - Force feedback.
 - Story mode with message.
 - Traffic simulator
+- (Ingame car livery design (themed))
