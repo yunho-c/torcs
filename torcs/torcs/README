@@ -245,7 +245,7 @@ Changes since 1.3.8-test1
   PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
 - Adopted cars for tire temperature model: 2000 GT, 5300 GT, A110, TZ2, AH 3000 Mk II,
   Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona, AM DB4 GT Zagato,
-  AM DBS (Bernhard).
+  AM DBS, Dino 246 GT (Bernhard).
 
 
 Changes since 1.3.7
@@ -290,7 +290,6 @@ TODO for 1.3.8 "worn & blown"
 - Car adjustments (tire wear, performance balance), TODO:
 kc-giulietta
 kc-ghibli
-kc-dino
 - Fix build warnings in Linux
 - Mouse steering calibration seems to be broken, verify
 
