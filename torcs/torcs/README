@@ -240,11 +240,11 @@ Changes since 1.3.8-test1
 - Implemented sound blending also for other surface transitions (Bernhard).
 - Fixed a minor coordinate bug in the tire sound code, nobody has ever noticed (Bernhard).
 - Increased the sound engine evaluation limit from 50 to 100 Hz, CPU's got faster (Bernhard).
-- Updated OpenAL dll to openal-soft-1.23.1 to get rid of some crackling (Bernhard).
+- Updated OpenAL dll to openal-soft-1.23.1 to get rid of some audio crackling (Bernhard).
 - Updated controller configuration, such that axis which are also buttons (like L2 and R2 on
   PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
 - Adopted cars for tire temperature model: 2000 GT, 5300 GT, A110, TZ2, AH 3000 Mk II,
-  Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona (Bernhard).
+  Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona, AM DB4 GT Zagato (Bernhard).
 
 
 Changes since 1.3.7
@@ -291,7 +291,6 @@ kc-giulietta
 kc-ghibli
 kc-dino
 kc-dbs
-kc-db4z
 - Fix build warnings in Linux
 - Mouse steering calibration seems to be broken, verify
 
@@ -300,7 +299,7 @@ TODO for 1.3.9
 - New Visual Studio Version
 - Remove all VS 6 compatibility defines etc.
 - Use vs redistributable for heap mamagement (required rebuilding libraries and adoption
-  of installer)
+  of installer), put files directy into torcs install instead of using installer?
 - Move plib into TORCS, strip it down to ease later refactoring
 
 TODO for 1.3.9 "analysed"
