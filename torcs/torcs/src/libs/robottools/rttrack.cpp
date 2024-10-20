@@ -443,17 +443,15 @@ RtTrackHeightL(tTrkLocPos *p)
 		// to track angle + height difference due to curb (this seems
 		// to be the way it is implemented in the graphics too: the
 		// curb does not adding an angle to the main track, but a
-		// height in global coords).
+		// height in global coordinates).
 
 		tdble alpha = tr;
 		if (seg->type2 == TR_RBORDER) {
 			alpha = seg->width - tr;
 		}
 
-		tdble curb_roughness = seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * lg) / seg->width;
-		// TODO: I do not understand the use of atan2 here, but removing it gives really bad results. Somehow it contradicts
-		// the comment above, I would have expected simply "alpha * (seg->height + ...)"
-		return base_height + alpha * (atan2(seg->height, seg->width) + curb_roughness);
+		tdble curb_roughness = seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * lg);
+		return base_height + alpha * (seg->height + curb_roughness) / seg->width;
 	}
 
 	return base_height +
