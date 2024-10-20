@@ -61,7 +61,7 @@ http://sourceforge.net/projects/trackeditor.
   on AMD64 if you run a 64 bit version of Linux. Be aware that maybe just
   1.8.5 works.
 - Untar the archive
-- cd into the torcs-1.3.5 directory
+- cd into the torcs-1.3.8 directory
 - ./configure (use --help for showing the options, of interest might be
   --enable-debug and --disable-xrandr).
 - make
@@ -93,7 +93,7 @@ Command line arguments:
   February Edtion CORE SDK (the last one which worked with VS 6.0) and set the lib
   and include path in the options (used for SHGetFolderPath etc.).
 - untar the archive into a path without whitespaces and special characters.
-- cd into the torcs-1.3.5 directory
+- cd into the torcs-1.3.8 directory
 - run setup_win32.bat
 - run setup_win32-data-from-CVS.bat
 - select the TORCS workspace (TORCS.dsw for VS 6) or solution (TORCS.sln
@@ -144,7 +144,7 @@ Command line arguments:
   February Edtion CORE SDK (the last one which worked with VS 6.0) and set the lib
   and include path in the options (used for SHGetFolderPath etc.).
 - untar the archive into a path without whitespaces and special characters.
-- cd into the torcs-1.3.5 directory
+- cd into the torcs-1.3.8 directory
 - run setup_win32_debug.bat
 - run setup_win32-data-from-CVS_debug.bat
 - select the TORCS workspace (TORCS.dsw for VS 6) or solution (TORCS.sln
@@ -245,7 +245,7 @@ Changes since 1.3.8-test1
   PS4 gamepad) can be selected and calibrated with less fuss (Bernhard).
 - Adopted cars for tire temperature model: 2000 GT, 5300 GT, A110, TZ2, AH 3000 Mk II,
   Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona, AM DB4 GT Zagato,
-  AM DBS, Dino 246 GT, Ghibli (Bernhard).
+  AM DBS, Dino 246 GT, Ghibli and Giulietta Spider (Bernhard).
 
 
 Changes since 1.3.7
@@ -287,8 +287,6 @@ Changes since 1.3.7
 
 TODO for 1.3.8 "worn & blown"
 --------------
-- Car adjustments (tire wear, performance balance), TODO:
-kc-giulietta
 - Fix build warnings in Linux
 - Mouse steering calibration seems to be broken, verify
 
