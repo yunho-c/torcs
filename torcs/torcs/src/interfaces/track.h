@@ -2,9 +2,8 @@
 
     file                 : track.h
     created              : Sun Jan 30 23:00:06 CET 2000
-    copyright            : (C) 2000-2014 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -317,13 +316,13 @@ typedef struct trackSeg {
     tdble width;		/**< Width of the segment (if constant width) */
     tdble startWidth;		/**< Width of the beginning of the segment */
     tdble endWidth;		/**< Width of the end of the segment */
-    tdble lgfromstart;		/**< Length of begining of segment from starting line */
+    tdble lgfromstart;		/**< Length of beginning of segment from starting line */
     tdble radius;		/**< Radius in meters of the middle of the track (>0) */
     tdble radiusr;		/**< Radius in meters of the right side of the track (>0) */
     tdble radiusl;		/**< Radius in meters of the left side of the track (>0) */
     tdble arc;			/**< Arc in rad of the curve (>0) */
     t3Dd center;		/**< Center of the curve */
-    t3Dd vertex[4];		/**< Coord of the 4 corners of the segment.
+    t3Dd vertex[4];		/**< Coordinates of the 4 corners of the segment.
 				   <br>Index in:
 				   - TR_SL
 				   - TR_SL
@@ -425,14 +424,14 @@ typedef struct
 				   - TR_LPOS_TRACK
 				 */
 
-#define TR_LPOS_MAIN	0	/**< Relative to the main segment */
-#define TR_LPOS_SEGMENT	1	/**< If the point is on a side, relative to this side */
-#define TR_LPOS_TRACK	2	/**< Local pos includes all the track width */
+#define TR_LPOS_MAIN	0	/**< Relative to the main segment, mostly used for racing on the main track */
+#define TR_LPOS_SEGMENT	1	/**< Relative to the segment which the point is located, including border and sides, mostly used for contact physics */
+#define TR_LPOS_TRACK	2	/**< Local pos includes all the track width, mostly used for collision with outermost barrier */
 
     tdble	toStart;	/**< Distance to start of segment (or arc if turn) */
-    tdble	toRight;	/**< Distance to right side of segment (+ to inside of track - to outside) */
-    tdble	toMiddle;	/**< Distance to middle of segment (+ to left - to right) */
-    tdble	toLeft;		/**< Distance to left side of segment (+ to inside of track - to outside) */
+    tdble	toRight;	/**< Distance (+ to left, - to right) relative to the right side of segment */
+    tdble	toMiddle;	/**< Distance (+ to left, - to right) relative to the middle of segment */
+    tdble	toLeft;		/**< Distance (- to left, + to right) relative to left side of segment  */
 } tTrkLocPos;
 
 struct CarElt;

@@ -246,6 +246,7 @@ Changes since 1.3.8-test1
 - Adopted cars for tire temperature model: 2000 GT, 5300 GT, A110, TZ2, AH 3000 Mk II,
   Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona, AM DB4 GT Zagato,
   AM DBS, Dino 246 GT, Ghibli and Giulietta Spider (Bernhard).
+- Little refactoring of RtTrackHeightL for readability (Bernhard).
 
 
 Changes since 1.3.7
@@ -298,8 +299,8 @@ TODO for 1.3.9
   of installer), put files directy into torcs install instead of using installer?
 - Move plib into TORCS, strip it down to ease later refactoring
 
-TODO for 1.3.9 "analysed"
---------------
+TODO for 1.3.10 "analysed"
+---------------
 - Data recorder ("Telemetry")
 - Data analyser (high/low-pass filtering, comparison, etc.)
 - Speed/Shock
@@ -308,18 +309,13 @@ TODO for 1.3.9 "analysed"
 - Wind/Temp
 - Brake migration (e.g. 55:45 at 0% brakes, 56.25:43.75 at 50% brakes, 57.5:42.5 at 100% brakes)
 
-
-TODO for 1.3.10 "ruled"
+TODO for 1.3.11 "ruled"
 ---------------
 - Rules
 - Timed races (e.g. 24h).
 - Rules/Modes which do not requrie 1.4 changes
 - Improve ranking with penalties if cars are not taken out of the race because of damage (e.g. out of fuel).
-
-TODO for 1.3.11 "tutored"
----------------
 - Starting/race modes (multi-class for TRB?)
-- Robot Tutorial update (move to doxygen)
 
 TODO for 1.3.12 "managed"
 ---------------
@@ -347,11 +343,14 @@ TODO for 1.3.15+
 
 TODO for 2.0.x
 --------------
+- situation time as long (avoid floating point drift, can be also used as timestep id),
+  situation time is then timestepid*RCM_MAX_DT_SIMU
 - Robot interface adoptions (maybe askfeatures, callonce, grid, postprocess, we will see...).
   How to identify robots, get rid of Index (name only)?
 - Make it possible for a robot module to carry any arbitrary number of
   drivers (instead of static 10).
 - Pre race setup (fuel, tire selection, with UI for human player)
+- Robot Tutorial update (move to doxygen) -> move to after changing robot interfaces
 - More Rules.
 - Brake/Engine Wear (with cooling)
 - Apply SDL patch from Brian Gavin but moving directly to SDL 3.0.

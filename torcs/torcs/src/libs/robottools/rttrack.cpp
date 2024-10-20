@@ -405,10 +405,7 @@ RtTrackHeightL(tTrkLocPos *p)
 	tdble tr = p->toRight;
 	tTrackSeg *seg = p->seg;
 	
-	//bool left_side = true;
 	if ((tr < 0) && (seg->rside != NULL)) {
-		//left_side = false;
-
 		seg = seg->rside;
 		tr += seg->width;
 
@@ -434,30 +431,33 @@ RtTrackHeightL(tTrkLocPos *p)
 			break;
 	}
 	
+	// Initial height on right side
+	tdble height_right_side = seg->vertex[TR_SR].z + p->toStart * seg->Kzl;
+	// Additional height because of banking angle	
+	tdble height_to_right = tr * tan(seg->angle[TR_XS] + p->toStart * seg->Kzw);
+	// Base height
+	tdble base_height = height_right_side + height_to_right;
+
 	if (seg->style == TR_CURB) {
 		// The final height = starting height + height difference due
 		// to track angle + height difference due to curb (this seems
 		// to be the way it is implemented in the graphics too: the
 		// curb does not adding an angle to the main track, but a
 		// height in global coords).
+
+		tdble alpha = tr;
 		if (seg->type2 == TR_RBORDER) {
-			// alpha shows how far we've moved into this segment.
-			tdble alpha = seg->width - tr;
-			tdble angle = seg->angle[TR_XS] + p->toStart * seg->Kzw;
-			tdble noise = seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * lg) * alpha / seg->width;
-			tdble start_height = seg->vertex[TR_SR].z + p->toStart * seg->Kzl;
-			return start_height + tr * tan(angle) + alpha * atan2(seg->height, seg->width) + noise;
+			alpha = seg->width - tr;
 		}
 
-		return
-			seg->vertex[TR_SR].z + p->toStart * seg->Kzl +
-			tr * (tan(seg->angle[TR_XS] + p->toStart * seg->Kzw) +
-			atan2(seg->height, seg->width)) +
-			seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * lg) * tr / seg->width;
+		tdble curb_roughness = seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * lg) / seg->width;
+		// TODO: I do not understand the use of atan2 here, but removing it gives really bad results. Somehow it contradicts
+		// the comment above, I would have expected simply "alpha * (seg->height + ...)"
+		return base_height + alpha * (atan2(seg->height, seg->width) + curb_roughness);
 	}
 
-	return seg->vertex[TR_SR].z + p->toStart * seg->Kzl + tr * tan(seg->angle[TR_XS] + p->toStart * seg->Kzw) +
-	seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * tr) * sin(seg->surface->kRoughWaveLen * lg);
+	return base_height +
+		seg->surface->kRoughness * sin(seg->surface->kRoughWaveLen * tr) * sin(seg->surface->kRoughWaveLen * lg);
 }
 
 
