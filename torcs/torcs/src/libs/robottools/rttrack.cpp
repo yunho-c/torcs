@@ -46,8 +46,8 @@
 
 /** Get the track width at the specified point.
     @ingroup	tracktools
-    @param	seg	Segment
-    @param	toStart	Distance from the beginning of the segment.
+    @param[in]	seg	Segment
+    @param[in]	toStart	Distance from the beginning of the segment.
     		<br>The units are:
 		- meters for straights
 		- radians for turns
@@ -69,10 +69,10 @@ RtTrackGetWidth(tTrackSeg *seg, tdble toStart)
     is greater than the segment length.
     toStart represent an angle in radian for curves
     and a length in meters for straights.
-    @param	p	Local position
-    @param	X	returned X position
-    @param	Y	returned Y position
-    @param	flag	Local position use:
+    @param[in]	p	Local position
+    @param[in,out]	X	returned X position
+    @param[in,out]	Y	returned Y position
+    @param[in]	flag	Local position use:
 			- TR_TOMIDDLE the toMiddle field is used
 			- TR_TORIGHT the toRight field is used
 			- TR_TOLEFT the toLeft field is used
@@ -118,63 +118,37 @@ RtTrackLocal2Global(tTrkLocPos *p, tdble *X, tdble *Y, int flag)
 				case TR_STR:
 					CosA = cos(seg->angle[TR_ZS]);
 					SinA = sin(seg->angle[TR_ZS]);
-					switch (seg->type2) {
-						case TR_MAIN:
-						case TR_LSIDE:
-						case TR_LBORDER:
-							tr = p->toRight;
-							break;
-						case TR_RSIDE:
-						case TR_RBORDER:
-							tr = p->toRight - seg->Kyl * p->toStart;
-							break;
-						default:
-							tr = 0;
-							break;
+					
+					if (seg->type2 == TR_MAIN || seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
+						tr = p->toRight;
+					} else if (seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
+						tr = p->toRight - seg->Kyl * p->toStart;
+					} else {
+						tr = 0;
 					}
+
 					*X = seg->vertex[TR_SR].x + p->toStart * CosA - tr * SinA;
 					*Y = seg->vertex[TR_SR].y + p->toStart * SinA + tr * CosA;
 					break;
 					
 				case TR_LFT:
-					a = seg->angle[TR_ZS] + p->toStart;
-					switch (seg->type2) {
-						case TR_MAIN:
-						case TR_LSIDE:
-						case TR_LBORDER:
-							r = seg->radiusr - p->toRight ;
-							break;
-						case TR_RSIDE:
-						case TR_RBORDER:
-							r = seg->radiusl + seg->startWidth + seg->Kyl * p->toStart - p->toRight ;
-							break;
-						default:
-							r = 0;
-							break;
-					}
-					*X = seg->center.x + r * sin(a);
-					*Y = seg->center.y - r * cos(a);
-					break;
-
 				case TR_RGT:
-					a = seg->angle[TR_ZS] - p->toStart;
-					switch (seg->type2) {
-						case TR_MAIN:
-						case TR_LSIDE:
-						case TR_LBORDER:
-							r = seg->radiusr + p->toRight ;
-							break;
-						case TR_RSIDE:
-						case TR_RBORDER:
-							r = seg->radiusl - seg->startWidth - seg->Kyl * p->toStart + p->toRight ;
-							break;
-						default:
+					{
+						tdble sign = (seg->type == TR_LFT) ? 1.0f : -1.0f;
+						a = seg->angle[TR_ZS] + sign * p->toStart;
+
+						if (seg->type2 == TR_MAIN || seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
+							r = seg->radiusr - sign * p->toRight;
+						} else if (seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
+							r = seg->radiusl + sign * (seg->startWidth + seg->Kyl * p->toStart - p->toRight);
+						} else {
 							r = 0;
-							break;
+						}
+
+						*X = seg->center.x + sign * r * sin(a);
+						*Y = seg->center.y - sign * r * cos(a);
+						break;
 					}
-					*X = seg->center.x - r * sin(a);
-					*Y = seg->center.y + r * cos(a);
-					break;
 			}
 			break;
 
@@ -183,24 +157,37 @@ RtTrackLocal2Global(tTrkLocPos *p, tdble *X, tdble *Y, int flag)
 				case TR_STR:
 					CosA = cos(seg->angle[TR_ZS]);
 					SinA = sin(seg->angle[TR_ZS]);
-					tr = seg->startWidth + seg->Kyl * p->toStart - p->toLeft;
+
+					if (seg->type2 == TR_MAIN || seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
+						tr = seg->startWidth - p->toLeft;
+					} else if (seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
+						tr = seg->startWidth + seg->Kyl * p->toStart - p->toLeft;
+					} else {
+						tr = 0;
+					}
+
 					*X = seg->vertex[TR_SR].x + p->toStart * CosA - tr * SinA;
 					*Y = seg->vertex[TR_SR].y + p->toStart * SinA + tr * CosA;
 					break;
-					
-				case TR_LFT:
-					a = seg->angle[TR_ZS] + p->toStart;
-					r = seg->radiusl + p->toLeft;
-					*X = seg->center.x + r * sin(a);
-					*Y = seg->center.y - r * cos(a);
-					break;
 
+				case TR_LFT:
 				case TR_RGT:
-					a = seg->angle[TR_ZS] - p->toStart;
-					r = seg->radiusr + seg->startWidth + seg->Kyl * p->toStart - p->toLeft;
-					*X = seg->center.x - r * sin(a);
-					*Y = seg->center.y + r * cos(a);
-					break;
+					{
+						tdble sign = (seg->type == TR_LFT) ? 1.0f : -1.0f;
+						a = seg->angle[TR_ZS] + sign * p->toStart;
+
+						if (seg->type2 == TR_MAIN || seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
+							r = seg->radiusl + sign * p->toLeft;
+						} else if (seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
+							r = seg->radiusr - sign * (seg->startWidth + seg->Kyl * p->toStart - p->toLeft);
+						} else {
+							r = 0;
+						}
+
+						*X = seg->center.x + sign * r * sin(a);
+						*Y = seg->center.y - sign * r * cos(a);
+						break;
+					}
 			}
 			break;
 	}
@@ -214,11 +201,11 @@ RtTrackLocal2Global(tTrkLocPos *p, tdble *X, tdble *Y, int flag)
     of the segment for straights or the arc of the curve.
     The sides parameters is to indicate wether to use the track sides (1) or not (0) in
     the toRight computation.
-    @param	segment	Current segment
-    @param	X	Current X position
-    @param	Y	Current Y position
-    @param	p	Returned local position
-    @param	type	Type of local position desired:
+    @param[in]	segment	Current segment
+    @param[in]	X	Current X position
+    @param[in]	Y	Current Y position
+    @param[in,out]	p	Returned local position
+    @param[in]	type	Type of local position desired:
     			- TR_LPOS_MAIN relative to the main segment
 			- TR_LPOS_SEGMENT if the point is on a side, relative to this side
 			- TR_LPOS_TRACK local pos includes all the track width
@@ -395,7 +382,7 @@ RtTrackGlobal2Local(tTrackSeg *segment, tdble X, tdble Y, tTrkLocPos *p, int typ
     track side
 	@endverbatim
     @ingroup	tracktools
-    @param	p	Local position
+    @param[in]	p	Local position
     @return	Height in meters
  */
 tdble
@@ -434,9 +421,9 @@ RtTrackHeightL(tTrkLocPos *p)
 	// Initial height on right side
 	tdble height_right_side = seg->vertex[TR_SR].z + p->toStart * seg->Kzl;
 	// Additional height because of banking angle	
-	tdble height_to_right = tr * tan(seg->angle[TR_XS] + p->toStart * seg->Kzw);
+	tdble banking_height = tr * tan(seg->angle[TR_XS] + p->toStart * seg->Kzw);
 	// Base height
-	tdble base_height = height_right_side + height_to_right;
+	tdble base_height = height_right_side + banking_height;
 
 	if (seg->style == TR_CURB) {
 		// The final height = starting height + height difference due
@@ -463,9 +450,9 @@ RtTrackHeightL(tTrkLocPos *p)
     members only point to segments on the outside, the inside pointer is always NULL and this is implied in various
 	code locations.
 	@ingroup	tracktools
-	@param	main	Main segment to serach for neighbour from the inside (must be of type TR_MAIN)
-	@param	current	Segment to find the neighbour for
-	@param  tr_side	Neighbour we are looking for, either left or right, TR_SIDE_LFT or TR_SIDE_RGT
+	@param[in]	main	Main segment to serach for neighbour from the inside (must be of type TR_MAIN)
+	@param[in]	current	Segment to find the neighbour for
+	@param[in]  tr_side	Neighbour we are looking for, either left or right, TR_SIDE_LFT or TR_SIDE_RGT
 	@return	neighbour found or outermost segment or NULL
  */
 tTrackSeg *RtTrackGetSideNeighbourSeg(tTrackSeg *main, tTrackSeg *current, int tr_side)
@@ -494,7 +481,7 @@ tTrackSeg *RtTrackGetSideNeighbourSeg(tTrackSeg *main, tTrackSeg *current, int t
 /** Get the effective segment of the given position starting from a segment of type TR_MAIN, searching
 	to the sides. It does not search along the previous and next segments on the track.
 	@ingroup	tracktools
-    @param	p	Current position relative to the main segment
+    @param[in]	p	Current position relative to the main segment
 	@return	segment for the given position
  */
 tTrackSeg *
@@ -522,9 +509,9 @@ RtTrackGetSeg(tTrkLocPos *p)
 /** Returns the absolute height in meters of the road
     at the Global position (segment, X, Y)
     @ingroup	tracktools
-    @param	seg	Segment
-    @param	X	Global X position
-    @param	Y	Global Y position
+    @param[in]	seg	Segment
+    @param[in]	X	Global X position
+    @param[in]	Y	Global Y position
     @return	Height in meters
  */
 tdble
@@ -545,13 +532,13 @@ RtTrackHeightG(tTrackSeg *seg, tdble X, tdble Y)
     to give a point directly on the border itself.
     The vector is normalized.
     @ingroup	tracktools
-    @param	seg	Current segment
-    @param	X	Global X position
-    @param	Y	Global Y position
-    @param	side	Side where the normal is wanted
+    @param[in]	seg	Current segment
+    @param[in]	X	Global X position
+    @param[in]	Y	Global Y position
+    @param[in]	side	Side where the normal is wanted
 			- TR_LFT for left side
 			- TR_RGT for right side
-    @param	norm	Returned normalized side normal vector
+    @param[in,out]	norm	Returned normalized side normal vector
     @todo	RtTrackSideNormalG: Give the correct normal for variable width sides.
  */
 void
@@ -600,7 +587,7 @@ RtTrackSideNormalG(tTrackSeg *seg, tdble X, tdble Y, int side, t3Dd *norm)
     The angle is given in radian.
     the angle 0 is parallel to the first segment start.
     @ingroup	tracktools
-    @param	p	Local position
+    @param[in]	p	Local position
     @return	Tagent angle in radian.
     @note	For side segment, the track side is used for the tangent.
  */
@@ -628,8 +615,8 @@ RtTrackSideTgAngleL(tTrkLocPos *p)
     get the road normal vector.
     The vector is normalized. 
     @ingroup	tracktools
-    @param	p	Local position
-    @param	norm	Returned normalized road normal vector
+    @param[in]	p	Local position
+    @param[in,out]	norm	Returned normalized road normal vector
  */
 void
 RtTrackSurfaceNormalL(tTrkLocPos *p, t3Dd *norm)
@@ -691,7 +678,7 @@ RtTrackSurfaceNormalL(tTrkLocPos *p, t3Dd *norm)
 
 /** Get the distance from the start lane.
     @ingroup	tracktools
-    @param	car 	the concerned car.
+    @param[in]	car 	the concerned car.
     @return	The distance between the start lane and the car.
  */
 tdble
@@ -717,7 +704,7 @@ RtGetDistFromStart(tCarElt *car)
 
 /** Get the distance from the start lane.
     @ingroup	tracktools
-    @param	p	Local position
+    @param[in]	p	Local position
     @return	The distance between the start lane and the car.
  */
 tdble
@@ -744,10 +731,10 @@ RtGetDistFromStart2(tTrkLocPos *p)
 
 /** Get the distance to the pit stop.
     @ingroup	tracktools
-    @param	car 	The concerned car.
-    @param	track	The current Track
-    @param	dL	Length to the pits
-    @param	dW	Width to the pits
+    @param[in]	car 	The concerned car.
+    @param[in]	track	The current Track
+    @param[in,out]	dL	Length to the pits
+    @param[in,out]	dW	Width to the pits
     @return	0
     @note	dW > 0 if the pit is on the right
 */

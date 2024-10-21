@@ -247,6 +247,8 @@ Changes since 1.3.8-test1
   Cobra 427, Cobra DS, GT Conrero, T-Top, F365 Gtb4 Daytona, AM DB4 GT Zagato,
   AM DBS, Dino 246 GT, Ghibli and Giulietta Spider (Bernhard).
 - Little refactoring of RtTrackHeightL for readability (Bernhard).
+- Refactoring of RtTrackLocal2Global, TR_TOLEFT was not properly implemented, but this did
+  not matter much, because almost exclusiely TR_TORIGHT was used (Bernhard).
 
 
 Changes since 1.3.7
@@ -298,6 +300,8 @@ TODO for 1.3.9
 - Use vs redistributable for heap mamagement (required rebuilding libraries and adoption
   of installer), put files directy into torcs install instead of using installer?
 - Move plib into TORCS, strip it down to ease later refactoring
+- Add unit test framework, probably gtest. Consider taking something which allows measuring
+  test coverage with sonarkube/cloud.
 
 TODO for 1.3.10 "analysed"
 ---------------
