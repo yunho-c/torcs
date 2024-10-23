@@ -61,135 +61,77 @@ RtTrackGetWidth(tTrackSeg *seg, tdble toStart)
 }
 
 
-/** Convert a Local position (segment, toRight, toStart)
+/** Calculate global coordinates from a local position relative to the given track segment (segment, toRight, toStart)
     @ingroup	tracktools
-    into a Global one (X, Y)
-    The ToStart position refers to the current segment,
+    The toStart position refers to the current segment,
     the function will not search for next segment if toStart
     is greater than the segment length.
     toStart represent an angle in radian for curves
     and a length in meters for straights.
     @param[in]	p	Local position
-    @param[in,out]	X	returned X position
-    @param[in,out]	Y	returned Y position
+    @param[in,out]	X	Returned X position
+    @param[in,out]	Y	Returned Y position
     @param[in]	flag	Local position use:
-			- TR_TOMIDDLE the toMiddle field is used
-			- TR_TORIGHT the toRight field is used
-			- TR_TOLEFT the toLeft field is used
+			- TR_TOMIDDLE the toMiddle field is used (+ to left, - to right), relative to the middle of segment
+			- TR_TORIGHT the toRight field is used (+ to left, - to right), relative to the right side of segment
+			- TR_TOLEFT the toLeft field is used (- to left, + to right), relative to left side of segment
 */
 void
 RtTrackLocal2Global(tTrkLocPos *p, tdble *X, tdble *Y, int flag)
 {
 	tdble CosA, SinA, r, a;
-	tdble tr;
-
+	tdble tr, toRight;
 	tTrackSeg *seg = p->seg;
-	switch (flag) {
-		case TR_TOMIDDLE:
-			switch(seg->type) {
-				case TR_STR:
-					CosA = cos(seg->angle[TR_ZS]);
-					SinA = sin(seg->angle[TR_ZS]);
-					/* Jussi Pajala: must be divided by two to get middle of the track ! */
-					tr = p->toMiddle + seg->startWidth / 2.0; 
-					*X = seg->vertex[TR_SR].x + p->toStart * CosA - tr * SinA;
-					*Y = seg->vertex[TR_SR].y + p->toStart * SinA + tr * CosA;
-					break;
-					
-				case TR_LFT:
-					a = seg->angle[TR_ZS] + p->toStart;
-					r = seg->radius - p->toMiddle;
-					*X = seg->center.x + r * sin(a);
-					*Y = seg->center.y - r * cos(a);
-					break;
 
-				case TR_RGT:
-					a = seg->angle[TR_ZS] - p->toStart;
-					r = seg->radius + p->toMiddle;
-					*X = seg->center.x - r * sin(a);
-					*Y = seg->center.y + r * cos(a);
-					break;
-					
+	// Compute the equivalent toRight for TR_TOMIDDLE and TR_TOLEFT. This way
+	// we can run for all cases the same calculations further below.
+	if (flag == TR_TOMIDDLE || flag == TR_TOLEFT) {
+		tdble width = RtTrackGetWidth(seg, p->toStart);
+
+		if (flag == TR_TOMIDDLE) {
+			toRight = (width / 2.0) + p->toMiddle;
+		} else { // TR_TOLEFT
+			toRight = width - p->toLeft;
+		}
+	} else {
+		toRight = p->toRight;
+	}
+
+	switch(seg->type) {
+		case TR_STR:
+			CosA = cos(seg->angle[TR_ZS]);
+			SinA = sin(seg->angle[TR_ZS]);
+
+			if (seg->type2 == TR_MAIN || seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
+				tr = toRight;
+			} else if (seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
+				tr = toRight - seg->Kyl * p->toStart;
+			} else {
+				tr = 0;
 			}
+
+			*X = seg->vertex[TR_SR].x + p->toStart * CosA - tr * SinA;
+			*Y = seg->vertex[TR_SR].y + p->toStart * SinA + tr * CosA;
 			break;
 
-		case TR_TORIGHT:
-			switch(seg->type) {
-				case TR_STR:
-					CosA = cos(seg->angle[TR_ZS]);
-					SinA = sin(seg->angle[TR_ZS]);
-					
-					if (seg->type2 == TR_MAIN || seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
-						tr = p->toRight;
-					} else if (seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
-						tr = p->toRight - seg->Kyl * p->toStart;
-					} else {
-						tr = 0;
-					}
+		case TR_LFT:
+		case TR_RGT:
+			{
+				tdble sign = (seg->type == TR_LFT) ? 1.0f : -1.0f;
+				a = seg->angle[TR_ZS] + sign * p->toStart;
 
-					*X = seg->vertex[TR_SR].x + p->toStart * CosA - tr * SinA;
-					*Y = seg->vertex[TR_SR].y + p->toStart * SinA + tr * CosA;
-					break;
-					
-				case TR_LFT:
-				case TR_RGT:
-					{
-						tdble sign = (seg->type == TR_LFT) ? 1.0f : -1.0f;
-						a = seg->angle[TR_ZS] + sign * p->toStart;
+				if (seg->type2 == TR_MAIN || seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
+					r = seg->radiusr - sign * toRight;
+				} else if (seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
+					r = seg->radiusl + sign * (seg->startWidth + seg->Kyl * p->toStart - toRight);
+				} else {
+					r = 0;
+				}
 
-						if (seg->type2 == TR_MAIN || seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
-							r = seg->radiusr - sign * p->toRight;
-						} else if (seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
-							r = seg->radiusl + sign * (seg->startWidth + seg->Kyl * p->toStart - p->toRight);
-						} else {
-							r = 0;
-						}
-
-						*X = seg->center.x + sign * r * sin(a);
-						*Y = seg->center.y - sign * r * cos(a);
-						break;
-					}
+				*X = seg->center.x + sign * r * sin(a);
+				*Y = seg->center.y - sign * r * cos(a);
+				break;
 			}
-			break;
-
-		case TR_TOLEFT:
-			switch(seg->type) {
-				case TR_STR:
-					CosA = cos(seg->angle[TR_ZS]);
-					SinA = sin(seg->angle[TR_ZS]);
-
-					if (seg->type2 == TR_MAIN || seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
-						tr = seg->startWidth - p->toLeft;
-					} else if (seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
-						tr = seg->startWidth + seg->Kyl * p->toStart - p->toLeft;
-					} else {
-						tr = 0;
-					}
-
-					*X = seg->vertex[TR_SR].x + p->toStart * CosA - tr * SinA;
-					*Y = seg->vertex[TR_SR].y + p->toStart * SinA + tr * CosA;
-					break;
-
-				case TR_LFT:
-				case TR_RGT:
-					{
-						tdble sign = (seg->type == TR_LFT) ? 1.0f : -1.0f;
-						a = seg->angle[TR_ZS] + sign * p->toStart;
-
-						if (seg->type2 == TR_MAIN || seg->type2 == TR_RSIDE || seg->type2 == TR_RBORDER) {
-							r = seg->radiusl + sign * p->toLeft;
-						} else if (seg->type2 == TR_LSIDE || seg->type2 == TR_LBORDER) {
-							r = seg->radiusr - sign * (seg->startWidth + seg->Kyl * p->toStart - p->toLeft);
-						} else {
-							r = 0;
-						}
-
-						*X = seg->center.x + sign * r * sin(a);
-						*Y = seg->center.y - sign * r * cos(a);
-						break;
-					}
-			}
-			break;
 	}
 }
 
