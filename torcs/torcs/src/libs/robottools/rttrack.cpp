@@ -148,18 +148,16 @@ RtTrackLocal2Global(tTrkLocPos *p, tdble *X, tdble *Y, int flag)
     @param[in]	Y	Current Y position
     @param[in,out]	p	Returned local position
     @param[in]	type	Type of local position desired:
-    			- TR_LPOS_MAIN relative to the main segment
-			- TR_LPOS_SEGMENT if the point is on a side, relative to this side
-			- TR_LPOS_TRACK local pos includes all the track width
+    			- TR_LPOS_MAIN Relative to the main segment, mostly used for racing on the main track
+			- TR_LPOS_SEGMENT Relative to the segment which the point is located, including border and sides, mostly used for contact physics
+			- TR_LPOS_TRACK Local position relative to the outermost barriers, mostly used for collision detection with barrier
  */
-
 void
 RtTrackGlobal2Local(tTrackSeg *segment, tdble X, tdble Y, tTrkLocPos *p, int type)
 {
 	int segnotfound = 1;
 	tdble x, y;
 	tTrackSeg *seg = segment;
-	tTrackSeg *sseg;
 	tdble theta, a2;
 	int depl = 0;
 	tdble curWidth;
@@ -244,66 +242,51 @@ RtTrackGlobal2Local(tTrackSeg *segment, tdble X, tdble Y, tTrkLocPos *p, int typ
 	p->toMiddle = p->toRight - seg->width / 2.0;
 	p->toLeft = seg->width - p->toRight;
 
-	/* Consider all the track with the sides */
-	/* Stay on main segment */
+	// Local position relative to the outermost barriers, mostly used for collision detection with barrier
 	if (type == TR_LPOS_TRACK) {
-		if (seg->rside != NULL) {
-			sseg = seg->rside;
-			p->toRight += RtTrackGetWidth(sseg, p->toStart);
-			sseg = sseg->rside;
-			if (sseg) {
-				p->toRight += RtTrackGetWidth(sseg, p->toStart);
-			}
-		}
-		if (seg->lside != NULL) {
-			sseg = seg->lside;
-			p->toLeft += RtTrackGetWidth(sseg, p->toStart);
-			sseg = sseg->lside;
-			if (sseg) {
-				p->toLeft += RtTrackGetWidth(sseg, p->toStart);
+		int side;
+		for (side = TR_SIDE_RGT; side <= TR_SIDE_LFT; side++) {
+			tdble* toSide = (side == TR_SIDE_RGT) ? (&p->toRight) : (&p->toLeft);
+			tTrackSeg *sseg = seg;
+			while ((sseg = sseg->side[side]) != NULL) {
+				*toSide += RtTrackGetWidth(sseg, p->toStart);
 			}
 		}
 	}
 
-	/* Relative to a segment, change to the side segment if necessary */
+	// Relative to the segment which the point is located, including border and sides, mostly used for contact physics
 	if (type == TR_LPOS_SEGMENT) {
-		if ((p->toRight < 0) && (seg->rside != NULL)) {
-			sseg = seg->rside;
+		tTrackSeg *sseg = seg;
+		int trSide;
+
+		// Determine which side to traverse to based on the position
+		if ((p->toRight < 0.0f) && (seg->side[TR_SIDE_RGT] != NULL)) {
+			trSide = TR_SIDE_RGT;
+		} else if ((p->toLeft < 0.0f) && (seg->side[TR_SIDE_LFT] != NULL)) {
+			trSide = TR_SIDE_LFT;
+		} else {
+			// Local position is already within the given segment
+			return;
+		}
+
+		// Set variables based on the side
+		tdble *toSide = (trSide == TR_SIDE_RGT) ? &p->toRight : &p->toLeft;
+		tdble *toOppositeSide = (trSide == TR_SIDE_RGT) ? &p->toLeft : &p->toRight;
+		tdble sign = (trSide == TR_SIDE_RGT) ? 1.0f : -1.0f;
+		tdble prevWidth = seg->width;
+
+		while ((*toSide < 0.0f) && (sseg->side[trSide] != NULL)) {
+			sseg = sseg->side[trSide];
 			p->seg = sseg;
 			curWidth = RtTrackGetWidth(sseg, p->toStart);
-			p->toRight +=  curWidth;
-			p->toLeft -= seg->width;
-			p->toMiddle += (seg->width + curWidth) / 2.0;
-			if ((p->toRight < 0) && (sseg->rside != NULL)) {
-				p->toLeft -= curWidth;
-				p->toMiddle += curWidth / 2.0;
-				seg = sseg;
-				sseg = seg->rside;
-				curWidth = RtTrackGetWidth(sseg, p->toStart);
-				p->seg = sseg;
-				p->toRight +=  curWidth;
-				p->toMiddle += curWidth / 2.0;
-			}
-		} else if ((p->toLeft < 0) && (seg->lside != NULL)) {
-			sseg = seg->lside;
-			p->seg = sseg;
-			curWidth = RtTrackGetWidth(sseg, p->toStart);
-			p->toRight += -seg->width;
-			p->toMiddle -= (seg->width + curWidth) / 2.0;
-			p->toLeft += curWidth;
-			if ((p->toLeft < 0) && (sseg->lside != NULL)) {
-				p->toRight -= curWidth;
-				p->toMiddle -= curWidth / 2.0;
-				seg = sseg;
-				sseg = seg->lside;
-				curWidth = RtTrackGetWidth(sseg, p->toStart);
-				p->seg = sseg;
-				p->toMiddle -= curWidth / 2.0;
-				p->toLeft += curWidth;
-			}
+			*toOppositeSide -= prevWidth;
+			*toSide += curWidth;
+			p->toMiddle += sign*(prevWidth + curWidth)/2.0f;
+			prevWidth = curWidth;
 		}
 	}
 }
+
 
 /** Returns the absolute height in meters of the road
     at the Local position p.

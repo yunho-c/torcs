@@ -426,7 +426,7 @@ typedef struct
 
 #define TR_LPOS_MAIN	0	/**< Relative to the main segment, mostly used for racing on the main track */
 #define TR_LPOS_SEGMENT	1	/**< Relative to the segment which the point is located, including border and sides, mostly used for contact physics */
-#define TR_LPOS_TRACK	2	/**< Local pos includes all the track width, mostly used for collision with outermost barrier */
+#define TR_LPOS_TRACK	2	/**< Local position relative to the outermost barriers, mostly used for collision detection with barrier */
 
     tdble	toStart;	/**< Distance to start of segment (or arc if turn) */
     tdble	toRight;	/**< Distance (+ to left, - to right) relative to the right side of segment */
