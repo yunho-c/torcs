@@ -4,9 +4,8 @@
 #
 #    file                 : Make-config.in
 #    created              : Mon Dec 11 23:47:37 CET 2000
-#    copyright            : (C) 2000 by Eric Espi�                        
-#    email                : Eric.Espie@torcs.org   
-#    version              : $Id$                                  
+#    copyright            : (C) 2000-2024 by Eric Espié, Bernhard Wymann                        
+#    email                : berniw@bluewin.ch
 #
 ##############################################################################
 #
@@ -48,7 +47,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 
-CFLAGSD = -D_SVID_SOURCE -D_BSD_SOURCE -DSHM -DHAVE_CONFIG_H
+CFLAGSD = -D_DEFAULT_SOURCE -DSHM -DHAVE_CONFIG_H
 CXXFLAGS =  @CXXFLAGS@ @CPPFLAGS@ ${CFLAGSD}
 CFLAGS   =  @CFLAGS@ ${CFLAGSD}
 
