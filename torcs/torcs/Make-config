@@ -4,9 +4,8 @@
 #
 #    file                 : Make-config.in
 #    created              : Mon Dec 11 23:47:37 CET 2000
-#    copyright            : (C) 2000 by Eric Espi�                        
-#    email                : Eric.Espie@torcs.org   
-#    version              : $Id$                                  
+#    copyright            : (C) 2000-2024 by Eric Espié, Bernhard Wymann                        
+#    email                : berniw@bluewin.ch
 #
 ##############################################################################
 #
@@ -48,7 +47,7 @@ INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_SCRIPT = ${INSTALL}
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 
-CFLAGSD = -D_SVID_SOURCE -D_BSD_SOURCE -DSHM -DHAVE_CONFIG_H
+CFLAGSD = -D_DEFAULT_SOURCE -DSHM -DHAVE_CONFIG_H
 CXXFLAGS =  -march=native -O2 -fno-strict-aliasing -Wall -fPIC -fno-strict-aliasing -O2 -DUSE_RANDR_EXT -DGL_GLEXT_PROTOTYPES -Wall -fPIC -fno-strict-aliasing -O2 -DUSE_RANDR_EXT -DGL_GLEXT_PROTOTYPES -march=native -O2 -fno-strict-aliasing ${CFLAGSD}
 CFLAGS   =  -march=native -O2 -fno-strict-aliasing -Wall -fPIC -fno-strict-aliasing -O2 -DUSE_RANDR_EXT -DGL_GLEXT_PROTOTYPES -Wall -fPIC -fno-strict-aliasing -O2 -DUSE_RANDR_EXT -DGL_GLEXT_PROTOTYPES ${CFLAGSD}
 
@@ -63,7 +62,7 @@ INCFLAGS =  -I${EXPORTBASE}/include -I${TORCS_BASE}
 CPP = gcc -E -march=native -O2 -fno-strict-aliasing -M -D__DEPEND__
 
 PACKAGE = torcs
-VERSION = 1.3.8-test1
+VERSION = 1.3.8
 
 TAR = gtar
 GZIP_ENV = --best
