@@ -2,8 +2,7 @@
 
     file        : ac3dgroup.cpp
     created     : Fri Apr 18 23:11:36 CEST 2003
-    copyright   : (C) 2003 by Christophe Guionneau
-    version     : $Id$
+    copyright   : (C) 2003-2024 by Christophe Guionneau, Bernhard Wymann
 
  ***************************************************************************/
 
@@ -72,7 +71,7 @@ void assignArrays(ob_t *tmpob, ob_t* tmpob2, double **textarray, tcoord_t **vert
 			*texture=tmpob2->texture;
 			*textarray=tmpob2->textarray;
 			*vertexarray=tmpob2->vertexarray;
-			for (int i=0; i<tmpob->numvert; i++)
+			for (int i=0; i<tmpob->numvert; i++) {
 				if (
 					fabs(tmpob->vertex[i].x - tmpob2->vertex[i].x )>MINVAL ||
 					fabs(tmpob->vertex[i].y - tmpob2->vertex[i].y )>MINVAL ||
@@ -80,12 +79,14 @@ void assignArrays(ob_t *tmpob, ob_t* tmpob2, double **textarray, tcoord_t **vert
 				{
 					notinsameorder=TRUE;
 				}
-				if (notinsameorder==TRUE) {
-					printf("%s : points not in the same order, reordering ...\n",tmpob->name);
-					reorder(tmpob,tmpob2,*textarray,*vertexarray);
-					printf("%s : reordering ... done\n",tmpob->name);
-				}
-				break;
+			}
+			
+			if (notinsameorder==TRUE) {
+				printf("%s : points not in the same order, reordering ...\n",tmpob->name);
+				reorder(tmpob,tmpob2,*textarray,*vertexarray);
+				printf("%s : reordering ... done\n",tmpob->name);
+			}
+			break;
 		}
 		tmpob2=tmpob2->next;
 	}

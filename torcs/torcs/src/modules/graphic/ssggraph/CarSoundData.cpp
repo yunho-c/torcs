@@ -329,11 +329,12 @@ void CarSoundData::calculateTyreSound(tCarElt* car)
 bool CarSoundData::isOffRoadSurface(const tTrackSeg* const seg) {
 	const char* const materialName = seg->surface->material;
 	return materialName &&
-		(strstr(materialName, TRK_VAL_SAND))
-		||(strstr(materialName, TRK_VAL_DIRT))
-		||(strstr(materialName, TRK_VAL_GRASS))
-		||(strstr(materialName, "gravel"))
-		||(strstr(materialName, "mud"));								
+		(strstr(materialName, TRK_VAL_SAND)
+		|| strstr(materialName, TRK_VAL_DIRT)
+		|| strstr(materialName, TRK_VAL_GRASS)
+		|| strstr(materialName, "gravel")
+		|| strstr(materialName, "mud")
+        );
 }
 
 

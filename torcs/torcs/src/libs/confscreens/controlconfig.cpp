@@ -333,11 +333,9 @@ static bool checkJoystickMovedAxis(tCmdInfo* cmd)
 
 static void Idle(void)
 {
-	int mask;
 	int i;
 	int	index;
 	const char *str;
-	int	axis;
 	
 	GfctrlMouseGetCurrent(&mouseInfo);
 	

@@ -3,11 +3,8 @@
 
     file                 : driver.cpp
     created              : Thu Dec 20 01:21:49 CET 2002
-    copyright            : (C) 2002-2004 Bernhard Wymann
-                           (C) 2004-2005 Christos Dimitrakakis
-    email                : berniw@bluewin.ch
-                           dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2002-2024 Bernhard Wymann, Christos Dimitrakakis
+    email                : berniw@bluewin.ch, dimitrak@idiap.ch
 
 ***************************************************************************/
 
@@ -802,7 +799,7 @@ namespace olethros {
             rpmMaxTq,
             rpmMaxPw,
             rpmMax,
-            rpmMax*2.0
+            rpmMax*2.0f
 	};
 	int N = 5;
 	for (int i=0; i<N - 1; i++) {

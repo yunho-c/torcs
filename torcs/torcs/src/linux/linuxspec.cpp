@@ -2,9 +2,8 @@
 
     file                 : linuxspec.cpp
     created              : Sat Mar 18 23:54:05 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espié, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -35,7 +34,8 @@
 // Keep handle of ssggraph, it makes trouble when loaded multiple times dynamically
 static void * ssgHandle = NULL;
 bool bKeepModules = false;
-
+static const int soPathSize = 1024;
+static const int soNameSize = 256;
 
 /*
  * Function
@@ -59,16 +59,16 @@ linuxModLoad(unsigned int /* gfid */, char *sopath, tModList **modlist)
 	tfModInfo fModInfo;	/* init function of the modules */
 	void *handle;	/* */
 	tModList *curMod;
-	char dname[256];	/* name of the funtions */
+	char dname[soNameSize];	/* name of the funtions */
 	char *lastSlash;
 	
 	curMod = (tModList*)calloc(1, sizeof(tModList));
 	
 	lastSlash = strrchr(sopath, '/');
 	if (lastSlash) {
-		strcpy(dname, lastSlash+1);
+		strncpy(dname, lastSlash+1, soNameSize);
 	} else {
-		strcpy(dname, sopath);
+		strncpy(dname, sopath, soNameSize);
 	}
 	dname[strlen(dname) - 3] = 0; /* cut .so */
 	
@@ -137,7 +137,7 @@ linuxModInfo(unsigned int /* gfid */, char *sopath, tModList **modlist)
 	tfModInfo fModInfo;	/* init function of the modules */
 	void *handle;	/* */
 	tModList *curMod;
-	char dname[256];	/* name of the funtions */
+	char dname[soNameSize];	/* name of the funtions */
 	char *lastSlash;
 	tModList *cMod;
 	int prio;
@@ -146,9 +146,9 @@ linuxModInfo(unsigned int /* gfid */, char *sopath, tModList **modlist)
 	
 	lastSlash = strrchr(sopath, '/');
 	if (lastSlash) {
-		strcpy(dname, lastSlash+1);
+		strncpy(dname, lastSlash+1, soNameSize);
 	} else {
-		strcpy(dname, sopath);
+		strncpy(dname, sopath, soNameSize);
 	}
 	dname[strlen(dname) - 3] = 0; /* cut .so */
 	
@@ -223,8 +223,8 @@ static int
 linuxModLoadDir(unsigned int gfid, char *dir, tModList **modlist)
 {
 	tfModInfo fModInfo;	/* init function of the modules */
-	char dname[256];	/* name of the funtions */
-	char sopath[256];	/* path of the lib[x].so */
+	char dname[soNameSize];	/* name of the funtions */
+	char sopath[soPathSize];	/* path of the lib[x].so */
 	void *handle;	/* */
 	DIR *dp;		/* */
 	struct dirent *ep;		/* */
@@ -243,8 +243,8 @@ linuxModLoadDir(unsigned int gfid, char *dir, tModList **modlist)
 		while ((ep = readdir (dp)) != 0) {
 			if ((strlen(ep->d_name) > 4) &&
 						  (strcmp(".so", ep->d_name+strlen(ep->d_name)-3) == 0)) { /* xxxx.so */
-				sprintf(sopath, "%s/%s", dir, ep->d_name);
-				strcpy(dname, ep->d_name);
+				snprintf(sopath, soPathSize, "%s/%s", dir, ep->d_name);
+				strncpy(dname, ep->d_name, soNameSize);
 				dname[strlen(dname) - 3] = 0; /* cut .so */
 				handle = dlopen(sopath, RTLD_LAZY);
 				if (handle != NULL) {
@@ -328,8 +328,8 @@ static int
 linuxModInfoDir(unsigned int /* gfid */, char *dir, int level, tModList **modlist)
 {
 	tfModInfo fModInfo;	/* init function of the modules */
-	char dname[256];	/* name of the funtions */
-	char sopath[256];	/* path of the lib[x].so */
+	char dname[soNameSize];	/* name of the funtions */
+	char sopath[soPathSize];	/* path of the lib[x].so */
 	void *handle;	/* */
 	DIR *dp;		/* */
 	struct dirent *ep;		/* */
@@ -350,11 +350,11 @@ linuxModInfoDir(unsigned int /* gfid */, char *dir, int level, tModList **modlis
 						   (strcmp(".so", ep->d_name+strlen(ep->d_name)-3) == 0)) || 
 						   ((level == 1) && (ep->d_name[0] != '.'))) { /* xxxx.so */
 				if (level == 1) {
-					sprintf(sopath, "%s/%s/%s.so", dir, ep->d_name, ep->d_name);
-					strcpy(dname, ep->d_name);
+					snprintf(sopath, soPathSize, "%s/%s/%s.so", dir, ep->d_name, ep->d_name);
+					strncpy(dname, ep->d_name, soNameSize);
 				} else {
-					sprintf(sopath, "%s/%s", dir, ep->d_name);
-					strcpy(dname, ep->d_name);
+					snprintf(sopath, soPathSize, "%s/%s", dir, ep->d_name);
+					strncpy(dname, ep->d_name, soNameSize);
 					dname[strlen(dname) - 3] = 0; /* cut .so */
 				}
 				handle = dlopen(sopath, RTLD_LAZY);
@@ -438,7 +438,7 @@ linuxModUnloadList(tModList **modlist)
 	tModList *curMod;
 	tModList *nextMod;
 	tfModShut fModShut;
-	char dname[256];	/* name of the funtions */
+	char dname[soNameSize];	/* name of the funtions */
 	char *lastSlash;
 
 	curMod = *modlist;
@@ -454,11 +454,11 @@ linuxModUnloadList(tModList **modlist)
 		
 		lastSlash = strrchr(curMod->sopath, '/');
 		if (lastSlash) {
-			strcpy(dname, lastSlash+1);
+			strncpy(dname, lastSlash+1, soNameSize);
 		} else {
-			strcpy(dname, curMod->sopath);
+			strncpy(dname, curMod->sopath, soNameSize);
 		}
-		strcpy(&dname[strlen(dname) - 3], "Shut"); /* cut .so */
+		strncpy(&dname[strlen(dname) - 3], "Shut", soNameSize); /* cut .so */
 		if ((fModShut = (tfModShut)dlsym(curMod->handle, dname)) != NULL) {
 			GfOut("Call %s\n", dname);
 			fModShut();
