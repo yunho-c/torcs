@@ -251,6 +251,7 @@ Changes since 1.3.8-test1
   not matter much, because almost exclusively TR_TORIGHT was used (Bernhard).
 - Refactoring of RtTrackGlobal2Local, unification of similar right/left code. Still more to
   go (Bernhard).
+- Fixed most compiler warnings in Linux (Bernhard).
 
 
 Changes since 1.3.7
@@ -292,7 +293,6 @@ Changes since 1.3.7
 
 TODO for 1.3.8 "worn & blown"
 --------------
-- Fix build warnings in Linux
 - Mouse steering calibration seems to be broken, verify
 
 TODO for 1.3.9
