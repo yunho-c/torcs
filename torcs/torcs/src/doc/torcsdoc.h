@@ -2,9 +2,8 @@
 
     file                 : torcsdoc.h
     created              : Sat Jul 27 14:24:31 CEST 2002
-    copyright            : (C) 2001-2014 by Eric Espie, Bernhard Wymann
-    email                : Eric.Espie@torcs.org
-    version              : $Id$
+    copyright            : (C) 2001-2025 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -19,7 +18,6 @@
  
 /** @file    
     @author Bernhard Wymann, Eric Espie
-    @version $Id$
 */
 
 #ifndef _TORCSDOC_H_
@@ -172,8 +170,6 @@
     
     @section doclist Other Documentation
     
-    - [Robot Tutorial](http://www.berniw.org/tutorials/robot)
-    - [Track Tutorial](http://www.berniw.org/aboutme/publications/build_your_trocs_track_in_20_minutes_v2.odt)
     - [Car Creation Tutorial](http://www.youtube.com/playlist?list=PLq-L0hhLuRI04BLdNW0QrSxhvuyPml8zp)
     - [Research Papers](http://scholar.google.com/scholar?q=torcs+car)
 
