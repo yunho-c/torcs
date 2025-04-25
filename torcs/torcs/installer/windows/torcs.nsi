@@ -1,9 +1,8 @@
 ;
 ;        file       : torcs.nsi
 ;        created    : Wed Feb 2 15:35:10 CET 2005
-;        copyright  : (C) 2005, 2017 Bernhard Wymann
+;        copyright  : (C) 2005-2025 Bernhard Wymann
 ;        email      : berniw@bluewin.ch
-;        version    : $Id$
 ;
 ;        This program is free software; you can redistribute it and/or modify
 ;        it under the terms of the GNU General Public License as published by
@@ -15,8 +14,8 @@
 !define VER_MAJOR 1
 !define VER_MINOR 3
 !define VER_REVISION 8
-!define VER_EXTRA -test1
-!define VER_RELDATE 20170303
+!define VER_EXTRA
+!define VER_RELDATE 20250426
 
 !define PRODUCT_NAME "TORCS - The Open Racing Car Simulator"
 !define PRODUCT_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_REVISION}${VER_EXTRA}"
@@ -463,6 +462,7 @@ SetOutPath "$INSTDIR\data\music"
   File "base\data\sound\crash4.wav"
   File "base\data\sound\crash5.wav"
   File "base\data\sound\crash6.wav"
+  File "base\data\sound\curb_ride.wav"
   File "base\data\sound\engine-1.wav"
   File "base\data\sound\evo7_engine.wav"
   File "base\data\sound\evo7_engine_f.wav"
@@ -3356,8 +3356,8 @@ Section -AdditionalIcons
   WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
   CreateShortCut "$SMPROGRAMS\TORCS\TORCS Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
   
-  WriteIniStr "$INSTDIR\trb.url" "InternetShortcut" "URL" "http://www.berniw.org/trb"
-  CreateShortCut "$SMPROGRAMS\TORCS\TORCS Racing Board.lnk" "$INSTDIR\trb.url"
+#  WriteIniStr "$INSTDIR\trb.url" "InternetShortcut" "URL" "http://www.berniw.org/trb"
+#  CreateShortCut "$SMPROGRAMS\TORCS\TORCS Racing Board.lnk" "$INSTDIR\trb.url"
 
 #  WriteIniStr "$INSTDIR\trackgen.url" "InternetShortcut" "URL" "http://trackgen.pierlucalanzi.net"
 #  CreateShortCut "$SMPROGRAMS\TORCS\Online track generator.lnk" "$INSTDIR\trackgen.url"

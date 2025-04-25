@@ -14,8 +14,6 @@ Bernhard
 4. Getting Help
 5. Car Setups
 6. Creating Tracks
-7. Robot (AI driver) programming
-8. Official Championships
 
 1. Licenses
 -----------
@@ -37,44 +35,24 @@ graphics drivers.
 
 3. Running TORCS
 ----------------
-- Read the "How-To Drive" on www.torcs.org
-  (http://torcs.sourceforge.net/index.php?name=Sections&op=viewarticle&artid=10).
-- Press F1 anytime to get help (do it as well during the ride to learn about
-  the options).
-- Read the FAQ to learn about split screen multiplayer and more.
-- Or watch videos, you find the links on www.torcs.org
+Press F1 anytime to get help (do it as well during the ride to learn about the options).
 
 4. Getting Help
 ---------------
-First have a look at the available documentation on www.torcs.org and
-www.berniw.org. If you find no solution for the problem learn in the
-FAQ how and where to report a problem. The best place to get help is the
-torcs-users mailing list, you find the link on www.torcs.org.
+First have a look at the available documentation on www.torcs.org. If you
+find no solution for the problem learn in the FAQ how and where to report
+a problem. The best place to get help is the torcs-users mailing list,
+you find the link on www.torcs.org.
 
 5. Car Setups
 -------------
-Since 1.3.5 there is a car setup screen integrated in TORCS, if you run
+There is a car setup screen integrated in TORCS, if you run
 a practice or qualifying session as human player you can hit the "esc"
 (escape) key, then choose in the menu "setup car, restart", or if the
 track has a pit, make a pit stop and hit there the "setup" button. Your
-setups are stored then in "drivers/human/*.xml". For some information
-about the properties look into the robot tutorial chapter 5
-(http://www.berniw.org/tutorials/robot/ch5/properties.html).
+setups are stored then in "drivers/human/*.xml".
 
 6. Creating Tracks
 ------------------
-The track editor is included in the TORCS distribution for Windows. It
-is automatically installed if you select to install the "Trackeditor and Tools".
-Alternatively you can get it from
-http://sourceforge.net/projects/trackeditor or
-http://www.berniw.org/trb/download/trackeditor-0.6.2c.tar.bz2.
+You can download a track editor from http://sourceforge.net/projects/trackeditor.
 The sources are included in the jars.
-
-7. Robot (AI driver) programming
---------------------------------
-You find a robot programming tutorial on www.berniw.org in the TORCS section.
-Have a look at the FAQ as well.
-
-8. Official Championships
--------------------------
-Visit www.berniw.org/trb for more information.
