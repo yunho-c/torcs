@@ -211,7 +211,7 @@ Some additional notes:
 11. Changes
 -----------
 
-Changes since 1.3.8
+Changes since 1.3.9
 -------------------
 - Updateded .gitignore for vscode in Linux (Bernhard).
 - Add description of source code setup with vscode in Linux (Bernhard).
