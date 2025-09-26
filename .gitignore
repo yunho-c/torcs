@@ -4,9 +4,11 @@
 *.a
 .ctagsdb
 .directory
+.vscode
 checkout.sh
 torcs_
 gaga
+tags
 
 *.exe
 *.dll
@@ -14,6 +16,7 @@ gaga
 *.spec
 
 torcs/torcs/config.log
+torcs/torcs/.cache
 torcs/torcs/config.status
 torcs/torcs/export/
 torcs/torcs/setup_linux.sh
@@ -33,3 +36,4 @@ torcs/torcs/src/tools/trackgen/trackgen
 torcs/torcs/src/tools/trackgen/trackgen-bin
 runtime
 runtimed
+torcs/torcs/compile_commands.json
