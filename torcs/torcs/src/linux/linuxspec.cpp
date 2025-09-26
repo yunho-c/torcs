@@ -437,9 +437,6 @@ linuxModUnloadList(tModList **modlist)
 {
 	tModList *curMod;
 	tModList *nextMod;
-	tfModShut fModShut;
-	char dname[soNameSize];	/* name of the funtions */
-	char *lastSlash;
 
 	curMod = *modlist;
 	if (curMod == 0) {
@@ -451,18 +448,6 @@ linuxModUnloadList(tModList **modlist)
 		curMod = nextMod;
 		nextMod = curMod->next;
 		GfOut("<<< %s unloaded <<<\n", curMod->sopath);
-		
-		lastSlash = strrchr(curMod->sopath, '/');
-		if (lastSlash) {
-			strncpy(dname, lastSlash+1, soNameSize);
-		} else {
-			strncpy(dname, curMod->sopath, soNameSize);
-		}
-		strncpy(&dname[strlen(dname) - 3], "Shut", soNameSize); /* cut .so */
-		if ((fModShut = (tfModShut)dlsym(curMod->handle, dname)) != NULL) {
-			GfOut("Call %s\n", dname);
-			fModShut();
-		}
 
 		// Special case, hold ssg
 		if (curMod->handle != ssgHandle) {
