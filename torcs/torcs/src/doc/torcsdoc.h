@@ -170,6 +170,7 @@
     
     @section doclist Other Documentation
     
+    - [Changelogs](@ref changelogs)
     - [Car Creation Tutorial](http://www.youtube.com/playlist?list=PLq-L0hhLuRI04BLdNW0QrSxhvuyPml8zp)
     - [Research Papers](http://scholar.google.com/scholar?q=torcs+car)
 

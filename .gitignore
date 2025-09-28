@@ -34,6 +34,7 @@ torcs/torcs/src/tools/texmapper/texmapper
 torcs/torcs/src/tools/texmapper/texmapper-bin
 torcs/torcs/src/tools/trackgen/trackgen
 torcs/torcs/src/tools/trackgen/trackgen-bin
+torcs/torcs/doc/manual/api
 runtime
 runtimed
 torcs/torcs/compile_commands.json

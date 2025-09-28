@@ -217,6 +217,7 @@ Changes since 1.3.8
 - Add description of source code setup with vscode in Linux (Bernhard).
 - Removed legacy module shutdown code from linuxspec.cpp, due to problem discovered by
   Botond István Horváth (Botond, Bernhard).
+- Added changelogs to doxygen (Benrhard).
  
 12. TODO/Notes
 --------------
