@@ -10,6 +10,25 @@ torcs_
 gaga
 tags
 
+# Visual Studio user/caches
+.vs/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+*.opendb
+*.VC.db
+*.VC.VC.opendb
+ipch/
+
+# Build outputs
+[Bb]in/
+[Oo]bj/
+Debug*/
+Release*/
+x64/
+x86/
+
 *.exe
 *.dll
 *.lib
