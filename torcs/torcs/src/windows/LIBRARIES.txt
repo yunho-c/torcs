@@ -18,3 +18,17 @@ zlib1_vs6static.lib, 1.2.5, static lib, built with VS 6, code generation /MT, pe
 and build, libvorbis does handle this better)
 
 ul.lib, ssg*.lib, sl.lib, sg.lib, static lib, built with VS 6, code generation /MT, pentium pro
+
+VS 2022 update notes, first step (32 bit, still statically linked):
+-------------------------------------------------------------------
+zlib-1_3_1 notes (zlib 1.3.1):
+- For static library I needed to undefine ZLIB_WINAPI, otherwise the symbol conventaion mismatches
+  (missing symbols on linking). Can be checked with "dumpbin /LINKERMEMBER zlib1_vs2022_32.lib | findstr gz",
+  replace gz with your missing symbol
+- Built with contrib project file in zlib-1_3_1\contrib\vstudio\vc17
+
+libpng notes (libpng 1.6.50):
+- Build with project file in lpng1650\projects\vstudio
+- Adopt path in zlib.props for the zlib headers
+- Do NOT use the zlib built by libpng, it does only define symbols used by libpng
+- Release build had debugging info, switched that off to avoid missing pdb warnings in the TORCS build
