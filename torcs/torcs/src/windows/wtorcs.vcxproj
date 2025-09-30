@@ -87,7 +87,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>client.lib;txml.lib;libpng15_vs2008_32.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>client.lib;txml.lib;libpng16_vs2022_32.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/wtorcs.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../export/lib;../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -142,7 +142,7 @@ copy dll\libvorbisfile.dll $(SolutionDir)runtime
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>client.lib;txml.lib;libpng15_vs2008_32.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>client.lib;txml.lib;libpng16_vs2022_32.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/wtorcs.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../export/libd;../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

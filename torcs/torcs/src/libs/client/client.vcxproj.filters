@@ -190,8 +190,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="client.def">
+    <None Include="client.def">
       <Filter>Source Files</Filter>
-    </CustomBuild>
+    </None>
   </ItemGroup>
 </Project>

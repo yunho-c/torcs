@@ -224,9 +224,7 @@ copy $(TargetDir)*.lib $(SolutionDir)export\lib
     <ClCompile Include="splash.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="client.def">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </CustomBuild>
+    <None Include="client.def" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\racescreens\racescreens.h" />
