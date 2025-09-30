@@ -222,6 +222,7 @@ Changes since 1.3.8
   break the VS 2008 build, because of the updated libpng headers (Bernhard).
 - Replaced GLUT with GreeGLUT in Windows (Bernhard).
 - Cleanup VS 2022 build, diabled warnings 4244 and 4305 for now (Bernhard).
+- Removed vs 6.0 projects and libraries (Benrhard).
 
  
 12. TODO/Notes
