@@ -106,7 +106,7 @@
     <PostBuildEvent>
       <Message>exports</Message>
       <Command>copy $(TargetDir)wtorcs.exe $(SolutionDir)runtime
-copy dll\glut32.dll $(SolutionDir)runtime
+copy dll\freeglut.dll $(SolutionDir)runtime
 copy dll\OpenAL32.dll $(SolutionDir)runtime
 copy dll\libogg.dll $(SolutionDir)runtime
 copy dll\libvorbis.dll $(SolutionDir)runtime
@@ -164,7 +164,7 @@ copy dll\libvorbisfile.dll $(SolutionDir)runtime
     <PostBuildEvent>
       <Message>exports</Message>
       <Command>copy $(TargetDir)wtorcs.exe $(SolutionDir)runtimed
-copy dll\glut32.dll $(SolutionDir)runtimed
+copy dll\freeglut.dll $(SolutionDir)runtimed
 copy dll\OpenAL32.dll $(SolutionDir)runtimed
 copy dll\libogg.dll $(SolutionDir)runtimed
 copy dll\libvorbis.dll $(SolutionDir)runtimed
