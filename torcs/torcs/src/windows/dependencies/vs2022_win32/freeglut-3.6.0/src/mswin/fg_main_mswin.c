@@ -733,7 +733,7 @@ static LRESULT fghWindowProcKeyPress(SFG_Window *window, UINT uMsg, GLboolean ke
     fgState.Modifiers = INVALID_MODIFIERS;
 
     /* SYSKEY events should be sent to default window proc for system to handle them */
-    if (uMsg==WM_SYSKEYDOWN || uMsg==WM_SYSKEYUP)
+	if ((uMsg==WM_SYSKEYDOWN || uMsg==WM_SYSKEYUP) && wParam!=VK_F10)
         return DefWindowProc( window->Window.Handle, uMsg, wParam, lParam );
     else
         return 1;

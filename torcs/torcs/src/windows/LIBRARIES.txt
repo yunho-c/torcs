@@ -39,15 +39,19 @@ libpng notes (libpng 1.6.50):
 
 freeglut-3.6.0:
 - build with 
-- cmake -B build32 -G "Visual Studio 17 2022" -A Win32 ^
-	-DCMAKE_INSTALL_PREFIX=install32 ^
-	-DCMAKE_C_FLAGS_RELEASE="/MT" ^
-	-DCMAKE_CXX_FLAGS_RELEASE="/MT" ^
-	-DCMAKE_C_FLAGS_DEBUG="/MTd" ^
-	-DCMAKE_CXX_FLAGS_DEBUG="/MTd" ^
-	-DFREEGLUT_BUILD_DEMOS=OFF ^
-	-DFREEGLUT_BUILD_TESTS=OFF  
+- cmake -B build32 -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX=install32 -DCMAKE_C_FLAGS_RELEASE="/MT" -DCMAKE_CXX_FLAGS_RELEASE="/MT" -DCMAKE_C_FLAGS_DEBUG="/MTd" -DCMAKE_CXX_FLAGS_DEBUG="/MTd" -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_BUILD_TESTS=OFF
 - cmake --build build32 --config Release
 - cmake --install build32 --config Release
 - Check if "/MT" option was taken: dumpbin /dependents install32\bin\freeglut.dll
 - Should NOT contain CRUNTIME140.dll, api-ms-win-crt-heap-l1-1-0.dll, etc.
+- Applied hack from https://github.com/freeglut/freeglut/issues/73
+diff --git a/freeglut/freeglut/src/mswin/fg_main_mswin.c b/freeglut/freeglut/src/mswin/fg_main_mswin.c
+index 6d286e7..2e7bed6 100644
+--- a/freeglut/freeglut/src/mswin/fg_main_mswin.c
++++ b/freeglut/freeglut/src/mswin/fg_main_mswin.c
+@@ -731,7 +731,7 @@ static LRESULT fghWindowProcKeyPress(SFG_Window *window, UINT uMsg, GLboolean ke
+     fgState.Modifiers = INVALID_MODIFIERS;
+
+     /* SYSKEY events should be sent to default window proc for system to handle them */
+-    if (uMsg==WM_SYSKEYDOWN || uMsg==WM_SYSKEYUP)
++    if ((uMsg==WM_SYSKEYDOWN || uMsg==WM_SYSKEYUP) && wParam!=VK_F10)

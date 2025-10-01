@@ -223,6 +223,11 @@ Changes since 1.3.8
 - Replaced GLUT with GreeGLUT in Windows (Bernhard).
 - Cleanup VS 2022 build, diabled warnings 4244 and 4305 for now (Bernhard).
 - Removed vs 6.0 projects and libraries (Benrhard).
+- Added change to freeglut to behave the same like GLUT on the F10 key. Freeglut does respect
+  that Windows wants to open the menubar menu if TORCS runs in a window, so TORCS seems to hang
+  when the button is not pressed again. See also https://github.com/freeglut/freeglut/issues/73
+  (Bernhard).
+  
 
  
 12. TODO/Notes
@@ -296,6 +301,7 @@ TODO for 2.0.x
 - More Rules.
 - Brake/Engine Wear (with cooling)
 - Apply SDL patch from Brian Gavin but moving directly to SDL 3.0.
+	- Remember Freeglut/F10 hack, maybe similar care is required here.
 - Update OpenAL to 1.1, fix use of deprecated stuff.
 - Car asignment for human players.
 - Sound (alut depricated/scheduling for lots of cars)
