@@ -48,14 +48,14 @@
     <IntDir>.\Release\</IntDir>
     <EnableManagedIncrementalBuild>False</EnableManagedIncrementalBuild>
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
+    <GenerateManifest>true</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>.\Debug\</OutDir>
     <IntDir>.\Debug\</IntDir>
     <EnableManagedIncrementalBuild>False</EnableManagedIncrementalBuild>
     <LinkIncremental>false</LinkIncremental>
-    <GenerateManifest>false</GenerateManifest>
+    <GenerateManifest>true</GenerateManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -113,6 +113,11 @@ copy dll\vorbis.dll $(SolutionDir)runtime
 copy dll\vorbisfile.dll $(SolutionDir)runtime
 </Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+      <OutputManifestFile>
+      </OutputManifestFile>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
@@ -171,6 +176,11 @@ copy dll\vorbis.dll $(SolutionDir)runtimed
 copy dll\vorbisfile.dll $(SolutionDir)runtimed
 </Command>
     </PostBuildEvent>
+    <Manifest>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
+      <OutputManifestFile>
+      </OutputManifestFile>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

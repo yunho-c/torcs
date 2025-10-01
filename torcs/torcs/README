@@ -227,6 +227,9 @@ Changes since 1.3.8
   that Windows wants to open the menubar menu if TORCS runs in a window, so TORCS seems to hang
   when the button is not pressed again. See also https://github.com/freeglut/freeglut/issues/73
   (Bernhard).
+- Updated ogg and vorbis libraries (Bernhard).
+- Added manifest to wtorcs.exe with "Per Monitor High DPI Aware", this should fix full screen
+  scaling issues with multi monitor systems and other than 100% dpi settings (Bernhard).
   
 
  
@@ -302,6 +305,9 @@ TODO for 2.0.x
 - Brake/Engine Wear (with cooling)
 - Apply SDL patch from Brian Gavin but moving directly to SDL 3.0.
 	- Remember Freeglut/F10 hack, maybe similar care is required here.
+	- Check if this is a thing with SDL:
+	  Added manifest to wtorcs.exe with "Per Monitor High DPI Aware", this should fix full screen
+      scaling issues with multi monitor systems and other than 100% dpi settings (Bernhard).
 - Update OpenAL to 1.1, fix use of deprecated stuff.
 - Car asignment for human players.
 - Sound (alut depricated/scheduling for lots of cars)
