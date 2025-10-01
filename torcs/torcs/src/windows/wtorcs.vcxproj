@@ -108,9 +108,9 @@
       <Command>copy $(TargetDir)wtorcs.exe $(SolutionDir)runtime
 copy dll\freeglut.dll $(SolutionDir)runtime
 copy dll\OpenAL32.dll $(SolutionDir)runtime
-copy dll\libogg.dll $(SolutionDir)runtime
-copy dll\libvorbis.dll $(SolutionDir)runtime
-copy dll\libvorbisfile.dll $(SolutionDir)runtime
+copy dll\ogg.dll $(SolutionDir)runtime
+copy dll\vorbis.dll $(SolutionDir)runtime
+copy dll\vorbisfile.dll $(SolutionDir)runtime
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -166,9 +166,9 @@ copy dll\libvorbisfile.dll $(SolutionDir)runtime
       <Command>copy $(TargetDir)wtorcs.exe $(SolutionDir)runtimed
 copy dll\freeglut.dll $(SolutionDir)runtimed
 copy dll\OpenAL32.dll $(SolutionDir)runtimed
-copy dll\libogg.dll $(SolutionDir)runtimed
-copy dll\libvorbis.dll $(SolutionDir)runtimed
-copy dll\libvorbisfile.dll $(SolutionDir)runtimed
+copy dll\ogg.dll $(SolutionDir)runtimed
+copy dll\vorbis.dll $(SolutionDir)runtimed
+copy dll\vorbisfile.dll $(SolutionDir)runtimed
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

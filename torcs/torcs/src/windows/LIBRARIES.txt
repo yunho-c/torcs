@@ -19,15 +19,19 @@ and build, libvorbis does handle this better)
 
 ul.lib, ssg*.lib, sl.lib, sg.lib, static lib, built with VS 6, code generation /MT, pentium pro
 
+
+
 VS 2022 update notes, first step (32 bit, still self containing and static builds, no dependency to runtime distributable):
 ----------------------------------------------------------------------------------------------------------------------------
 zlib-1_3_1 notes (zlib 1.3.1):
+------------------------------
 - For static library I needed to undefine ZLIB_WINAPI, otherwise the symbol conventaion mismatches
   (missing symbols on linking). Can be checked with "dumpbin /LINKERMEMBER zlib1_vs2022_32.lib | findstr gz",
   replace gz with your missing symbol
 - Built with contrib project file in zlib-1_3_1\contrib\vstudio\vc17
 
 libpng notes (libpng 1.6.50):
+-----------------------------
 - Build with project file in lpng1650\projects\vstudio
 - Adopt path in zlib.props for the zlib headers
 - Do NOT use the zlib built by libpng, it does only define symbols used by libpng
@@ -38,6 +42,7 @@ libpng notes (libpng 1.6.50):
 #endif
 
 freeglut-3.6.0:
+---------------
 - build with 
 - cmake -B build32 -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX=install32 -DCMAKE_C_FLAGS_RELEASE="/MT" -DCMAKE_CXX_FLAGS_RELEASE="/MT" -DCMAKE_C_FLAGS_DEBUG="/MTd" -DCMAKE_CXX_FLAGS_DEBUG="/MTd" -DFREEGLUT_BUILD_DEMOS=OFF -DFREEGLUT_BUILD_TESTS=OFF
 - cmake --build build32 --config Release
@@ -55,3 +60,17 @@ index 6d286e7..2e7bed6 100644
      /* SYSKEY events should be sent to default window proc for system to handle them */
 -    if (uMsg==WM_SYSKEYDOWN || uMsg==WM_SYSKEYUP)
 +    if ((uMsg==WM_SYSKEYDOWN || uMsg==WM_SYSKEYUP) && wParam!=VK_F10)
+
+libogg-1.3.6:
+-------------
+- rmdir /S /Q build32 install32 (cleanup, just if you built before)
+- cmake -B build32 -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX=install32 -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /DNDEBUG" -DCMAKE_CXX_FLAGS_RELEASE="/MT /O2 /DNDEBUG" -DBUILD_SHARED_LIBS=ON
+- Check lib dependencies, see freeeglut above: dumpbin /dependents install32\bin\libogg.dll
+
+libvorbis-1.3.7:
+----------------
+- rmdir /s /q build32 install32
+- cmake -B build32 -G "Visual Studio 17 2022" -A Win32 -DCMAKE_INSTALL_PREFIX=install32 -DBUILD_SHARED_LIBS=ON -DOGG_INCLUDE_DIR=..\libogg-1.3.6\install32\include -DOGG_LIBRARY=..\libogg-1.3.6\install32\lib\ogg.lib -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /DNDEBUG" -DCMAKE_CXX_FLAGS_RELEASE="/MT /O2 /DNDEBUG"
+- cmake --build build32 --config Release --target INSTALL
+- dumpbin /dependents install32\bin\vorbis.dll
+- dumpbin /dependents install32\bin\vorbisfile.dll
