@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <!-- make sure this is BEFORE the Import of Microsoft.Cpp.targets -->
-<PropertyGroup>
-  <!-- Predefine so any later writes aren’t “first time” -> suppresses MSB4211 -->
-  <GetTargetPathDependsOn>$(GetTargetPathDependsOn)</GetTargetPathDependsOn>
-</PropertyGroup>
+  <PropertyGroup>
+    <!-- Predefine so any later writes aren’t “first time” -> suppresses MSB4211 -->
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn)</GetTargetPathDependsOn>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{4A39FF7C-9320-4D07-B768-7EA6EFF43D2F}</ProjectGuid>
@@ -71,7 +71,7 @@
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>

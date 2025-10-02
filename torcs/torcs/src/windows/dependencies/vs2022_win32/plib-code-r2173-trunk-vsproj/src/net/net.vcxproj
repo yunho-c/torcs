@@ -11,10 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <!-- make sure this is BEFORE the Import of Microsoft.Cpp.targets -->
-<PropertyGroup>
-  <!-- Predefine so any later writes aren’t “first time” -> suppresses MSB4211 -->
-  <GetTargetPathDependsOn>$(GetTargetPathDependsOn)</GetTargetPathDependsOn>
-</PropertyGroup>
+  <PropertyGroup>
+    <!-- Predefine so any later writes aren’t “first time” -> suppresses MSB4211 -->
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn)</GetTargetPathDependsOn>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{AE4B5FE1-B9E0-4133-BA1C-977113339D65}</ProjectGuid>
@@ -112,6 +112,7 @@ copy netSocket.h ..\..\netSocket.h
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
