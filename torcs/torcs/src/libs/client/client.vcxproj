@@ -89,7 +89,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>txml.lib;libpng16_vs2022_32.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;tgf.lib;robottools.lib;ssggraphlib.lib;ssg_vs2022_32.lib;ssgAux_vs2022_32.lib;sl_vs2022_32.lib;OpenAL32.lib;Alut.lib;ogg.lib;vorbis.lib;vorbisfile.lib;zlib1_vs2022_32.lib;js_vs2022_32.lib;Advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>txml.lib;libpng16.lib;sg.lib;ul.lib;tgf.lib;robottools.lib;ssggraphlib.lib;ssg.lib;ssgAux.lib;sl.lib;OpenAL32.lib;Alut.lib;ogg.lib;vorbis.lib;vorbisfile.lib;zlib1.lib;js.lib;Advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/client.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/libd;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -150,7 +150,7 @@ copy $(TargetDir)*.lib $(SolutionDir)export\libd
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>txml.lib;libpng16_vs2022_32.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;tgf.lib;robottools.lib;ssggraphlib.lib;ssg_vs2022_32.lib;ssgAux_vs2022_32.lib;sl_vs2022_32.lib;OpenAL32.lib;Alut.lib;ogg.lib;vorbis.lib;vorbisfile.lib;zlib1_vs2022_32.lib;js_vs2022_32.lib;Advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>txml.lib;libpng16.lib;sg.lib;ul.lib;tgf.lib;robottools.lib;ssggraphlib.lib;ssg.lib;ssgAux.lib;sl.lib;OpenAL32.lib;Alut.lib;ogg.lib;vorbis.lib;vorbisfile.lib;zlib1.lib;js.lib;Advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/client.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/lib;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

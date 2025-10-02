@@ -90,7 +90,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>sl_vs2022_32.lib;client.lib;robottools.lib;sg_vs2022_32.lib;ssg_vs2022_32.lib;ssggraphlib.lib;txml.lib;ul_vs2022_32.lib;libpng16_vs2022_32.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sl.lib;client.lib;robottools.lib;sg.lib;ssg.lib;ssggraphlib.lib;txml.lib;ul.lib;libpng16.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/trackgen.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/lib;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -140,7 +140,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>sl_vs2022_32.lib;client.lib;robottools.lib;sg_vs2022_32.lib;ssg_vs2022_32.lib;ssggraphlib.lib;txml.lib;ul_vs2022_32.lib;libpng16_vs2022_32.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sl.lib;client.lib;robottools.lib;sg.lib;ssg.lib;ssggraphlib.lib;txml.lib;ul.lib;libpng16.lib;tgf.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/trackgen.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/libd;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

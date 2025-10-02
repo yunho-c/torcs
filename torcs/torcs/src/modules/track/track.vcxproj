@@ -92,7 +92,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>tgf.lib;robottools.lib;txml.lib;ssg_vs2022_32.lib;ul_vs2022_32.lib;sg_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>tgf.lib;robottools.lib;txml.lib;ssg.lib;ul.lib;sg.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/track.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/libd;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -150,7 +150,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>sg_vs2022_32.lib;tgf.lib;robottools.lib;txml.lib;ssg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>sg.lib;tgf.lib;robottools.lib;txml.lib;ssg.lib;ul.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/track.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/lib;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

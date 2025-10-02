@@ -92,7 +92,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>robottools.lib;tgf.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>robottools.lib;tgf.lib;sg.lib;ul.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/inferno2.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/lib;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -147,7 +147,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>robottools.lib;tgf.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>robottools.lib;tgf.lib;sg.lib;ul.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/inferno2.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/libd;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

@@ -91,7 +91,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>solid.lib;tgf.lib;robottools.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>solid.lib;tgf.lib;robottools.lib;sg.lib;ul.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/simuv2.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../../export/libd;../../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -149,7 +149,7 @@
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>solid.lib;tgf.lib;robottools.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>solid.lib;tgf.lib;robottools.lib;sg.lib;ul.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Release/simuv2.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../../export/lib;../../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
