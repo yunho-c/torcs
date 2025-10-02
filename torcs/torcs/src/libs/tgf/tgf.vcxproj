@@ -144,7 +144,7 @@ copy $(TargetDir)*.lib ..\..\..\export\lib
       <LinkLibraryDependencies>false</LinkLibraryDependencies>
     </ProjectReference>
     <Link>
-      <AdditionalDependencies>libpng15_vs2008_32.lib;txml.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libpng16_vs2022_32.lib;txml.lib;sg_vs2022_32.lib;ul_vs2022_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>.\Debug/tgf.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../export/libd;../../windows/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
