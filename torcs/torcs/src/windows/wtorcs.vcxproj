@@ -105,12 +105,12 @@
     </Bscmake>
     <PostBuildEvent>
       <Message>exports</Message>
-      <Command>copy $(TargetDir)wtorcs.exe $(SolutionDir)runtime
-copy dll\freeglut.dll $(SolutionDir)runtime
-copy dll\OpenAL32.dll $(SolutionDir)runtime
-copy dll\ogg.dll $(SolutionDir)runtime
-copy dll\vorbis.dll $(SolutionDir)runtime
-copy dll\vorbisfile.dll $(SolutionDir)runtime
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)
+xcopy /f /y dll\freeglut.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\OpenAL32.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\ogg.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\vorbis.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\vorbisfile.dll $(TorcsRuntimeDir)
 </Command>
     </PostBuildEvent>
     <Manifest>
@@ -168,12 +168,12 @@ copy dll\vorbisfile.dll $(SolutionDir)runtime
     </Bscmake>
     <PostBuildEvent>
       <Message>exports</Message>
-      <Command>copy $(TargetDir)wtorcs.exe $(SolutionDir)runtimed
-copy dll\freeglut.dll $(SolutionDir)runtimed
-copy dll\OpenAL32.dll $(SolutionDir)runtimed
-copy dll\ogg.dll $(SolutionDir)runtimed
-copy dll\vorbis.dll $(SolutionDir)runtimed
-copy dll\vorbisfile.dll $(SolutionDir)runtimed
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)
+xcopy /f /y dll\freeglut.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\OpenAL32.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\ogg.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\vorbis.dll $(TorcsRuntimeDir)
+xcopy /f /y dll\vorbisfile.dll $(TorcsRuntimeDir)
 </Command>
     </PostBuildEvent>
     <Manifest>

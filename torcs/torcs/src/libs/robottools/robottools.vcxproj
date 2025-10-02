@@ -107,9 +107,8 @@
       <OutputFile>.\Release/robottools.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtime
-copy $(TargetDir)*.lib $(SolutionDir)export\lib
-</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\lib</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -166,9 +165,8 @@ copy $(TargetDir)*.lib $(SolutionDir)export\lib
       <OutputFile>.\Debug/robottools.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtimed
-copy $(TargetDir)*.lib $(SolutionDir)export\libd
-</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\libd</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -113,7 +113,7 @@
       <OutputFile>.\Debug/human.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtimed\drivers\human</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)drivers\$(TargetName)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -166,7 +166,7 @@
       <OutputFile>.\Release/human.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtime\drivers\human</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)drivers\$(TargetName)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -1,0 +1,10 @@
+<Project>
+  <!-- Custom global properties for all projects in this solution -->
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <TorcsRuntimeDir>$(SolutionDir)runtimed\</TorcsRuntimeDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <TorcsRuntimeDir>$(SolutionDir)runtime\</TorcsRuntimeDir>
+  </PropertyGroup>
+</Project>

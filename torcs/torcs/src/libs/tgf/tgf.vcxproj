@@ -107,8 +107,8 @@
       <OutputFile>.\Release/tgf.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll ..\..\..\runtime
-copy $(TargetDir)*.lib ..\..\..\export\lib
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\lib
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -165,9 +165,8 @@ copy $(TargetDir)*.lib ..\..\..\export\lib
       <OutputFile>.\Debug/tgf.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtimed
-copy $(TargetDir)*.lib $(SolutionDir)export\libd
-</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\libd</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

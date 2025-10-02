@@ -104,7 +104,7 @@
       <OutputFile>.\Debug/nfsperf.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)nfsperf.exe $(SolutionDir)runtimed</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -152,7 +152,7 @@
       <OutputFile>.\Release/nfsperf.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)nfsperf.exe $(SolutionDir)runtime</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

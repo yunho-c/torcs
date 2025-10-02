@@ -112,7 +112,7 @@
       <OutputFile>.\Debug/simuv2.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtimed\modules\simu</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -168,7 +168,7 @@
       <OutputFile>.\Release/simuv2.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtime\modules\simu</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

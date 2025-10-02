@@ -111,7 +111,7 @@
       <OutputFile>.\Release/damned.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtime\drivers\damned</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)drivers\$(TargetName)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -168,7 +168,7 @@
       <OutputFile>.\Debug/damned.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)*.dll $(SolutionDir)runtimed\drivers\damned</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)drivers\$(TargetName)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

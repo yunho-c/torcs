@@ -205,6 +205,9 @@ Changes since 1.3.8
 - Changed naming of precompiled libraries for Windows build, in preparation for having 64 bit
   libraries in a different folder, but with the same names (Bernhard).
 - Renamed TORCS_VS2022.sln to TORCS.sln (because of removal of other VS builds) (Bernhard).
+- Added Directory.Build.props to define $(TorcsRuntimeDir) depending on the build type,
+  either runtime (Release) or runtimed (Debug), adopted post build steps (Bernhard).
+- Replaced copy with xcopy in post build steps to get more verbose output (Bernhard).
 
  
 12. TODO/Notes

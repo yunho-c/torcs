@@ -95,7 +95,7 @@
       <OutputFile>.\Release/nfs2ac.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)nfs2ac.exe $(SolutionDir)runtime</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -142,7 +142,7 @@
       <OutputFile>.\Debug/nfs2ac.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>copy $(TargetDir)nfs2ac.exe $(SolutionDir)runtimed</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
