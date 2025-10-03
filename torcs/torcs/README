@@ -208,6 +208,7 @@ Changes since 1.3.8
 - Added Directory.Build.props to define $(TorcsRuntimeDir) depending on the build type,
   either runtime (Release) or runtimed (Debug), adopted post build steps (Bernhard).
 - Replaced copy with xcopy in post build steps to get more verbose output (Bernhard).
+- Prepared 64 bit libraries and dll's, except ALut and OpenAL, coming next (Bernhard).
 
  
 12. TODO/Notes
