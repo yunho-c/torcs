@@ -93,7 +93,10 @@ freealut (https://github.com/vancegroup/freealut, master from 2025-10-03)
 - cmake --install build32 --config Release
 - Modified alut.h for now, added "AL/..." in includes and defined "#define ALUT_BUILD_STATIC". Will be replaced with SDL, good enough for now.
 
-
+- 64 bit build with:
+- cmake -B build64 -G "Visual Studio 17 2022" -A x64 -DCMAKE_INSTALL_PREFIX=install64 -DBUILD_SHARED_LIBS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF -DOPENAL_INCLUDE_DIR=..\openal-soft-1.24.3-bin\include\AL -DOPENAL_LIBRARY=..\openal-soft-1.24.3-bin\libs\Win64\OpenAL32.lib -DCMAKE_C_FLAGS_RELEASE="/MT /O2 /DNDEBUG"
+- cmake --build build64 --config Release
+- cmake --install build64 --config Release
 
 
 
