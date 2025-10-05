@@ -212,6 +212,8 @@ Changes since 1.3.8
 - Updated OpenAL with open-soft 1.24.3, including libraries and headers for 32 bit,
   replaced ALut with FreeAlut (Bernhard).
 - Built and added 64 bit version of FreeALut (Bernhard).
+- Added initial 64 bit builds for Windows, select x64 as target in VS 2022. The build goes then
+  as with Win32 into runtime for Release, and into runtimed for Debug (Bernhard).
 
  
 12. TODO/Notes
@@ -219,8 +221,10 @@ Changes since 1.3.8
 
 TODO for 1.3.9
 --------------
-- 64 bit windows build
-- Integrate reworked 155-DTM  
+- Integrate reworked 155-DTM
+- Check out 64 bit VS 2022 build warnings, for whatever reason there are much more than with
+  gcc on Linux
+- Testing because of new libraries etc., 32 and 64 bit release build (release a -test1  first)
 
 Optional or later:
 - Use vs redistributable for heap mamagement (required rebuilding libraries and adoption
@@ -229,7 +233,10 @@ Optional or later:
 - Add unit test framework, probably gtest. Consider taking something which allows measuring
   test coverage with sonarkube/cloud.
 - Integrate plib build into TORCS build on Windows to reduce the hassle, maybe other libraries
-  too
+  too, use vcpkg (https://github.com/microsoft/vcpkg) or similar?
+- Eventually get rifd of learning64.def
+- Define some more lib output and other paths properly, maybe after getting rid of 32 bit build?
+
   
 
 TODO for 1.3.10 "analysed"

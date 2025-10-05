@@ -41,6 +41,9 @@
     <None Include="learning.def">
       <Filter>Quellcodedateien</Filter>
     </None>
+    <None Include="learning64.def">
+      <Filter>Quellcodedateien</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ANN.h">
