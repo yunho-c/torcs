@@ -64,8 +64,8 @@
 
   <section name="Engine">
     <attnum name="inertia" min=".2" max="1.0" unit="kg.m2" val="0.20"/>
-    <attnum name="revs maxi" min="3000" max="10000" unit="rpm" val="3000"/>
-    <attnum name="revs limiter" min="3000" max="9500" unit="rpm" val="3000"/>
+    <attnum name="revs maxi" min="3000" max="15000" unit="rpm" val="3000"/>
+    <attnum name="revs limiter" min="3000" max="15000" unit="rpm" val="3000"/>
     <attnum name="tickover" min="500" max="3000" unit="rpm" val="500"/>
     <attnum name="fuel cons factor" min="1.0" max="2.0" val="1.0"/>
 
@@ -355,7 +355,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5500"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.41"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="packers" min="0" max="30" unit="mm" val="0"/>
+    <attnum name="packers" min="0" max="60" unit="mm" val="0"/>
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50"/>
@@ -368,7 +368,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5500"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.41"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="packers" min="0" max="30" unit="mm" val="0"/>
+    <attnum name="packers" min="0" max="60" unit="mm" val="0"/>
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50"/>
@@ -381,7 +381,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5500"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.41"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="packers" min="0" max="30" unit="mm" val="0"/>
+    <attnum name="packers" min="0" max="60" unit="mm" val="0"/>
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50"/>
@@ -394,7 +394,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5500"/>
     <attnum name="suspension course" min="0" max="1" unit="m" val="0.41"/>
     <attnum name="bellcrank" min="0.1" max="5" val="1"/>
-    <attnum name="packers" min="0" max="30" unit="mm" val="0"/>
+    <attnum name="packers" min="0" max="60" unit="mm" val="0"/>
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200"/>
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50"/>

@@ -214,6 +214,7 @@ Changes since 1.3.8
 - Built and added 64 bit version of FreeALut (Bernhard).
 - Added initial 64 bit builds for Windows, select x64 as target in VS 2022. The build goes then
   as with Win32 into runtime for Release, and into runtimed for Debug (Bernhard).
+- Complete rework of 155-DTM (Philipp Körber, Bernhard). 
 
  
 12. TODO/Notes
@@ -221,7 +222,6 @@ Changes since 1.3.8
 
 TODO for 1.3.9
 --------------
-- Integrate reworked 155-DTM
 - Check out 64 bit VS 2022 build warnings, for whatever reason there are much more than with
   gcc on Linux
 - Testing because of new libraries etc., 32 and 64 bit release build (release a -test1  first)
