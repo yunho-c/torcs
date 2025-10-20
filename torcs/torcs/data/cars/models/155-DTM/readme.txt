@@ -3,7 +3,7 @@ Sports car model
 accc +es 0 155-DTM-src.ac 155-DTM.acc
 
 --
-Copyright 2025 Philipp Körber, Bernhard Wymann ,rework inspired by model from  Andrea Alfieri
+Copyright 2025 Philipp Körber, Bernhard Wymann, rework inspired by model from  Andrea Alfieri
 Reused parts Copyright © 2005 Olaf Saßnick, Bernhard Wymann
 
 Copyleft: this work of art is free, you can redistribute
