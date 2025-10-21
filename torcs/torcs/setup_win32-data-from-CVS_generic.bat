@@ -175,9 +175,9 @@ if exist .\data\cars\models\155-DTM\155-DTM.rgb copy .\data\cars\models\155-DTM\
 if exist .\data\cars\models\155-DTM\tex-wheel.rgb copy .\data\cars\models\155-DTM\tex-wheel.rgb .\%RUNTIMEDIR%\cars\155-DTM\tex-wheel.rgb
 if exist .\data\cars\models\155-DTM\shadow.rgb copy .\data\cars\models\155-DTM\shadow.rgb .\%RUNTIMEDIR%\cars\155-DTM\shadow.rgb
 if exist .\data\cars\models\155-DTM\155-DTM.acc copy .\data\cars\models\155-DTM\155-DTM.acc .\%RUNTIMEDIR%\cars\155-DTM\155-DTM.acc
-if exist .\data\cars\models\155-DTM\155-DTM-lod1.acc copy .\data\cars\models\155-DTM\155-DTM-lod1.acc .\%RUNTIMEDIR%\cars\155-DTM\155-DTM-lod1.acc
-if exist .\data\cars\models\155-DTM\155-DTM-lod2.acc copy .\data\cars\models\155-DTM\155-DTM-lod2.acc .\%RUNTIMEDIR%\cars\155-DTM\155-DTM-lod2.acc
 if exist .\data\cars\models\155-DTM\readme.txt copy .\data\cars\models\155-DTM\readme.txt .\%RUNTIMEDIR%\cars\155-DTM\readme.txt
+if exist .\data\cars\models\155-DTM\driver.rgb copy .\data\cars\models\155-DTM\driver.rgb .\%RUNTIMEDIR%\cars\155-DTM\driver.rgb
+
 
 if exist .\data\cars\models\car1-trb1\*.* call .\create_dir .\%RUNTIMEDIR%
 if exist .\data\cars\models\car1-trb1\*.* call .\create_dir .\%RUNTIMEDIR%\cars

@@ -87,14 +87,13 @@ Section "Base System" SEC01
   SetOverwrite try
   
   SetOutPath "$INSTDIR\cars\155-DTM"
-  File "base\cars\155-DTM\155-DTM-lod1.acc"
-  File "base\cars\155-DTM\155-DTM-lod2.acc"
   File "base\cars\155-DTM\155-DTM.acc"
   File "base\cars\155-DTM\155-DTM.rgb"
   File "base\cars\155-DTM\155-DTM.xml"
   File "base\cars\155-DTM\readme.txt"
   File "base\cars\155-DTM\shadow.rgb"
   File "base\cars\155-DTM\tex-wheel.rgb"
+  File "base\cars\155-DTM\driver.rgb"
   
   SetOutPath "$INSTDIR\cars\acura-nsx-sz"
   File "base\cars\acura-nsx-sz\acura-nsx-sz-lod1.acc"

@@ -2,9 +2,8 @@
 #
 #    file                 : Makefile
 #    created              : Sun Feb 18 21:02:29 /etc/localtime 2001
-#    copyright            : (C) 2000 by Eric Espié                        
-#    email                : Eric.Espie@torcs.org   
-#    version              : $Id$                                  
+#    copyright            : (C) 2000-2025 by Eric Espié, Bernhard Wymann                        
+#    email                : berniw@bluewin.ch
 #
 ##############################################################################
 #
@@ -20,7 +19,7 @@ CAR       = 155-DTM
 DATADIR   = cars/155-DTM
 
 DATA      = $(CAR).xml readme.txt \
-            $(CAR).rgb tex-wheel.rgb shadow.rgb \
+            $(CAR).rgb tex-wheel.rgb shadow.rgb driver.rgb \
 	    $(shell find *.acc -maxdepth 0 -type f -print)
 
 data-cars-extra_PKGFILES	= $(DATA) $(shell find *.xcf -maxdepth 0 -type f -print)
