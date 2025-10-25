@@ -389,7 +389,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5000" />
     <attnum name="suspension course" unit="m" val="0.2" />
     <attnum name="bellcrank" min="1" max="2" val="1" />
-    <attnum name="packers" min="0" max="50" unit="mm" val="20" />
+    <attnum name="packers" min="37" max="50" unit="mm" val="37" />
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="300" />
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200" />
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50" />
@@ -402,7 +402,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5000" />
     <attnum name="suspension course" unit="m" val="0.2" />
     <attnum name="bellcrank" min="1" max="2" val="1" />
-    <attnum name="packers" min="0" max="50" unit="mm" val="20" />
+    <attnum name="packers" min="37" max="50" unit="mm" val="37" />
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="300" />
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200" />
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50" />
@@ -415,7 +415,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5000" />
     <attnum name="suspension course" unit="m" val="0.2" />
     <attnum name="bellcrank" min="1" max="2" val="1" />
-    <attnum name="packers" min="0" max="50" unit="mm" val="20" />
+    <attnum name="packers" min="30" max="50" unit="mm" val="30" />
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="300" />
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200" />
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50" />
@@ -428,7 +428,7 @@
     <attnum name="spring" min="500" max="10000" unit="lbs/in" val="5000" />
     <attnum name="suspension course" unit="m" val="0.2" />
     <attnum name="bellcrank" min="1" max="2" val="1" />
-    <attnum name="packers" min="0" max="50" unit="mm" val="20" />
+    <attnum name="packers" min="30" max="50" unit="mm" val="30" />
     <attnum name="slow bump" min="50" max="1000" unit="lbs/in/s" val="300" />
     <attnum name="slow rebound" min="50" max="1000" unit="lbs/in/s" val="200" />
     <attnum name="fast bump" min="10" max="200" unit="lbs/in/s" val="50" />
