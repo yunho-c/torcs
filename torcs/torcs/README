@@ -214,7 +214,9 @@ Changes since 1.3.8
 - Built and added 64 bit version of FreeALut (Bernhard).
 - Added initial 64 bit builds for Windows, select x64 as target in VS 2022. The build goes then
   as with Win32 into runtime for Release, and into runtimed for Debug (Bernhard).
-- Complete rework of 155-DTM (Philipp Körber, Bernhard). 
+- Complete rework of 155-DTM (Philipp Körber, Bernhard).
+- Fix for track normal calculations in pathological cases with broken geometry, specific for
+  track ole-dirt (Bernhard).
 
  
 12. TODO/Notes

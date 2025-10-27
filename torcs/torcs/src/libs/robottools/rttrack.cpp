@@ -551,8 +551,10 @@ RtTrackSurfaceNormalL(tTrkLocPos *p, t3Dd *norm)
 	t3Dd v1, v2;
 	tdble lg;
 
+	// Get to vectors, and calculate normal from the cross product.
 	p1.seg = p->seg;
 
+	// Points for vector along the track with points px1, px2
 	p1.toStart = 0;
 	p1.toRight = p->toRight;
 	RtTrackLocal2Global(&p1, &px1.x, &px1.y, TR_TORIGHT);
@@ -567,19 +569,33 @@ RtTrackSurfaceNormalL(tTrkLocPos *p, t3Dd *norm)
 	RtTrackLocal2Global(&p1, &px2.x, &px2.y, TR_TORIGHT);
 	px2.z = RtTrackHeightL(&p1);
 
+	// Points for vector to the side of the track
+	// Determine if we take the vector on the start or end of the segment, for cases
+	// where start width or end width is 0. Does usually not matter, except on special
+	// cases like test tracks like ole-dirt
+	tdble width;
+	if (p1.seg->endWidth > p1.seg->startWidth) {
+		p1.toStart = p->toStart;
+		width = p1.seg->endWidth;
+	} else {
+		p1.toStart = 0;
+		width = p1.seg->startWidth;
+	}
+
 	p1.toRight = 0;
-	p1.toStart = p->toStart;
 	RtTrackLocal2Global(&p1, &py1.x, &py1.y, TR_TORIGHT);
 	py1.z = RtTrackHeightL(&p1);
 
-	p1.toRight = p1.seg->width;
+	p1.toRight = width;
 	RtTrackLocal2Global(&p1, &py2.x, &py2.y, TR_TORIGHT);
 	py2.z = RtTrackHeightL(&p1);
 
-
+	// Vector along the track with points px1, px2
 	v1.x = px2.x - px1.x;
 	v1.y = px2.y - px1.y;
 	v1.z = px2.z - px1.z;
+	
+	// Vector to the side of the track py1, py2
 	v2.x = py2.x - py1.x;
 	v2.y = py2.y - py1.y;
 	v2.z = py2.z - py1.z;
