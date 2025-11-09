@@ -69,6 +69,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		installer\windows\torcs.nsi = installer\windows\torcs.nsi
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "googletest", "test\libs\googletest\googletest.vcxproj", "{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -285,6 +287,14 @@ Global
 		{31CA578B-13CA-4640-8D1A-95ED57C026A2}.Release|Win32.Build.0 = Release|Win32
 		{31CA578B-13CA-4640-8D1A-95ED57C026A2}.Release|x64.ActiveCfg = Release|x64
 		{31CA578B-13CA-4640-8D1A-95ED57C026A2}.Release|x64.Build.0 = Release|x64
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Debug|Win32.Build.0 = Debug|Win32
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Debug|x64.ActiveCfg = Debug|x64
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Debug|x64.Build.0 = Debug|x64
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Release|Win32.ActiveCfg = Release|Win32
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Release|Win32.Build.0 = Release|Win32
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Release|x64.ActiveCfg = Release|x64
+		{D3F7E9A4-6BA7-40F6-99AD-59A70E8109E8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
