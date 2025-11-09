@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="googlemock\src\gmock-all.cc" />
     <ClCompile Include="googletest\src\gtest-all.cc" />
     <ClCompile Include="googletest\src\gtest_main.cc" />
   </ItemGroup>
@@ -96,7 +97,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googlemock;$(SolutionDir)test\libs\googletest\googlemock\include;$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -119,7 +120,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googlemock;$(SolutionDir)test\libs\googletest\googlemock\include;$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
@@ -140,7 +141,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googlemock;$(SolutionDir)test\libs\googletest\googlemock\include;$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -163,7 +164,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)test\libs\googletest\googlemock;$(SolutionDir)test\libs\googletest\googlemock\include;$(SolutionDir)test\libs\googletest\googletest;$(SolutionDir)test\libs\googletest\googletest\include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>

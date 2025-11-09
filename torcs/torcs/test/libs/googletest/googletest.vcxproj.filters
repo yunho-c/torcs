@@ -21,5 +21,8 @@
     <ClCompile Include="googletest\src\gtest_main.cc">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="googlemock\src\gmock-all.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
