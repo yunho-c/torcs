@@ -482,29 +482,22 @@ RtTrackSideNormalG(tTrackSeg *seg, tdble X, tdble Y, int side, t3Dd *norm)
 			}
 			break;
 		case TR_RGT:
-			if (side == TR_LFT) {
-				norm->x = seg->center.x - X;
-				norm->y = seg->center.y - Y;
-			} else {
+		case TR_LFT:
+			// For curved segments: same side as curve direction = outward, opposite side = inward
+			if (side == seg->type) {
+				// outward: pos - center
 				norm->x = X - seg->center.x;
 				norm->y = Y - seg->center.y;
+			} else {
+				// inward: center - pos
+				norm->x = seg->center.x - X;
+				norm->y = seg->center.y - Y;
 			}
+
 			lg = 1.0 / sqrt(norm->x * norm->x + norm->y * norm->y);
 			norm->x *= lg;
 			norm->y *= lg;
 			break;
-		case TR_LFT:
-			if (side == TR_RGT) {
-				norm->x = seg->center.x - X;
-				norm->y = seg->center.y - Y;   
-			} else {
-				norm->x = X - seg->center.x;
-				norm->y = Y - seg->center.y;
-			}
-			lg = 1.0 / sqrt(norm->x * norm->x + norm->y * norm->y);
-			norm->x *= lg;
-			norm->y *= lg;
-		break;
 	}
 }
 

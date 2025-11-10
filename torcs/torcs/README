@@ -219,6 +219,9 @@ Changes since 1.3.8
   track ole-dirt (Bernhard).
 - Updated version number to 1.3.9-test1 (Bernhard).
 - Added googletest 1.17.0 for future unit tests (Bernhard).
+- Added proof of concept for normal and parameterized tests, see robottools_test
+  project (Berhard).
+- Litte refactoring of RtTrackSideNormalG (Bernhard).
 
  
 12. TODO/Notes
