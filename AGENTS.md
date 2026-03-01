@@ -47,18 +47,65 @@ Compiler flags: `-Wall -fPIC -fno-strict-aliasing -O2`. Debug adds `-g -DDEBUG`.
 
 ### Windows (Visual Studio 2022)
 
+- Solution file: `torcs/torcs/TORCS.sln`
+- Setup release: `setup_win32.bat` then `setup_win32-data-from-CVS.bat`
+- Setup debug: `setup_win32_debug.bat` then `setup_win32-data-from-CVS_debug.bat`
+- Open `TORCS.sln` and build `Win32-Release` or `Win32-Debug`
+- x64 builds are supported; select `x64` platform in VS
+- Runtime output: `runtime\wtorcs.exe` (Release), `runtimed\wtorcs.exe` (Debug)
+- Configurations: Debug|Win32, Debug|x64, Release|Win32, Release|x64
+- Platform toolset: v143. Target: 0 build warnings.
+- Output directories: `runtime/` (Release), `runtimed/` (Debug).
+
+**IMPORTANT - MSBuild from the command line:**
+
+For detailed build and test commands, load the `build-torcs` skill.
+
+MSBuild is NOT in PATH. The full path is:
+`C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe`
+
+The Bash tool in OpenCode runs commands through `/usr/bin/bash`, even on Windows.
+This causes problems with MSBuild because bash misinterprets `/p:` switches as
+paths and mangles backslashes. **You MUST use `powershell -Command`** to invoke
+MSBuild so that stdout/stderr is properly captured. Do NOT use `cmd /C` because
+it swallows all output and you cannot verify build success or failure.
+
+Use the `workdir` parameter to set the working directory to `torcs/torcs/`.
+Use the exact command templates below (copy-paste, do not reformulate).
+Use `timeout: 600000` for build commands.
+
+**Build Release x64:**
 ```
-cd torcs\torcs\
-setup_win32.bat                    # Release setup
-setup_win32-data-from-CVS.bat      # Copy data for Release
-setup_win32_debug.bat              # Debug setup
-setup_win32-data-from-CVS_debug.bat # Copy data for Debug
+powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Release /p:Platform=x64 2>&1"
+```
+workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+
+**Build Release Win32:**
+```
+powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Release /p:Platform=Win32 2>&1"
+```
+workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+
+**Build Debug x64:**
+```
+powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Debug /p:Platform=x64 2>&1"
+```
+workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+
+**Clean before build** (add `/t:Clean` as a separate step first):
+```
+powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /t:Clean /p:Configuration=Release /p:Platform=x64 2>&1"
 ```
 
-Open `TORCS.sln` in VS 2022. Configurations: Debug|Win32, Debug|x64,
-Release|Win32, Release|x64. Platform toolset: v143. Target: 0 build warnings.
-
-Output directories: `runtime/` (Release), `runtimed/` (Debug).
+**General pattern:**
+```
+powershell -Command "& '<full-path-to-MSBuild.exe>' <project-or-sln> /p:Configuration=<cfg> /p:Platform=<plat> 2>&1"
+```
+- The `& '...'` syntax invokes the executable with spaces in the path.
+- The `2>&1` ensures stderr is also captured.
+- Use `workdir` parameter instead of `cd`.
+- Verify output ends with `0 Fehler` (0 errors). If output is empty or only
+  shows a Windows version banner, the command failed silently.
 
 ### Running TORCS
 
@@ -74,20 +121,31 @@ Key CLI flags: `-s` disable multitexturing, `-r <config.xml>` run headless race,
 ## Testing
 
 ### Unit Tests (Google Test 1.17.0)
-
-Tests are in `test/libs/`. Currently `robottools_test/` contains tests for
-`RtTrackSideNormalG()` plus a gtest setup verification test.
+- There is no `make test` target in the top-level Makefile
+- GTest project: `test\libs\robottools_test\robottools_test.vcxproj` (Windows build)
+- Run a single test: `robottools_test.exe --gtest_filter=Suite.TestName`
+- Run a test group: `robottools_test.exe --gtest_filter=Suite.*`
+- Trackgen regression data: `test/trackgen/generate.sh` (Linux shell script)
 
 Built as standalone VS 2022 console executables (`robottools_test.vcxproj`).
 C++ standard: C++17 for test projects. Tests link against `googletest.lib`,
 `robottools.lib`, `tgf.lib`.
 
-**Run all tests:** Execute the built test binary directly (standard gtest runner).
+**IMPORTANT - Test binary output paths:** The test executable is output to
+`x64\Release\robottools_test.exe` (or `Win32\Release\` etc.) relative to the
+solution root (`torcs\torcs\`), NOT inside the test project subdirectory.
+
+**Run all tests:** Call the binary directly from bash (do NOT use `cmd /C`,
+which swallows stdout). Use `workdir` set to `torcs\torcs\`:
+```
+x64/Release/robottools_test.exe
+```
+workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
 
 **Run a single test** (gtest filter):
 ```
-robottools_test.exe --gtest_filter=RtTrackSideNormalGTest.StraightSegment_RightSideUsesRgtSideNormal
-robottools_test.exe --gtest_filter=RtTrackSideNormalGCurveTest.*
+x64/Release/robottools_test.exe --gtest_filter=RtTrackSideNormalGTest.StraightSegment_RightSideUsesRgtSideNormal
+x64/Release/robottools_test.exe --gtest_filter=RtTrackSideNormalGCurveTest.*
 ```
 
 ### Trackgen Regression Tests
