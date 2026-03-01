@@ -47,12 +47,23 @@ Compiler flags: `-Wall -fPIC -fno-strict-aliasing -O2`. Debug adds `-g -DDEBUG`.
 
 ### Windows (Visual Studio 2022)
 
+- From `torcs/torcs`
+- Setup release: `setup_win32.bat` then `setup_win32-data-from-CVS.bat`
+- Setup debug: `setup_win32_debug.bat` then `setup_win32-data-from-CVS_debug.bat`
+- Open `TORCS.sln` and build `Win32-Release` or `Win32-Debug`
+- x64 builds are supported; select `x64` platform in VS
+- Runtime output: `runtime\wtorcs.exe` (Release), `runtimed\wtorcs.exe` (Debug)
+- MSBuild example (Release Win32): `msbuild TORCS.sln /p:Configuration=Release /p:Platform=Win32`
+- MSBuild example (Release x64): `msbuild TORCS.sln /p:Configuration=Release /p:Platform=x64`
+- MSBuild is not in the path, is is located at "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe"
+
 ```
 cd torcs\torcs\
 setup_win32.bat                    # Release setup
 setup_win32-data-from-CVS.bat      # Copy data for Release
 setup_win32_debug.bat              # Debug setup
 setup_win32-data-from-CVS_debug.bat # Copy data for Debug
+msbuild TORCS.sln /p:Configuration=Release /p:Platform=x64
 ```
 
 Open `TORCS.sln` in VS 2022. Configurations: Debug|Win32, Debug|x64,
@@ -74,9 +85,12 @@ Key CLI flags: `-s` disable multitexturing, `-r <config.xml>` run headless race,
 ## Testing
 
 ### Unit Tests (Google Test 1.17.0)
-
-Tests are in `test/libs/`. Currently `robottools_test/` contains tests for
-`RtTrackSideNormalG()` plus a gtest setup verification test.
+- There is no `make test` target in the top-level Makefile
+- GTest project: `test\libs\robottools_test\robottools_test.vcxproj` (Windows build)
+- Run all tests (after building): `x64\Release\robottools_test.exe` or `Win32\Release\robottools_test.exe`
+- Run a single test: `robottools_test.exe --gtest_filter=Suite.TestName`
+- Run a test group: `robottools_test.exe --gtest_filter=Suite.*`
+- Trackgen regression data: `test/trackgen/generate.sh` (Linux shell script)
 
 Built as standalone VS 2022 console executables (`robottools_test.vcxproj`).
 C++ standard: C++17 for test projects. Tests link against `googletest.lib`,
