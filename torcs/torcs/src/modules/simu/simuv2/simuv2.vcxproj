@@ -157,7 +157,8 @@
       <OutputFile>.\Debug/simuv2.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\libd</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -214,7 +215,8 @@
       <OutputFile>.\Debug/simuv2.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\libd</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -270,7 +272,8 @@
       <OutputFile>.\Release/simuv2.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\lib</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -326,7 +329,8 @@
       <OutputFile>.\Release/simuv2.bsc</OutputFile>
     </Bscmake>
     <PostBuildEvent>
-      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu</Command>
+      <Command>xcopy /f /y $(TargetPath) $(TorcsRuntimeDir)modules\simu
+xcopy /f /y $(TargetDir)*.lib $(SolutionDir)export\lib</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
