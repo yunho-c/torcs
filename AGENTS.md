@@ -77,6 +77,7 @@ Use `timeout: 600000` for build commands.
 **Build Release x64:**
 ```
 powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Release /p:Platform=x64 2>&1"
+msbuild TORCS.sln /p:Configuration=Release /p:Platform=x64
 ```
 workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
 
