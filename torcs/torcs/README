@@ -222,6 +222,9 @@ Changes since 1.3.8
 - Added proof of concept for normal and parameterized tests, see robottools_test
   project (Berhard).
 - Litte refactoring of RtTrackSideNormalG (Bernhard).
+- Added unittests for simuv2/susp.cpp (Bernhard).
+- Added AGENTS.md and build skill for open code (Bernhard).
+- Added unittests for simuv2/brake.cpp (Bernhard).
 
  
 12. TODO/Notes
