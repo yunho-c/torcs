@@ -2,9 +2,8 @@
 
     file                 : engine.cpp
     created              : Sun Mar 19 00:06:55 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
 ***************************************************************************/
 
@@ -67,13 +66,13 @@ SimEngineConfig(tCar *car)
 		data = &(car->engine.curve.data[i]);
 		
 		data->rads = edesc[i+1].rpm;
-		if ((data->rads>=car->engine.tickover)
+		if ((data->rads >= car->engine.tickover)
 			&& (edesc[i+1].tq > maxTq)
 			&& (data->rads < car->engine.revsLimiter)) {
 			maxTq = edesc[i+1].tq;
 			rpmMaxTq = data->rads;
 		}
-		if ((data->rads>=car->engine.tickover)
+		if ((data->rads >= car->engine.tickover)
 			&& (data->rads * edesc[i+1].tq > car->engine.curve.maxPw)
 			&& (data->rads < car->engine.revsLimiter)) {
 			car->engine.curve.TqAtMaxPw = edesc[i+1].tq;
@@ -81,6 +80,18 @@ SimEngineConfig(tCar *car)
 			car->engine.curve.rpmMaxPw = data->rads;
 		}
 	
+		/* Precompute the straight-line equation for the torque curve between the current map point and the next one.
+		 * For the segment [rpm_i, rpm_(i+1)], torque is interpolated as:
+		 *
+		 *     T(rpm) = a * rpm + b
+		 *
+		 * where:
+		 *     a = slope of the segment
+		 *     b = intercept chosen so that the line passes through point i
+		 *
+		 * This lets SimEngineUpdateTq() evaluate the maximum engine torque quickly
+		 * at runtime without recomputing the interpolation formula in every timestep.
+		 */
 		data->a = (edesc[i+1].tq - edesc[i].tq) / (edesc[i+1].rpm - edesc[i].rpm);
 		data->b = edesc[i].tq - data->a * edesc[i].rpm;
 	}
@@ -119,11 +130,11 @@ SimEngineUpdateTq(tCar *car)
 				tdble Tmax = engine->rads * curve->data[i].a + curve->data[i].b;
 				tdble EngBrkK = engine->brakeCoeff * (engine->rads - engine->tickover) / (engine->revsMax - engine->tickover);
 		
-				engine->Tq = Tmax * (car->ctrl->accelCmd * (1.0 + EngBrkK) - EngBrkK);
+				engine->Tq = Tmax * (car->ctrl->accelCmd * (1.0f + EngBrkK) - EngBrkK);
 				// Engines comsume always fuel (needed for keeping the process running, inner friction,
 				// braking, accelerating pistons, etc.
 				// TODO: Evaluate if it is worth implementing it.
-				car->fuel -= fabs(engine->Tq) * engine->rads * engine->fuelcons * 0.0000001 * SimDeltaTime;
+				car->fuel -= (tdble) fabs(engine->Tq) * engine->rads * engine->fuelcons * 0.0000001f * SimDeltaTime;
 				if (car->fuel <= 0.0) {
 					car->fuel = 0.0;
 				}
@@ -169,8 +180,8 @@ SimEngineUpdateRpm(tCar *car, tdble axleRpm)
 	{
 		tdble dp = engine->pressure;
 		engine->pressure = engine->pressure*0.9f + 0.1f*engine->Tq;
-		dp = (0.001f*fabs(engine->pressure - dp));
-		dp = fabs(dp);
+		dp = (0.001f* (tdble) fabs(engine->pressure - dp));
+		dp = (tdble) fabs(dp);
 		tdble rth = urandom();
 		if (dp > rth) {
 			engine->exhaust_pressure += rth;
