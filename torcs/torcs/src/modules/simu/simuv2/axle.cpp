@@ -2,9 +2,8 @@
 
     file                 : axle.cpp
     created              : Sun Mar 19 00:05:09 CET 2000
-    copyright            : (C) 2000-2016 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -42,8 +41,8 @@ void SimAxleConfig(tCar *car, int index)
 		axle->arbSuspSpringK = GfParmGetNum(hdle, SECT_REARARB, PRM_SPR, (char*)NULL, 0.0f);
 	}
 	
-	car->wheel[index*2].feedBack.I += axle->I / 2.0;
-	car->wheel[index*2+1].feedBack.I += axle->I / 2.0;
+	car->wheel[index*2].feedBack.I += axle->I / 2.0f;
+	car->wheel[index*2+1].feedBack.I += axle->I / 2.0f;
 }
 
 

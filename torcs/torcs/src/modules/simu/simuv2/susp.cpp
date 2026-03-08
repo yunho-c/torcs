@@ -44,11 +44,14 @@ static tdble damperForce(tSuspension *susp)
 	tdble     f;
 	tdble     av;
 	tdble     v;
+	
+	// limit for damper velocity
+	const tdble SUSP_DAMPER_MAX_VELOCITY = 10.0f; // [m/s]
 
 	v = susp->v;
 	
-	if (fabs(v) > 10.0f) {
-		v = SIGN(v) * 10.0f;
+	if (fabs(v) > SUSP_DAMPER_MAX_VELOCITY) {
+		v = (tdble) SIGN(v) * SUSP_DAMPER_MAX_VELOCITY;
 	}
 	
 	if (v < 0.0f) {
@@ -59,14 +62,14 @@ static tdble damperForce(tSuspension *susp)
 		dampdef = &(susp->damper.bump);
 	}
 	
-	av = fabs(v);
+	av = (tdble) fabs(v);
 	if (av < dampdef->v1) {
 		f = (dampdef->C1 * av);
 	} else {
 		f = (dampdef->C2 * av + dampdef->b2);
 	}
 	
-	f *= SIGN(v);
+	f *= (tdble) SIGN(v);
 	
 	return f;
 }

@@ -23,9 +23,9 @@
     SimBrakeUpdate computes:
     1. Brake torque: Tq = coeff * pressure
     2. Temperature model:
-       - Cooling: temp -= |vel.x| * 0.0001 + 0.0002
+       - Cooling: temp -= (|vel.x| * 0.01 + 0.1) * SimDeltaTime
        - Clamp low: temp = max(temp, 0)
-       - Heating: temp += pressure * radius * |spinVel| * 5e-11
+       - Heating: temp += (pressure * radius * |spinVel| * 2.5e-8) * SimDeltaTime
        - Clamp high: temp = min(temp, 1.0)
 
     Tests are split into two groups: torque tests and temperature tests.
@@ -35,6 +35,15 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include "brake_test_helpers.h"
+
+
+static void runSimBrakeUpdate(tCar* car, tWheel* wheel, tBrake* brake, tdble dt = 0.002f)
+{
+	tdble prevDt = SimDeltaTime;
+	SimDeltaTime = dt;
+	SimBrakeUpdate(car, wheel, brake);
+	SimDeltaTime = prevDt;
+}
 
 
 // ===========================================================================
@@ -47,7 +56,7 @@ TEST(SimBrakeUpdateTorqueTest, TorqueIsCoeffTimesPressure)
 	tWheel wheel = makeWheelForBrakeUpdate(0.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 5000000.0f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	EXPECT_NEAR(brake.Tq, 0.00024f * 5000000.0f, 1e-1f);
 }
@@ -59,7 +68,7 @@ TEST(SimBrakeUpdateTorqueTest, ZeroPressure_ZeroTorque)
 	tWheel wheel = makeWheelForBrakeUpdate(50.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	EXPECT_FLOAT_EQ(brake.Tq, 0.0f);
 }
@@ -71,7 +80,7 @@ TEST(SimBrakeUpdateTorqueTest, ZeroCoeff_ZeroTorque)
 	tWheel wheel = makeWheelForBrakeUpdate(50.0f);
 	tBrake brake = makeBrake(0.0f, 0.13f, 0.15f, 5000000.0f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	EXPECT_FLOAT_EQ(brake.Tq, 0.0f);
 }
@@ -85,7 +94,7 @@ TEST(SimBrakeUpdateTorqueTest, HighPressure_HighTorque)
 	tdble pressure = 10000000.0f;
 	tBrake brake = makeBrake(coeff, 0.13f, 0.15f, pressure);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	EXPECT_NEAR(brake.Tq, coeff * pressure, 1e-1f);
 }
@@ -102,7 +111,7 @@ TEST(SimBrakeUpdateTempTest, ColdBrake_NoPressure_StaysCold)
 	tWheel wheel = makeWheelForBrakeUpdate(0.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.0f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	// Cooling: temp -= 0 * 0.0001 + 0.0002 = -0.0002, clamped to 0
 	EXPECT_FLOAT_EQ(brake.temp, 0.0f);
@@ -115,12 +124,12 @@ TEST(SimBrakeUpdateTempTest, HotBrake_NoPressure_Cools)
 	tWheel wheel = makeWheelForBrakeUpdate(100.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.5f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
-	// Cooling: temp -= |50| * 0.0001 + 0.0002 = 0.0052
+	// Cooling: temp -= (|50| * 0.00002 + 0.0002) = 0.0012
 	// Heating: temp += 0 (no pressure)
-	// Expected: 0.5 - 0.0052 = 0.4948
-	EXPECT_NEAR(brake.temp, 0.4948f, 1e-5f);
+	// Expected: 0.5 - 0.0012 = 0.4988
+	EXPECT_NEAR(brake.temp, 0.4988f, 1e-5f);
 }
 
 
@@ -131,9 +140,9 @@ TEST(SimBrakeUpdateTempTest, CoolingClampedToZero)
 	tWheel wheel = makeWheelForBrakeUpdate(0.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.001f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
-	// Cooling: 0.001 - (100 * 0.0001 + 0.0002) = 0.001 - 0.0102 = -0.0092 -> clamped to 0
+	// Cooling: 0.001 - (100 * 0.00002 + 0.0002) = 0.001 - 0.0022 = -0.0012 -> clamped to 0
 	// Heating: 0 (no pressure)
 	EXPECT_FLOAT_EQ(brake.temp, 0.0f);
 }
@@ -147,7 +156,7 @@ TEST(SimBrakeUpdateTempTest, HeatingWithPressure)
 	tdble radius = 0.15f;
 	tBrake brake = makeBrake(0.00024f, 0.13f, radius, pressure, 0.0f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	// Cooling: 0 - (0 * 0.0001 + 0.0002) = -0.0002 -> clamped to 0
 	// Heating: 0 + 5000000 * 0.15 * |200| * 5e-11 = 0.0075
@@ -163,7 +172,7 @@ TEST(SimBrakeUpdateTempTest, TemperatureClampedToOne)
 	tdble radius = 0.20f;
 	tBrake brake = makeBrake(0.00024f, 0.13f, radius, pressure, 0.99f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	// Cooling: 0.99 - 0.0002 = 0.9898
 	// Heating: 0.9898 + 10000000 * 0.20 * 500 * 5e-11 = 0.9898 + 0.5 = 1.4898
@@ -178,7 +187,7 @@ TEST(SimBrakeUpdateTempTest, StationaryCar_CoolsSlower)
 	tWheel wheel = makeWheelForBrakeUpdate(0.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.5f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	// Cooling: 0.5 - (0 * 0.0001 + 0.0002) = 0.5 - 0.0002 = 0.4998
 	EXPECT_NEAR(brake.temp, 0.4998f, 1e-6f);
@@ -191,10 +200,10 @@ TEST(SimBrakeUpdateTempTest, FastCar_CoolsFaster)
 	tWheel wheel = makeWheelForBrakeUpdate(0.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.5f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
-	// Cooling: 0.5 - (80 * 0.0001 + 0.0002) = 0.5 - 0.0082 = 0.4918
-	EXPECT_NEAR(brake.temp, 0.4918f, 1e-5f);
+	// Cooling: 0.5 - (80 * 0.00002 + 0.0002) = 0.5 - 0.0018 = 0.4982
+	EXPECT_NEAR(brake.temp, 0.4982f, 1e-5f);
 }
 
 
@@ -204,7 +213,7 @@ TEST(SimBrakeUpdateTempTest, ZeroSpinVel_NoHeating)
 	tWheel wheel = makeWheelForBrakeUpdate(0.0f);
 	tBrake brake = makeBrake(0.00024f, 0.13f, 0.15f, 5000000.0f, 0.5f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	// Cooling: 0.5 - 0.0002 = 0.4998
 	// Heating: 5000000 * 0.15 * 0 * 5e-11 = 0
@@ -220,8 +229,8 @@ TEST(SimBrakeUpdateTempTest, NegativeSpinVel_AbsUsed)
 	tBrake brakePos = makeBrake(0.00024f, 0.13f, 0.15f, 5000000.0f, 0.0f);
 	tBrake brakeNeg = makeBrake(0.00024f, 0.13f, 0.15f, 5000000.0f, 0.0f);
 
-	SimBrakeUpdate(&car, &wheelPos, &brakePos);
-	SimBrakeUpdate(&car, &wheelNeg, &brakeNeg);
+	runSimBrakeUpdate(&car, &wheelPos, &brakePos);
+	runSimBrakeUpdate(&car, &wheelNeg, &brakeNeg);
 
 	EXPECT_FLOAT_EQ(brakePos.temp, brakeNeg.temp);
 }
@@ -235,8 +244,8 @@ TEST(SimBrakeUpdateTempTest, NegativeVelX_AbsUsed)
 	tBrake brakePos = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.5f);
 	tBrake brakeNeg = makeBrake(0.00024f, 0.13f, 0.15f, 0.0f, 0.5f);
 
-	SimBrakeUpdate(&carPos, &wheel, &brakePos);
-	SimBrakeUpdate(&carNeg, &wheel, &brakeNeg);
+	runSimBrakeUpdate(&carPos, &wheel, &brakePos);
+	runSimBrakeUpdate(&carNeg, &wheel, &brakeNeg);
 
 	EXPECT_FLOAT_EQ(brakePos.temp, brakeNeg.temp);
 }
@@ -253,11 +262,27 @@ TEST(SimBrakeUpdateTempTest, CoolingThenHeating_NetEffect)
 	tdble radius = 0.15f;
 	tBrake brake = makeBrake(0.00024f, 0.13f, radius, pressure, 0.0001f);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
-	// Cooling: 0.0001 - (10 * 0.0001 + 0.0002) = 0.0001 - 0.0012 = -0.0011 -> clamped to 0
+	// Cooling: 0.0001 - (10 * 0.00002 + 0.0002) = 0.0001 - 0.0004 = -0.0003 -> clamped to 0
 	// Heating: 0 + 5000000 * 0.15 * 200 * 5e-11 = 0.0075
 	EXPECT_NEAR(brake.temp, 0.0075f, 1e-6f);
+}
+
+
+TEST(SimBrakeUpdateTempTest, TemperatureStepScalesWithSimDeltaTime)
+{
+	tCar car = makeCarForBrakeUpdate(80.0f);
+	tWheel wheel = makeWheelForBrakeUpdate(120.0f);
+	tBrake brakeDt1 = makeBrake(0.00024f, 0.13f, 0.15f, 3000000.0f, 0.5f);
+	tBrake brakeDt2 = brakeDt1;
+
+	runSimBrakeUpdate(&car, &wheel, &brakeDt1, 0.001f);
+	runSimBrakeUpdate(&car, &wheel, &brakeDt2, 0.002f);
+
+	const tdble delta1 = brakeDt1.temp - 0.5f;
+	const tdble delta2 = brakeDt2.temp - 0.5f;
+	EXPECT_NEAR(delta2, 2.0f * delta1, 1e-6f);
 }
 
 
@@ -281,7 +306,7 @@ TEST_P(SimBrakeUpdateTempParamTest, TemperatureProducesExpectedResult)
 	tWheel wheel = makeWheelForBrakeUpdate(c.spinVel);
 	tBrake brake = makeBrake(0.00024f, 0.13f, c.radius, c.pressure, c.initialTemp);
 
-	SimBrakeUpdate(&car, &wheel, &brake);
+	runSimBrakeUpdate(&car, &wheel, &brake);
 
 	EXPECT_NEAR(brake.temp, c.expectedTemp, 1e-5f) << "case: " << c.name;
 }
@@ -289,11 +314,12 @@ TEST_P(SimBrakeUpdateTempParamTest, TemperatureProducesExpectedResult)
 
 /// Helper to compute expected temperature after one SimBrakeUpdate step.
 /// This mirrors the logic in brake.cpp exactly.
-static tdble computeExpectedTemp(tdble temp, tdble velX, tdble pressure, tdble radius, tdble spinVel)
+static tdble computeExpectedTemp(tdble temp, tdble velX, tdble pressure, tdble radius, tdble spinVel, tdble deltaTime = 0.002f)
 {
-	temp -= fabs(velX) * 0.0001f + 0.0002f;
+	const tdble timeScale = deltaTime / 0.002f;
+	temp -= (fabs(velX) * 0.00002f + 0.0002f) * timeScale;
 	if (temp < 0.0f) temp = 0.0f;
-	temp += pressure * radius * fabs(spinVel) * 0.00000000005f;
+	temp += (pressure * radius * fabs(spinVel) * 0.00000000005f) * timeScale;
 	if (temp > 1.0f) temp = 1.0f;
 	return temp;
 }

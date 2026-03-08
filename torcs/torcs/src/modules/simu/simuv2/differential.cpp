@@ -2,9 +2,8 @@
 
     file                 : differential.cpp
     created              : Sun Mar 19 00:06:33 CET 2000
-    copyright            : (C) 2000-2013 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -117,18 +116,18 @@ static void updateSpool(tCar *car, tDifferential *differential, int first)
 	ndot = SimDeltaTime * (DrTq - inTq) / I;
 	spinVel = differential->inAxis[0]->spinVel + ndot;
 	
-	BrTq = - SIGN(spinVel) * brkTq;
+	BrTq = - (tdble) SIGN(spinVel) * brkTq;
 	ndot = SimDeltaTime * BrTq / I;
 	
-	if (((ndot * spinVel) < 0.0) && (fabs(ndot) > fabs(spinVel))) {
+	if (((ndot * spinVel) < 0.0f) && (fabs(ndot) > fabs(spinVel))) {
 		ndot = -spinVel;
 	}
-	if ((spinVel == 0.0) && (ndot < 0.0)) ndot = 0;
+	if ((spinVel == 0.0f) && (ndot < 0.0f)) ndot = 0.0f;
 	
 	spinVel += ndot;
 	if (first) {
 		engineReaction = SimEngineUpdateRpm(car, spinVel);
-		if (engineReaction != 0.0) {
+		if (engineReaction != 0.0f) {
 			spinVel = engineReaction;
 		}
 	}
@@ -165,9 +164,9 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 	inTq0 = differential->inAxis[0]->Tq;
 	inTq1 = differential->inAxis[1]->Tq;
 
-	commomSpinVel = fabs(spinVel0) + fabs(spinVel1);
+	commomSpinVel = (tdble) (fabs(spinVel0) + fabs(spinVel1));
 	if (commomSpinVel != 0) {
-		tdble spdRatio = fabs(spinVel0 - spinVel1) / commomSpinVel;
+		tdble spdRatio = (tdble) fabs(spinVel0 - spinVel1) / commomSpinVel;
 		
 		switch (differential->type) {
 		case DIFF_FREE:				
@@ -194,7 +193,7 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 			spdRatioMax = differential->dSlipMax - DrTq * differential->dSlipMax / lockTq;
 			bias = 0.0f;
 			if (spdRatio > spdRatioMax) {
-				deltaSpd = (spdRatio - spdRatioMax) * commomSpinVel / 2.0;
+				deltaSpd = (spdRatio - spdRatioMax) * commomSpinVel / 2.0f;
 				if (spinVel0 > spinVel1) {
 					spinVel0 -= deltaSpd;
 					spinVel1 += deltaSpd;
@@ -215,21 +214,21 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 		case DIFF_VISCOUS_COUPLER:
 			if (spinVel0 >= spinVel1) {
 				DrTq0 = DrTq * differential->dTqMin;
-				DrTq1 = DrTq * (1 - differential->dTqMin);
+				DrTq1 = DrTq * (1.0f - differential->dTqMin);
 			} else {
-				deltaTq = differential->dTqMin + (1.0 - exp(-fabs(differential->viscosity * (spinVel0 - spinVel1)))) * differential->dTqMax;
+				deltaTq = differential->dTqMin + (1.0f - (tdble) exp(-fabs(differential->viscosity * (spinVel0 - spinVel1)))) * differential->dTqMax;
 				DrTq0 = DrTq * deltaTq;
-				DrTq1 = DrTq * (1 - deltaTq);
+				DrTq1 = DrTq * (1.0f - deltaTq);
 			}
 		
 			break;
 		default: /* NONE ? */
-			DrTq0 = DrTq1 = 0;
+			DrTq0 = DrTq1 = 0.0f;
 			break;
 		}
 	} else {
-		DrTq0 = DrTq / 2.0;
-		DrTq1 = DrTq / 2.0;
+		DrTq0 = DrTq / 2.0f;
+		DrTq1 = DrTq / 2.0f;
 	}
 	
 	ndot0 = SimDeltaTime * (DrTq0 - inTq0) / differential->outAxis[0]->I;
@@ -237,28 +236,28 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 	ndot1 = SimDeltaTime * (DrTq1 - inTq1) / differential->outAxis[1]->I;
 	spinVel1 += ndot1;
 
-	BrTq = - SIGN(spinVel0) * differential->inAxis[0]->brkTq;
+	BrTq = - (tdble) SIGN(spinVel0) * differential->inAxis[0]->brkTq;
 	ndot0 = SimDeltaTime * BrTq / differential->outAxis[0]->I;
-	if (((ndot0 * spinVel0) < 0.0) && (fabs(ndot0) > fabs(spinVel0))) {
+	if (((ndot0 * spinVel0) < 0.0f) && (fabs(ndot0) > fabs(spinVel0))) {
 		ndot0 = -spinVel0;
 	}
-	if ((spinVel0 == 0.0) && (ndot0 < 0.0)) ndot0 = 0;
+	if ((spinVel0 == 0.0f) && (ndot0 < 0.0f)) ndot0 = 0.0f;
 	spinVel0 += ndot0;
 	
-	BrTq = - SIGN(spinVel1) * differential->inAxis[1]->brkTq;
+	BrTq = - (tdble) SIGN(spinVel1) * differential->inAxis[1]->brkTq;
 	ndot1 = SimDeltaTime * BrTq / differential->outAxis[1]->I;
-	if (((ndot1 * spinVel1) < 0.0) && (fabs(ndot1) > fabs(spinVel1))) {
+	if (((ndot1 * spinVel1) < 0.0f) && (fabs(ndot1) > fabs(spinVel1))) {
 		ndot1 = -spinVel1;
 	}
-	if ((spinVel1 == 0.0) && (ndot1 < 0.0)) ndot1 = 0;
+	if ((spinVel1 == 0.0f) && (ndot1 < 0.0f)) ndot1 = 0.0f;
 	spinVel1 += ndot1;
 	
 	if (first) {
-		meanv = (spinVel0 + spinVel1) / 2.0;
+		meanv = (spinVel0 + spinVel1) / 2.0f;
 		engineReaction = SimEngineUpdateRpm(car, meanv);
-		if (meanv != 0.0) {
+		if (meanv != 0.0f) {
 			engineReaction = engineReaction / meanv;
-			if (engineReaction != 0.0) {
+			if (engineReaction != 0.0f) {
 				spinVel1 *= engineReaction;
 				spinVel0 *= engineReaction;
 			}

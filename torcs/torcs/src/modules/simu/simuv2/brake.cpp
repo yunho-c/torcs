@@ -2,7 +2,7 @@
 
     file                 : brake.cpp
     created              : Sun Mar 19 00:05:26 CET 2000
-    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
     email                : berniw@bluewin.ch
 
  ***************************************************************************/
@@ -25,7 +25,7 @@ void SimBrakeConfig(void *hdle, const char *section, tBrake *brake)
 	diam     = GfParmGetNum(hdle, section, PRM_BRKDIAM, (char*)NULL, 0.2f);
 	area     = GfParmGetNum(hdle, section, PRM_BRKAREA, (char*)NULL, 0.002f);
 	mu       = GfParmGetNum(hdle, section, PRM_MU, (char*)NULL, 0.30f);
-	brake->coeff = diam * 0.5 * area * mu;
+	brake->coeff = diam * 0.5f * area * mu;
 
 	brake->I = GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.13f);
 	brake->radius = diam/2.0f;
@@ -36,9 +36,11 @@ void SimBrakeUpdate(tCar *car, tWheel *wheel, tBrake *brake)
 {
 	brake->Tq = brake->coeff * brake->pressure;
 
-	brake->temp -= fabs(car->DynGC.vel.x) * 0.0001 + 0.0002;
+	const tdble cooling = ((tdble) fabs(car->DynGC.vel.x) * 0.01f + 0.1f) * SimDeltaTime;
+	brake->temp -= cooling;
 	if (brake->temp < 0 ) brake->temp = 0;
-	brake->temp += brake->pressure * brake->radius * fabs(wheel->spinVel) * 0.00000000005;
+	const tdble heating = (brake->pressure * brake->radius * (tdble) fabs(wheel->spinVel) * 2.5e-8f) * SimDeltaTime;
+	brake->temp += heating;
 	if (brake->temp > 1.0) brake->temp = 1.0;
 }
 
