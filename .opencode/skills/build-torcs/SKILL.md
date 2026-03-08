@@ -13,7 +13,7 @@ because it swallows all stdout/stderr and you cannot verify whether the build
 succeeded or failed.
 
 All MSBuild commands must use the Bash tool with `workdir` set to:
-`C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+`torcs/torcs/`
 
 Use `timeout: 600000` (10 minutes) for build commands since full rebuilds can
 take a while.
@@ -75,7 +75,7 @@ Test binaries are output to `x64\Release\` (or `Win32\Release\`, `x64\Debug\`,
 etc.) relative to the solution root, NOT inside the test project subdirectory.
 
 Call test binaries directly from bash (do NOT use `cmd /C` or `powershell`).
-Use `workdir` set to `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`.
+Use `workdir` set to `torcs/torcs/`.
 
 **Run all tests:**
 ```

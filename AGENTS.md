@@ -22,7 +22,7 @@ torcs/torcs/
   src/windows/       # Windows platform layer + pre-built dependencies
   data/              # Game data (cars, tracks)
   test/              # Unit tests (googletest) and trackgen regression tests
-  export/            # Exported headers and libraries for module builds
+  export/            # Exported headers and libraries for module builds, never edit these files, edit the originals
   runtime/           # Windows runtime output (Release)
   runtimed/          # Windows runtime output (Debug)
   doc/               # Documentation, tutorials, man pages
@@ -48,6 +48,7 @@ Compiler flags: `-Wall -fPIC -fno-strict-aliasing -O2`. Debug adds `-g -DDEBUG`.
 ### Windows (Visual Studio 2022)
 
 - Solution file: `torcs/torcs/TORCS.sln`
+- To populate torcs/torcs/export with updated headers, use `setup_win32.bat` or `setup_win32_debug.bat`
 - Setup release: `setup_win32.bat` then `setup_win32-data-from-CVS.bat`
 - Setup debug: `setup_win32_debug.bat` then `setup_win32-data-from-CVS_debug.bat`
 - Open `TORCS.sln` and build `Win32-Release` or `Win32-Debug`
@@ -77,21 +78,20 @@ Use `timeout: 600000` for build commands.
 **Build Release x64:**
 ```
 powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Release /p:Platform=x64 2>&1"
-msbuild TORCS.sln /p:Configuration=Release /p:Platform=x64
 ```
-workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+workdir: `torcs/torcs/`
 
 **Build Release Win32:**
 ```
 powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Release /p:Platform=Win32 2>&1"
 ```
-workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+workdir: `torcs/torcs/`
 
 **Build Debug x64:**
 ```
 powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' TORCS.sln /p:Configuration=Debug /p:Platform=x64 2>&1"
 ```
-workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+workdir: `torcs/torcs/`
 
 **Clean before build** (add `/t:Clean` as a separate step first):
 ```
@@ -141,7 +141,7 @@ which swallows stdout). Use `workdir` set to `torcs\torcs\`:
 ```
 x64/Release/robottools_test.exe
 ```
-workdir: `C:\Users\berni\Development\torcs\torcs-code\torcs\torcs`
+workdir: `torcs/torcs/`
 
 **Run a single test** (gtest filter):
 ```
