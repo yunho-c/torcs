@@ -193,10 +193,16 @@ xcopy /f /y $(TorcsRuntimeDir)modules\simu\simuv2.dll $(OutDir)</Command>
     <ClCompile Include="simbrake_system_reconfig_test.cpp" />
     <ClCompile Include="simbrake_system_update_test.cpp" />
     <ClCompile Include="..\..\..\src\modules\simu\simuv2\brake.cpp" />
+    <ClCompile Include="axle_test_helpers.cpp" />
+    <ClCompile Include="simaxle_config_test.cpp" />
+    <ClCompile Include="simaxle_reconfig_test.cpp" />
+    <ClCompile Include="simaxle_update_test.cpp" />
+    <ClCompile Include="..\..\..\src\modules\simu\simuv2\axle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="susp_test_helpers.h" />
     <ClInclude Include="brake_test_helpers.h" />
+    <ClInclude Include="axle_test_helpers.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
