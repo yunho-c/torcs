@@ -36,7 +36,7 @@ void SimBrakeUpdate(tCar *car, tWheel *wheel, tBrake *brake)
 {
 	brake->Tq = brake->coeff * brake->pressure;
 
-	const tdble cooling = ((tdble) fabs(car->DynGC.vel.x) * 0.01f + 0.1f) * SimDeltaTime;
+	const tdble cooling = ((tdble) fabs(car->DynGC.vel.x) * 0.02f + 0.1f) * SimDeltaTime;
 	brake->temp -= cooling;
 	if (brake->temp < 0 ) brake->temp = 0;
 	const tdble heating = (brake->pressure * brake->radius * (tdble) fabs(wheel->spinVel) * 2.5e-8f) * SimDeltaTime;

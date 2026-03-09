@@ -23,7 +23,7 @@
     SimBrakeUpdate computes:
     1. Brake torque: Tq = coeff * pressure
     2. Temperature model:
-       - Cooling: temp -= (|vel.x| * 0.01 + 0.1) * SimDeltaTime
+       - Cooling: temp -= (|vel.x| * 0.02 + 0.1) * SimDeltaTime
        - Clamp low: temp = max(temp, 0)
        - Heating: temp += (pressure * radius * |spinVel| * 2.5e-8) * SimDeltaTime
        - Clamp high: temp = min(temp, 1.0)
@@ -126,10 +126,10 @@ TEST(SimBrakeUpdateTempTest, HotBrake_NoPressure_Cools)
 
 	runSimBrakeUpdate(&car, &wheel, &brake);
 
-	// Cooling: temp -= (|50| * 0.00002 + 0.0002) = 0.0012
+	// Cooling: temp -= (|50| * 0.00004 + 0.0002) = 0.0012
 	// Heating: temp += 0 (no pressure)
-	// Expected: 0.5 - 0.0012 = 0.4988
-	EXPECT_NEAR(brake.temp, 0.4988f, 1e-5f);
+	// Expected: 0.5 - 0.0012 = 0.4978
+	EXPECT_NEAR(brake.temp, 0.4978f, 1e-5f);
 }
 
 
@@ -202,8 +202,8 @@ TEST(SimBrakeUpdateTempTest, FastCar_CoolsFaster)
 
 	runSimBrakeUpdate(&car, &wheel, &brake);
 
-	// Cooling: 0.5 - (80 * 0.00002 + 0.0002) = 0.5 - 0.0018 = 0.4982
-	EXPECT_NEAR(brake.temp, 0.4982f, 1e-5f);
+	// Cooling: 0.5 - (80 * 0.00004 + 0.0002) = 0.5 - 0.0034 = 0.4966
+	EXPECT_NEAR(brake.temp, 0.4966f, 1e-5f);
 }
 
 
@@ -317,7 +317,7 @@ TEST_P(SimBrakeUpdateTempParamTest, TemperatureProducesExpectedResult)
 static tdble computeExpectedTemp(tdble temp, tdble velX, tdble pressure, tdble radius, tdble spinVel, tdble deltaTime = 0.002f)
 {
 	const tdble timeScale = deltaTime / 0.002f;
-	temp -= (fabs(velX) * 0.00002f + 0.0002f) * timeScale;
+	temp -= (fabs(velX) * 0.00004f + 0.0002f) * timeScale;
 	if (temp < 0.0f) temp = 0.0f;
 	temp += (pressure * radius * fabs(spinVel) * 0.00000000005f) * timeScale;
 	if (temp > 1.0f) temp = 1.0f;
