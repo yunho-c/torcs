@@ -8,6 +8,11 @@ description: Build TORCS solution with MSBuild on Windows and run unit tests. Lo
 MSBuild is NOT in PATH. The full path is:
 `C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe`
 
+Powershell command to find MSBuild, in case the above fails:
+```
+powershell -Command "& '${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe' -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe"
+```
+
 **CRITICAL:** Use `powershell -Command` to invoke MSBuild. Do NOT use `cmd /C`
 because it swallows all stdout/stderr and you cannot verify whether the build
 succeeded or failed.
@@ -66,7 +71,14 @@ powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Profession
 ### Build a Single Project
 
 ```
-powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' <path-to-vcxproj> /p:Configuration=<CFG> /p:Platform=<PLAT> 2>&1"
+powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' <path-to-vcxproj> /p:Configuration=<CFG> /p:Platform=<PLAT> /p:SolutionDir='<abs-path-to-torcs\\torcs\\>' 2>&1"
+```
+
+`<abs-path-to-torcs\\torcs\\>` must end with a trailing backslash.
+
+Example (new transmission tests):
+```
+powershell -Command "& 'C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe' test\libs\simuv2_transmission_test\simuv2_transmission_test.vcxproj /p:Configuration=Release /p:Platform=x64 /p:SolutionDir='C:\Users\berni\Development\torcs\torcs-code\torcs\torcs\' 2>&1"
 ```
 
 ## Running Unit Tests
@@ -80,6 +92,9 @@ Use `workdir` set to `torcs/torcs/`.
 **Run all tests:**
 ```
 x64/Release/robottools_test.exe
+x64/Release/simuv2_test.exe
+x64/Release/simuv2_engine_test.exe
+x64/Release/simuv2_transmission_test.exe
 ```
 
 **Run a single test:**
@@ -103,6 +118,7 @@ After every build, check the output for:
 
 After every test run, check for:
 - Tests passed: output contains `[  PASSED  ]` with the test count
+- Tests passed: output also includes the gtest run summary line `[==========] Running ... tests from ... test suites.`
 - Tests failed: output contains `[  FAILED  ]` with failing test names
 
 ## Configurations
