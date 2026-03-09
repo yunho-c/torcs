@@ -2,9 +2,8 @@
                     tgf.h -- Interface file for The Gaming Framework                                    
                              -------------------                                         
     created              : Fri Aug 13 22:32:14 CEST 1999
-    copyright            : (C) 1999-2017 by Eric Espie, Bernhard Wymann                         
-    email                : torcs@free.fr   
-    version              : $Id$                                  
+    copyright            : (C) 1999-2026 by Eric Espie, Bernhard Wymann                         
+    email                : berniw#bluewin.ch   
  ***************************************************************************/
 
 /***************************************************************************
@@ -81,15 +80,15 @@ const tdble G = 9.80665f; /**< m/s/s */
 /** Angle normalization between 0 and 2 * PI */
 #define NORM0_2PI(x) 				\
 do {						\
-	while ((x) > 2*PI) { (x) -= 2*PI; }	\
-	while ((x) < 0) { (x) += 2*PI; } 	\
+	while ((x) > 2.0*PI) { (x) -= (tdble) (2.0*PI); }	\
+	while ((x) < 0.0) { (x) += (tdble) (2.0*PI); } 	\
 } while (0)
 
 /** Angle normalization between -PI and PI */
 #define NORM_PI_PI(x) 				\
 do {						\
-	while ((x) > PI) { (x) -= 2*PI; }	\
-	while ((x) < -PI) { (x) += 2*PI; } 	\
+	while ((x) > PI) { (x) -= (tdble) (2.0*PI); }	\
+	while ((x) < -PI) { (x) += (tdble) (2.0*PI); } 	\
 } while (0)
 
 
