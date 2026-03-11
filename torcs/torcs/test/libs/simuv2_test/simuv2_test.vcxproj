@@ -201,6 +201,7 @@ xcopy /f /y $(TorcsRuntimeDir)modules\simu\simuv2.dll $(OutDir)</Command>
     <ClCompile Include="differential_test_helpers.cpp" />
     <ClCompile Include="simdifferential_config_test.cpp" />
     <ClCompile Include="simdifferential_reconfig_test.cpp" />
+    <ClCompile Include="simdifferential_update_brake_integration_test.cpp" />
     <ClCompile Include="simdifferential_update_spool_test.cpp" />
     <ClCompile Include="simdifferential_update_types_test.cpp" />
     <ClCompile Include="..\..\..\src\modules\simu\simuv2\differential.cpp" />

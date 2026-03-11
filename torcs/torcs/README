@@ -231,6 +231,7 @@ Changes since 1.3.8
 - Added unittests for simuv2/engine.cpp (Bernhard).
 - Added skill for test writing regarding floating point checks (Bernhard).
 - Added unittests for simuv2/transmission.cpp (Bernhard).
+- Added unittests for simuv2/aero.cpp (Bernhard).
 
  
 12. TODO/Notes
