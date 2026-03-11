@@ -44,12 +44,45 @@ Do not use different epsilons per assertion unless needed; prefer one file-local
   - behavior/state changes (ratios, inertias, clutch state, gear)
   - call routing/ordering (stub call logs)
 
+## Parameter permutation analysis (required for branchy physics logic)
+
+When refactoring or testing duplicated simulation logic, do not add ad-hoc cases first.
+Start by explicitly enumerating the meaningful input permutations, then map tests to that list.
+
+Use this workflow:
+
+1. **Identify call sites**
+   - List every location where the logic appears (e.g., spool path, split axis 0, split axis 1).
+2. **Define a canonical behavior matrix**
+   - Create short labels for branch-relevant states (example for brake integration):
+     - `A`: positive input, no overshoot
+     - `B`: positive input, overshoot clamp
+     - `C`: negative input, no overshoot
+     - `D`: negative input, overshoot clamp
+     - `E`: zero input with active braking (guard path)
+     - `F`: zero input with zero braking (baseline no-op)
+3. **Build a coverage table**
+   - For each call site, mark each canonical case as covered/missing.
+   - Keep this explicit in your notes or PR description.
+4. **Enforce symmetry where expected**
+   - If axis/side logic is intended to be symmetric, mirror single-axis cases explicitly.
+   - Do not assume one axis case proves the other unless the code is literally shared.
+5. **Add at least one independence/asymmetry case**
+   - Include one test where both sides are active with different parameters to prove no accidental coupling.
+6. **Harden branch boundaries**
+   - Add at least one exact-boundary case for strict inequalities (e.g., `|ndot| == |spinVel|`).
+7. **Only then refactor**
+   - Refactor implementation after matrix coverage is complete and passing.
+
+Guideline: Prefer a small canonical matrix plus symmetry mirrors over an uncontrolled combinatorial explosion.
+
 ## Pre-merge checklist for test edits
 
 1. Search for float equality in touched test files:
    - `EXPECT_FLOAT_EQ(` should be absent unless intentionally justified.
-2. Build the test project.
-3. Run the test executable and verify gtest summary contains `[  PASSED  ]`.
+2. For duplicated branchy logic, include a covered/missing permutation matrix in your work notes.
+3. Build the test project.
+4. Run the test executable and verify gtest summary contains `[  PASSED  ]`.
 
 ## Example patterns
 
