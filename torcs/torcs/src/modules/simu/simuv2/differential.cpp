@@ -195,7 +195,7 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 		switch (differential->type) {
 		case DIFF_FREE:				
 			{
-				float spiderTq = inTq1 - inTq0;
+				tdble spiderTq = inTq1 - inTq0;
 				DrTq0 = (DrTq + spiderTq)*0.5f;
 				DrTq1 = (DrTq - spiderTq)*0.5f;
 			}
@@ -230,7 +230,7 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 			}
 
 			{
-				float spiderTq = inTq1 - inTq0;
+				tdble spiderTq = inTq1 - inTq0;
 				DrTq0 = (DrTq*(1.0f + bias*biassign) + spiderTq)*0.5f;
 				DrTq1 = (DrTq*(1.0f - bias*biassign) - spiderTq)*0.5f;
 			}			
