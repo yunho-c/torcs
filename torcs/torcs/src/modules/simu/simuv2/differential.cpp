@@ -18,6 +18,41 @@
 
 #include "sim.h"
 
+
+/**
+ * @brief Integrate wheel/axle brake torque for one simulation step.
+ *
+ * This helper encapsulates the common brake integration logic used in both
+ * spool and split-differential update paths.
+ *
+ * Behavior details preserved from the original inline code:
+ * - Brake torque opposes the current rotation sign (`SIGN(spinVel)`).
+ * - If one integration step would cross through zero, the speed is clamped
+ *   exactly to zero instead of changing sign.
+ * - If speed is exactly zero and braking requests a negative step (possible
+ *   because `SIGN(0)` is positive), the step is suppressed to keep standstill.
+ *
+ * @param[in] spinVel  Current angular speed.
+ * @param[in] brkTq    Positive brake torque magnitude for this axis.
+ * @param[in] inertia  Effective rotational inertia used for integration.
+ * @return Updated angular speed after applying brake integration for dt.
+ */
+static tdble
+applyBrakeToSpinVel(tdble spinVel, tdble brkTq, tdble inertia)
+{
+	tdble BrTq = - (tdble) SIGN(spinVel) * brkTq;
+	tdble ndot = SimDeltaTime * BrTq / inertia;
+
+	if (((ndot * spinVel) < 0.0f) && (fabs(ndot) > fabs(spinVel))) {
+		ndot = -spinVel;
+	}
+	if ((spinVel == 0.0f) && (ndot < 0.0f)) {
+		ndot = 0.0f;
+	}
+
+	return spinVel + ndot;
+}
+
 void SimDifferentialConfig(void *hdle, const char *section, tDifferential *differential)
 {
 	differential->I		= GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.1f);
@@ -102,7 +137,6 @@ static void updateSpool(tCar *car, tDifferential *differential, int first)
 	tdble	DrTq;
 	tdble	ndot;
 	tdble	spinVel;
-	tdble	BrTq;
 	tdble	engineReaction;
 	tdble	I;
 	tdble	inTq, brkTq;
@@ -115,16 +149,7 @@ static void updateSpool(tCar *car, tDifferential *differential, int first)
 	
 	ndot = SimDeltaTime * (DrTq - inTq) / I;
 	spinVel = differential->inAxis[0]->spinVel + ndot;
-	
-	BrTq = - (tdble) SIGN(spinVel) * brkTq;
-	ndot = SimDeltaTime * BrTq / I;
-	
-	if (((ndot * spinVel) < 0.0f) && (fabs(ndot) > fabs(spinVel))) {
-		ndot = -spinVel;
-	}
-	if ((spinVel == 0.0f) && (ndot < 0.0f)) ndot = 0.0f;
-	
-	spinVel += ndot;
+	spinVel = applyBrakeToSpinVel(spinVel, brkTq, I);
 	if (first) {
 		engineReaction = SimEngineUpdateRpm(car, spinVel);
 		if (engineReaction != 0.0f) {
@@ -147,7 +172,6 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 	tdble	inTq0, inTq1;
 	tdble	spdRatioMax, commomSpinVel;
 	tdble	deltaSpd, deltaTq, bias, lockTq, biassign;
-	tdble	BrTq;
 	tdble	engineReaction;
 	tdble	meanv;
 	
@@ -236,21 +260,8 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 	ndot1 = SimDeltaTime * (DrTq1 - inTq1) / differential->outAxis[1]->I;
 	spinVel1 += ndot1;
 
-	BrTq = - (tdble) SIGN(spinVel0) * differential->inAxis[0]->brkTq;
-	ndot0 = SimDeltaTime * BrTq / differential->outAxis[0]->I;
-	if (((ndot0 * spinVel0) < 0.0f) && (fabs(ndot0) > fabs(spinVel0))) {
-		ndot0 = -spinVel0;
-	}
-	if ((spinVel0 == 0.0f) && (ndot0 < 0.0f)) ndot0 = 0.0f;
-	spinVel0 += ndot0;
-	
-	BrTq = - (tdble) SIGN(spinVel1) * differential->inAxis[1]->brkTq;
-	ndot1 = SimDeltaTime * BrTq / differential->outAxis[1]->I;
-	if (((ndot1 * spinVel1) < 0.0f) && (fabs(ndot1) > fabs(spinVel1))) {
-		ndot1 = -spinVel1;
-	}
-	if ((spinVel1 == 0.0f) && (ndot1 < 0.0f)) ndot1 = 0.0f;
-	spinVel1 += ndot1;
+	spinVel0 = applyBrakeToSpinVel(spinVel0, differential->inAxis[0]->brkTq, differential->outAxis[0]->I);
+	spinVel1 = applyBrakeToSpinVel(spinVel1, differential->inAxis[1]->brkTq, differential->outAxis[1]->I);
 	
 	if (first) {
 		meanv = (spinVel0 + spinVel1) / 2.0f;
