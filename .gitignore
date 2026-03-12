@@ -57,3 +57,6 @@ torcs/torcs/doc/manual/api
 runtime
 runtimed
 torcs/torcs/compile_commands.json
+torcs/torcs/src/windows/dependencies/vs2022_win32/plib-code-r2173-trunk-vsproj/*.h
+torcs/torcs/src/windows/dependencies/vs2022_win32/*/install*
+torcs/torcs/src/windows/dependencies/vs2022_win32/*/build*
