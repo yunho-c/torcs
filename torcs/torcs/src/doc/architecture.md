@@ -57,7 +57,7 @@ return value of a function call can be considered. Understanding of the State
 Engine can make some tasks really simple, e.g. implementing a robot which can
 restart the simulation by itself (not supported  by TORCS out of the box, but
 very easy to add, see 
-[TORCS FAQ 6.8](http://torcs.sourceforge.net/index.php?name=Sections&op=viewarticle&artid=30#c6_8)).
+[TORCS FAQ 6.8](faq.html#c6_8)).
 
 ![State Engine](@ref raceenginestate.gif)
 
