@@ -63,6 +63,8 @@ Compiler flags: `-Wall -fPIC -fno-strict-aliasing -O2`. Debug adds `-g -DDEBUG`.
 For detailed build and test commands, load the `build-torcs` skill.
 For unit test implementation conventions (especially floating-point assertions
 and robust `EXPECT_NEAR` usage), load the `torcs-test-writing` skill.
+For v4 track XML authoring/tooling/alignment guidance, load the `torcs-track-authoring` skill.
+For focused raceline generation and ACC merge workflows, load the `torcs-raceline-workflow` skill.
 
 MSBuild is NOT in PATH. The full path is:
 `C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe`

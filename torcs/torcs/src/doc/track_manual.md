@@ -19,6 +19,7 @@ The behavior described here is verified against current code in:
 - [1. Track context: XML vs 3D model](@ref track_manual_1)
 - [2. Authoring workflow overview](@ref track_manual_2)
 - [3. Tool workflow in detail (`trackgen`, `accc`)](@ref track_manual_3)
+- [3.1 3D model alignment contract (AC3D/Blender edits)](@ref track_manual_3_alignment)
 - [4. Top-level XML structure](@ref track_manual_4)
 - [5. Main Track defaults](@ref track_manual_5)
 - [6. Segment geometry (`str`, `lft`, `rgt`)](@ref track_manual_6)
@@ -28,6 +29,7 @@ The behavior described here is verified against current code in:
 - [10. Side, border, barrier and variable width](@ref track_manual_10)
 - [11. Guidance: when to use side, border, or both](@ref track_manual_11)
 - [11.1 Mini end-to-end XML example](@ref track_manual_example)
+- [11.2 State and fallback rules for omitted fields](@ref track_manual_fallbacks)
 - [12. Surface system deep dive (physics + rendering)](@ref track_manual_12)
 - [13. Terrain generation chapter (`Graphic/Terrain Generation`)](@ref track_manual_13)
 - [14. `trackgen -E` elevation export modes](@ref track_manual_14)
@@ -134,6 +136,73 @@ Example track merge flow:
 accc +shad name-bak.ac name-shade.ac
 accc -g name.ac -l0 name-bak.ac -l1 name-shade.ac -d3 1000 -d2 500 -d1 300 -S 300 -es
 ```
+
+\anchor track_manual_3_alignment
+### 3.1 3D model alignment contract (AC3D/Blender edits)
+
+This is the critical rule when editing generated `.ac` files:
+
+- physics/collision use the XML-generated track geometry
+- graphics render `Graphic/3d description`
+- they only line up because both use the same coordinates
+
+If you move/rotate/scale the generated road mesh in AC3D/Blender, visuals and
+physics drift apart.
+
+#### What exactly is `(0,0,0)`
+
+For v4, TORCS computes a bounding box from generated track geometry, then shifts
+all segment and camera coordinates so the minimum corner becomes `(0,0,0)`.
+
+- It is the corner with minimum `x`, minimum `y`, minimum `z`.
+- It is not tied to the start line.
+- It is based on generated track geometry (main/side/border vertices), not terrain.
+- Barrier thickness does not expand this origin box because barrier `width` is stored
+  as barrier metadata, not as extra boundary vertices.
+
+In practice this means: if you inspect the model, origin often appears aligned with
+the inner side of wall barriers (before barrier thickness), which is expected.
+
+#### Is origin location random from the start grid perspective?
+
+No. With standard v4 generation and start direction, origin is deterministic:
+
+- it is at or behind start in `x`
+- it is at or right of start in `y`
+
+So origin is in the back-right quadrant (including boundaries) when you face race
+direction on the grid.
+
+#### AC3D axis mapping to TORCS
+
+When loading AC3D vertices, TORCS remaps axes as:
+
+- `x_torcs = x_ac3d`
+- `y_torcs = -z_ac3d`
+- `z_torcs = y_ac3d`
+
+So AC3D up-axis (`Y`) becomes TORCS up-axis (`Z`), and AC3D `Z` maps to TORCS `Y`
+with sign inversion.
+
+#### Safe and unsafe post-edits
+
+Safe edits:
+
+- add scenery objects
+- tweak materials/textures/UVs
+- merge layers with `accc` while keeping base road geometry unchanged
+
+Unsafe edits:
+
+- global transform (move/rotate/scale) of generated road mesh
+- editing road chunk coordinates without regenerating from XML
+- deleting/renaming structural track chunks used by grouping workflows
+
+Quick validation after edits:
+
+- `trackgen` closure deltas remain near zero
+- visible road edge matches drivable/collision edge in-game
+- pits and cameras still line up
 
 \anchor track_manual_4
 ## 4. Top-level XML structure
@@ -666,6 +735,39 @@ What this demonstrates:
 - Pit main section with wall border and 20 pit slots.
 - Banking on one turn and descending grade on counter straight.
 - `marks` as turn-marker distances on the turns.
+
+\anchor track_manual_fallbacks
+### 11.2 State and fallback rules for omitted fields
+
+The v4 loader reads segments sequentially and keeps state for several fields.
+So omitted values are resolved by per-field fallback chains. It is not purely
+"always from Main Track" and not purely "always from previous segment".
+
+<table>
+  <tr><th>Field</th><th>If omitted in current segment</th><th>Initial source</th></tr>
+  <tr><td><code>surface</code> (main segment)</td><td>keeps previous segment surface</td><td><code>Main Track/surface</code></td></tr>
+  <tr><td><code>Left/Right Side/start width</code></td><td>defaults to previous side <code>end width</code></td><td><code>Main Track/Left|Right Side/width</code></td></tr>
+  <tr><td><code>Left/Right Side/width</code></td><td>defaults to segment <code>start width</code></td><td>derived in segment</td></tr>
+  <tr><td><code>Left/Right Side/end width</code></td><td>defaults to segment <code>width</code></td><td>derived in segment</td></tr>
+  <tr><td>side/border/barrier <code>surface</code></td><td>keeps previous state</td><td>matching <code>Main Track</code> default subsection</td></tr>
+  <tr><td>side/border/barrier <code>style</code></td><td>keeps previous state</td><td>matching <code>Main Track</code> default subsection</td></tr>
+  <tr><td><code>profil steps length</code></td><td>uses global value</td><td><code>Main Track/profil steps length</code></td></tr>
+  <tr><td>profile start tangents</td><td>continue from previous segment end tangents</td><td><code>0</code> (if no prior data)</td></tr>
+  <tr><td><code>z start left/right</code></td><td>continues from previous segment end heights</td><td><code>0</code> at beginning</td></tr>
+</table>
+
+Elevation precedence within a segment is separate from state carry-over:
+
+- <code>z start</code> overrides side-specific start heights
+- <code>z end</code> overrides side-specific end heights
+- if <code>z end</code> is absent and <code>grade</code> is present, end center height is derived from grade
+- if banking is present, left/right end heights are recomputed from center height and banking angles
+
+Practical authoring rule:
+
+- segment order matters when fields are omitted
+- at transition points (pit entry/start/end/exit, first turn after pits), set key fields explicitly
+  to avoid accidental state carry-over
 
 \anchor track_manual_12
 ## 12. Surface system deep dive (physics + rendering)
