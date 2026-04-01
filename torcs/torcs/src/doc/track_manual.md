@@ -732,7 +732,7 @@ Notes:
 - Download links (archived original distribution):
   - https://web.archive.org/web/20131004102243/http://www.cs.sunysb.edu/~stripe/stripe.tar.gz
   - https://web.archive.org/web/20131004102245/http://www.cs.sunysb.edu/~stripe/stripe.zip
-- In the Windows binary installer workflow, `stripe` is already included.
+- In the Windows binary installer `stripe` is already included.
 
 To render the combined model in-game, change:
 

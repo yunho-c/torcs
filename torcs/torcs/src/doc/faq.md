@@ -2,60 +2,6 @@
 
 \anchor topofthepage
 
-\section faq_section_1 FAQ Index
-
-- [0.1 License and copyright](#c0_1)
-- [0.2 Document version](#c0_2)
-
-\section faq_section_2 1. About TORCS in General
-
-- [1.1 What is TORCS?](#c1_1)
-- [1.2 Who develops TORCS?](#c1_2)
-- [1.3 Which features does TORCS have?](#c1_3)
-- [1.4 What do you mean by a robot?](#c1_4)
-- [1.5 Why do you not replace GLUT with SDL?](#c1_5)
-- [1.6 Are there official championships?](#c1_6)
-- [1.7 Should I start my own racing sim project?](#c1_7)
-
-\section faq_section_3 2. Platforms and Requirements
-
-- [2.1 Which operating systems does TORCS run on?](#c2_1)
-- [2.2 What are the hardware requirements?](#c2_2)
-- [2.3 What are the software requirements?](#c2_3)
-
-\section faq_section_4 3. Installation
-
-- [3.1 How do I install TORCS?](#c3_1)
-
-\section faq_section_5 4. Problems and Solutions
-
-- [4.1 General problem solving approach](#c4_1)
-- [4.2 Build problems](#c4_2)
-- [4.3 Startup and runtime problems](#c4_3)
-- [4.4 Other problems](#c4_4)
-
-\section faq_section_6 5. Problem Reporting
-
-- [5.1 When do I report a problem?](#c5_1)
-- [5.2 How and where do I report a problem?](#c5_2)
-
-\section faq_section_7 6. Researchers FAQ
-
-- [6.1 How do I explore the source code?](#c6_1)
-- [6.2 Where is the physical simulation code located in the source tree?](#c6_2)
-- [6.3 How does the simulation work?](#c6_3)
-- [6.4 Can I record/send telemetry data somewhere?](#c6_4)
-- [6.5 Where is the simulation timestep performed?](#c6_5)
-- [6.6 How often is the robot code called?](#c6_6)
-- [6.7 Is there a command line mode for AI training?](#c6_7)
-- [6.8 How do I extend TORCS such that the AI can restart the race?](#c6_8)
-- [6.9 How do I cite TORCS?](#c6_9)
-
-\section faq_section_8 7. Links
-
-- [7.1 TORCS](#c7_1)
-- [7.2 Libraries and Drivers](#c7_2)
-
 \section faq_section_9 0. About this Document
 
 \anchor c0_1
