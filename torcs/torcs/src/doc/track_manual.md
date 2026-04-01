@@ -2,24 +2,15 @@
 
 \anchor track_manual_top
 
-This manual explains how TORCS tracks are authored and processed, with focus on
-**track XML version 4**. It starts with an easy conceptual view and then goes into
-reference-level detail.
-
-The behavior described here is verified against current code in:
-
-- `src/modules/track/track4.cpp` (v4 loader)
-- `src/interfaces/track.h` (XML keys)
-- `src/tools/trackgen/*` and `src/tools/accc/*` (tool behavior)
-- `src/libs/robottools/rttrack.cpp` (runtime width behavior)
-- `src/libs/tgf/params.cpp` (unit conversion)
+This manual explains how TORCS tracks are authored and processed. It starts with an easy conceptual view and then goes into
+reference-level detail. It focuses on TORCS behavior and data formats, and discusses AC3D/Blender only where needed for
+alignment-safe post-editing. It covers the most recent TORCS track XML format, version 4 (`v4`).
 
 ## Contents
 
 - [1. Track context: XML vs 3D model](@ref track_manual_1)
 - [2. Authoring workflow overview](@ref track_manual_2)
 - [3. Tool workflow in detail (`trackgen`, `accc`)](@ref track_manual_3)
-- [3.1 3D model alignment contract (AC3D/Blender edits)](@ref track_manual_3_alignment)
 - [4. Top-level XML structure](@ref track_manual_4)
 - [5. Main Track defaults](@ref track_manual_5)
 - [6. Segment geometry (`str`, `lft`, `rgt`)](@ref track_manual_6)
@@ -28,8 +19,6 @@ The behavior described here is verified against current code in:
 - [9. Interpolation and sub-segmentation](@ref track_manual_9)
 - [10. Side, border, barrier and variable width](@ref track_manual_10)
 - [11. Guidance: when to use side, border, or both](@ref track_manual_11)
-- [11.1 Mini end-to-end XML example](@ref track_manual_example)
-- [11.2 State and fallback rules for omitted fields](@ref track_manual_fallbacks)
 - [12. Surface system deep dive (physics + rendering)](@ref track_manual_12)
 - [13. Terrain generation chapter (`Graphic/Terrain Generation`)](@ref track_manual_13)
 - [14. `trackgen -E` elevation export modes](@ref track_manual_14)
@@ -50,12 +39,12 @@ When you create a TORCS track, there are two related descriptions:
    - pits, cameras, terrain generation settings
 2. **Visual model (.ac)**
    - rendered geometry used by graphics
-   - referenced from `Graphic/3d description` (usually `name.ac`)
+   - referenced from `Graphic/3d description` (usually `<name>.ac` or `<name>.acc`)
 
 Think of it as:
 
 - XML = how the track behaves
-- `.ac` = how the track looks
+- `.ac` or `.acc` = how the track looks
 
 Both should stay consistent. If they drift apart, players can see one edge and collide
 with another.
@@ -86,12 +75,36 @@ For beginners: start with simple geometry and defaults, then add complexity in t
 For a compact applied snippet that combines these concepts, see
 [11.1 Mini end-to-end XML example](@ref track_manual_example).
 
+\anchor track_manual_2_license
+### 2.1 License and assets (boring, but important)
+
+Track metadata and asset rights should be explicit from the beginning. Beware, if you are not clear about it or choose
+incompatible licensing with TORCS, your track cannot be integrated in TORCS or further developed by other people later:
+
+- set `author` and `description` in XML `Header`
+- add a clear license statement in track README
+- document third-party asset source, author, and license
+
+Do not use random internet assets with unknown license state.
+Do not include commercial/proprietary assets unless redistribution and derivative-use
+rights are explicitly compatible with your track release.
+
+If you reuse TORCS assets, your track is a derivative work of TORCS content and must
+be distributed under terms compatible with TORCS licensing (GPL version 2 or later).
+
+Practical recommendation for README:
+
+- `License` section for XML/AC/ACC/textures
+- `Authors` and attribution list
+- `Third-party assets` table (source URL, license, modifications)
+- short note about whether redistribution and modification are allowed
+
 \anchor track_manual_3
 ## 3. Tool workflow in detail (`trackgen`, `accc`)
 
 ### `trackgen` basics
 
-Basic command:
+Trackgen takes the track XML file as input and generates the initial 3D-model or model parts (`.ac` files). Basic command:
 
 ```bash
 trackgen -c <category> -n <name>
@@ -151,7 +164,7 @@ physics drift apart.
 
 #### What exactly is `(0,0,0)`
 
-For v4, TORCS computes a bounding box from generated track geometry, then shifts
+TORCS computes a bounding box from generated track geometry, then shifts
 all segment and camera coordinates so the minimum corner becomes `(0,0,0)`.
 
 - It is the corner with minimum `x`, minimum `y`, minimum `z`.
@@ -165,7 +178,7 @@ the inner side of wall barriers (before barrier thickness), which is expected.
 
 #### Is origin location random from the start grid perspective?
 
-No. With standard v4 generation and start direction, origin is deterministic:
+No. With standard generation and start direction, origin is deterministic:
 
 - it is at or behind start in `x`
 - it is at or right of start in `y`
@@ -207,7 +220,7 @@ Quick validation after edits:
 \anchor track_manual_4
 ## 4. Top-level XML structure
 
-Typical v4 layout (simplified):
+Typical layout (simplified):
 
 ```xml
 <params name="..." type="track" version="4">
@@ -239,7 +252,7 @@ Use exact key strings from `track.h`.
 - `profil steps length`
 - default side/border/barrier sections
 
-Important v4 behavior:
+Important behavior:
 
 - Main segment width is effectively global (`Main Track/width` used for runtime main segments).
 - If you need local widening/narrowing, use side/border design, not per-main-segment road width.
@@ -345,7 +358,7 @@ Outward from main track on each side:
 2. side
 3. barrier
 
-Variable-width behavior in v4:
+Variable-width behavior:
 
 - side supports continuous taper (`start width`, `end width`)
 - border width is effectively constant within one authored segment
@@ -355,9 +368,6 @@ Variable-width behavior in v4:
 
 - `level`
 - `tangent`
-
-Compatibility note: some old files use `type="level|tangent"` inside side sections.
-v4 key is `banking type`.
 
 ### 10.1 Curb height behavior (`style="curb"`)
 
@@ -431,12 +441,22 @@ Pit merge rule of thumb:
 \anchor track_manual_example
 ### 11.1 Mini end-to-end XML example
 
-This is a full runnable v4 example designed for copy/paste testing. It uses an oval layout
+This is a full runnable example designed for copy/paste testing. It uses an oval layout
 (two 180-degree turns), a realistic pit lane layout with 20 pit slots, and demonstrates
 banking plus a descending counter-straight.
 
-```xml
+\code{.xml}
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+    file                 : manual_oval.xml
+    copyright            : (C) 2026 by B.Wymann
+-->
+
+<!--    This program is free software; you can redistribute it and/or modify  -->
+<!--    it under the terms of the GNU General Public License as published by  -->
+<!--    the Free Software Foundation; either version 2 of the License, or     -->
+<!--    (at your option) any later version.                                   -->
+
 <!DOCTYPE params SYSTEM "../../../src/libs/tgf/params.dtd" [
 <!ENTITY default-surfaces SYSTEM "../../../data/tracks/surfaces.xml">
 <!ENTITY default-objects SYSTEM "../../../data/tracks/objects.xml">
@@ -447,7 +467,7 @@ banking plus a descending counter-straight.
     <attstr name="category" val="road"/>
     <attnum name="version" val="4"/>
     <attstr name="author" val="Track Manual"/>
-    <attstr name="description" val="Runnable v4 example with realistic pits"/>
+    <attstr name="description" val="Runnable v4 example with pits"/>
   </section>
 
   <section name="Graphic">
@@ -654,7 +674,7 @@ banking plus a descending counter-straight.
     </section>
   </section>
 </params>
-```
+\endcode
 
 Suggested file path:
 
@@ -728,7 +748,7 @@ to:
 
 What this demonstrates:
 
-- Full v4 file structure (`Header`, `Graphic`, `Surfaces`, `Main Track`).
+- Full file structure (`Header`, `Graphic`, `Surfaces`, `Main Track`).
 - Closed-loop geometry with two 180-degree turns and long straights.
 - Default TORCS surface library via `default-surfaces` entity include.
 - Pit entry/exit on 200m straights with flat (`plan`) border sections.
@@ -739,7 +759,7 @@ What this demonstrates:
 \anchor track_manual_fallbacks
 ### 11.2 State and fallback rules for omitted fields
 
-The v4 loader reads segments sequentially and keeps state for several fields.
+The loader reads segments sequentially and keeps state for several fields.
 So omitted values are resolved by per-field fallback chains. It is not purely
 "always from Main Track" and not purely "always from previous segment".
 
@@ -822,6 +842,65 @@ Practical meaning:
 - Reuse a small, named library of surfaces (asphalt, curb, grass, gravel, wall).
 - Keep physics intent clear first, then tune texture look.
 - Avoid too many near-duplicate surfaces unless needed for visual variation.
+
+\anchor track_manual_12_4
+### 12.4 Texture loading order, formats, and transparency quirks
+
+#### Texture search order
+
+For track model loading, graphics uses this search order:
+
+1. `tracks/<category>/<trackname>`
+2. `data/textures`
+3. `data/img`
+4. `.`
+
+Background loading uses a very similar order but checks `data/img` before
+`data/textures`.
+
+Practical implication:
+
+- if the same texture basename exists in multiple places, first match wins
+- prefer track-local textures for portable tracks, and avoid ambiguous duplicate names
+
+#### Supported texture formats in this path
+
+- `.png`
+- `.rgb`
+
+#### Mipmap behavior (important quirk)
+
+The renderer applies filename heuristics:
+
+- textures ending with `_n...` disable mipmapping
+- textures containing `shadow` disable mipmapping
+
+So `texture mipmap` in surface definitions is a hint, but these filename rules can
+still override mipmap behavior.
+
+#### Transparency behavior (filename-triggered)
+
+AC loading enables special alpha-test/blend handling when texture name contains:
+
+- `tree`
+- `arbor`
+- `trans-`
+
+Additionally, material alpha from AC (`mat->rgb[3]`) is checked:
+
+- if alpha is below `0.99`, geometry is treated as translucent (alpha-test/blend path)
+- if alpha is `>= 0.99`, it follows the opaque path unless filename-triggered rules apply
+
+This is commonly used for vegetation and fence-card textures.
+
+Why this convention exists:
+
+- alpha cutout textures with mipmaps can create mixed-alpha fringe/halo artifacts
+  (often dark outlines at distance)
+- using cutout naming plus `_n` (no mipmaps) is a common TORCS pattern to reduce
+  those artifacts
+
+You can see this pattern in stock content (for example e-track-2 tree/arbor textures).
 
 \anchor track_manual_13
 ## 13. Terrain generation chapter (`Graphic/Terrain Generation`)
@@ -961,11 +1040,6 @@ Notes:
 - `marks` defines turn-marker sign distances (for example `25;50;100`) used by
   `trackgen` turn-mark generation in extension build paths.
 
-Compatibility notes:
-
-- older XML content may use side `type` where v4 uses `banking type`
-- when mixing legacy material, verify behavior with current loader rules
-
 \anchor track_manual_18
 ## 18. Reference tables
 
@@ -1073,9 +1147,14 @@ Before generation/testing:
 - Side taper is on side sections, not border.
 - Surface names referenced by segments exist in `Surfaces`.
 - Terrain settings (`track step`, margins, alt range) are intentional.
+- XML header metadata (`author`, `description`) is present and accurate.
+- README contains explicit license and attribution for XML, models, and textures.
+- No third-party assets with unknown or incompatible license terms are included.
 
 After changes:
 
 - regenerate with `trackgen`
 - run optional `accc` post-processing if needed
 - test in-game for seams, banking transitions, runoff feel, pit behavior, and cameras
+
+@author Bernhard Wymann
