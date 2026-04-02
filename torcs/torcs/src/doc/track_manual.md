@@ -449,9 +449,8 @@ banking plus a descending counter-straight.
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
     file                 : manual_oval.xml
-    copyright            : (C) 2026 by B.Wymann
+    copyright            : (C) 2026 by Bernhard Wymann
 -->
-
 <!--    This program is free software; you can redistribute it and/or modify  -->
 <!--    it under the terms of the GNU General Public License as published by  -->
 <!--    the Free Software Foundation; either version 2 of the License, or     -->
@@ -467,7 +466,7 @@ banking plus a descending counter-straight.
     <attstr name="category" val="road"/>
     <attnum name="version" val="4"/>
     <attstr name="author" val="Track Manual"/>
-    <attstr name="description" val="Runnable v4 example with pits"/>
+    <attstr name="description" val="Runnable example with pits"/>
   </section>
 
   <section name="Graphic">
@@ -484,7 +483,7 @@ banking plus a descending counter-straight.
       <attnum name="border margin" unit="m" val="140"/>
       <attnum name="border step" unit="m" val="16"/>
       <attnum name="border height" unit="m" val="0"/>
-      <attstr name="surface" val="grass"/>
+      <attstr name="surface" val="gravel"/>
     </section>
   </section>
 
@@ -493,17 +492,26 @@ banking plus a descending counter-straight.
 
     <!-- Custom main-road surface with raceline overlay texture -->
     <section name="manual-asphalt">
-      <attstr name="texture name" val="tr-asphalt_nmm.rgb"/>
+      <attstr name="texture name" val="tr-road1.rgb"/>
       <attstr name="texture type" val="continuous"/>
       <attnum name="texture size" unit="m" val="15.0001"/>
       <attnum name="texture mipmap" unit="m" val="0.0"/>
       <attstr name="texture start on boundary" val="yes"/>
       <attstr name="texture link with previous" val="yes"/>
       <attstr name="raceline name" val="raceline.png"/>
-      <attnum name="friction" val="1.2"/>
-      <attnum name="rolling resistance" val="0.001"/>
-      <attnum name="roughness" val="0"/>
-      <attnum name="roughness wavelength" val="1.0"/>
+      <attnum name="friction" val="1.06"/>
+      <attnum name="rolling resistance" val="0.021"/>
+      <attnum name="roughness" val="0.0007"/>
+      <attnum name="roughness wavelength" val="2.0"/>
+    </section>
+  
+    <section name="manual-barrier">
+      <attstr name="texture name" val="arbor2_n.rgb"/>
+      <attstr name="texture type" val="continuous"/>
+      <attnum name="texture size" val="10.0" unit="m"/>
+      <attnum name="texture mipmap" val="0.0"/>
+      <attnum name="friction" val="0.0"/>
+      <attnum name="dammage" val="10"/>
     </section>
   </section>
 
@@ -531,19 +539,19 @@ banking plus a descending counter-straight.
     <section name="Left Side">
       <attnum name="width" unit="m" val="5.0"/>
       <attstr name="banking type" val="tangent"/>
-      <attstr name="surface" val="grass"/>
+      <attstr name="surface" val="grass6"/>
     </section>
     <section name="Right Side">
       <attnum name="width" unit="m" val="4.0"/>
-      <attstr name="banking type" val="tangent"/>
-      <attstr name="surface" val="grass"/>
+      <attstr name="banking type" val="level"/>
+      <attstr name="surface" val="grass6"/>
     </section>
 
     <section name="Left Barrier">
-      <attnum name="width" unit="m" val="0.5"/>
-      <attnum name="height" unit="m" val="1.2"/>
-      <attstr name="style" val="wall"/>
-      <attstr name="surface" val="wall"/>
+      <attnum name="width" unit="m" val="0.0"/>
+      <attnum name="height" unit="m" val="4.0"/>
+      <attstr name="style" val="fence"/>
+      <attstr name="surface" val="manual-barrier"/>
     </section>
     <section name="Right Barrier">
       <attnum name="width" unit="m" val="0.5"/>
@@ -560,33 +568,30 @@ banking plus a descending counter-straight.
       <attstr name="end" val="pit_main"/>
       <attstr name="exit" val="pit_exit"/>
       <attnum name="speed limit" unit="km/h" val="80"/>
-      <!-- 20 pits: pit_main length 300m / pit length 15m -->
       <attnum name="length" unit="m" val="15"/>
       <attnum name="width" unit="m" val="5.0"/>
     </section>
 
     <section name="Track Segments">
-      <!-- Pit entry taper: asphalt, flat border (no curb) -->
       <section name="pit_entry">
         <attstr name="type" val="str"/>
         <attnum name="lg" unit="m" val="200.0"/>
         <section name="Right Side">
-          <attstr name="surface" val="asphalt"/>
+          <attstr name="surface" val="manual-asphalt"/>
           <attnum name="start width" unit="m" val="4.0"/>
           <attnum name="end width" unit="m" val="14.2"/>
         </section>
         <section name="Right Border">
           <attstr name="style" val="plan"/>
-          <attstr name="surface" val="asphalt"/>
+          <attstr name="surface" val="b-road1-l2p"/>
         </section>
       </section>
 
-      <!-- Pit main: painted pit-lane surface and wall border -->
       <section name="pit_main">
         <attstr name="type" val="str"/>
         <attnum name="lg" unit="m" val="300.0"/>
         <section name="Right Side">
-          <attstr name="surface" val="asphalt-pits"/>
+          <attstr name="surface" val="road1-pits"/>
           <attnum name="start width" unit="m" val="14.5"/>
           <attnum name="end width" unit="m" val="14.5"/>
         </section>
@@ -596,79 +601,90 @@ banking plus a descending counter-straight.
           <attnum name="width" unit="m" val="0.5"/>
           <attnum name="height" unit="m" val="1.0"/>
         </section>
+        <section name="Left Border">
+          <attnum name="width" unit="m" val="0.8"/>
+          <attstr name="style" val="plan"/>
+          <attstr name="surface" val="b-road1-grass6"/>
+        </section>
       </section>
 
-      <!-- Pit exit taper: asphalt, flat border (no curb) -->
       <section name="pit_exit">
         <attstr name="type" val="str"/>
         <attnum name="lg" unit="m" val="200.0"/>
+        <attnum name="banking start" unit="deg" val="0.0"/>
+        <attnum name="banking end" unit="deg" val="15.0"/>
         <section name="Right Side">
-          <attstr name="surface" val="asphalt"/>
+          <attstr name="surface" val="manual-asphalt"/>
           <attnum name="start width" unit="m" val="14.2"/>
           <attnum name="end width" unit="m" val="4.0"/>
         </section>
         <section name="Right Border">
           <attstr name="style" val="plan"/>
-          <attstr name="surface" val="asphalt"/>
+          <attstr name="surface" val="b-road1-l2p"/>
+          <attnum name="width" unit="m" val="0.8"/>
         </section>
       </section>
 
-      <!-- First 180 turn: banking demonstration -->
       <section name="turn_1">
         <attstr name="type" val="rgt"/>
         <attnum name="radius" unit="m" val="90.0"/>
         <attnum name="arc" unit="deg" val="180.0"/>
-        <attnum name="banking start" unit="deg" val="0.0"/>
-        <attnum name="banking end" unit="deg" val="9.0"/>
-        <attnum name="z end" unit="m" val="16.0"/>
+        <attnum name="z end" unit="m" val="-10.0"/>
         <attnum name="profil steps length" unit="m" val="3.0"/>
+        <attnum name="banking start" unit="deg" val="15.0"/>
+        <attnum name="banking end" unit="deg" val="15.0"/>
         <attstr name="marks" val="50;100"/>
         <section name="Right Border">
           <attstr name="style" val="curb"/>
           <attstr name="surface" val="curb-5cm-r"/>
-          <attnum name="width" unit="m" val="0.8"/>
           <attnum name="height" unit="m" val="0.06"/>
         </section>
         <section name="Right Side">
-          <attstr name="surface" val="grass"/>
+          <attstr name="surface" val="grass6"/>
           <attnum name="start width" unit="m" val="4.0"/>
           <attnum name="end width" unit="m" val="4.0"/>
         </section>
       </section>
 
-      <!-- Counter straight: descending slope back toward level -->
+      <section name="counter_straight_end_banking">
+        <attstr name="type" val="str"/>
+        <attnum name="lg" unit="m" val="200.0"/>
+        <attnum name="banking start" unit="deg" val="15.0"/>
+        <attnum name="banking end" unit="deg" val="0.0"/>
+        <attnum name="z end" unit="m" val="5.0"/>
+        <section name="Right Border">
+          <attstr name="style" val="plan"/>
+          <attstr name="surface" val="b-road1-grass6"/>
+        </section>
+      </section>
+
       <section name="counter_straight">
         <attstr name="type" val="str"/>
-        <attnum name="lg" unit="m" val="700.0"/>
-        <attnum name="grade" unit="%" val="-2.2857"/>
-        <attnum name="profil end tangent" unit="%" val="0.0"/>
-        <section name="Right Side">
-          <attstr name="surface" val="grass"/>
-          <attnum name="start width" unit="m" val="4.0"/>
-          <attnum name="end width" unit="m" val="4.0"/>
-        </section>
+        <attnum name="lg" unit="m" val="300.0"/>
+        <attnum name="z end" unit="m" val="0.0"/>
       </section>
 
-      <!-- Second 180 turn: return to level for pit straight -->
+      <section name="counter_straight_start_banking">
+        <attstr name="type" val="str"/>
+        <attnum name="lg" unit="m" val="200.0"/>
+        <attnum name="z end" unit="m" val="0.0"/>
+        <attnum name="banking start" unit="deg" val="0.0"/>
+        <attnum name="banking end" unit="deg" val="12.0"/>
+      </section>
+
       <section name="turn_2">
         <attstr name="type" val="rgt"/>
         <attnum name="radius" unit="m" val="90.0"/>
         <attnum name="arc" unit="deg" val="180.0"/>
-        <attnum name="banking start" unit="deg" val="9.0"/>
-        <attnum name="banking end" unit="deg" val="0.0"/>
         <attnum name="profil steps length" unit="m" val="3.0"/>
-        <attnum name="z end" unit="m" val="0.0"/>
         <attstr name="marks" val="50;100"/>
+        <attnum name="banking start" unit="deg" val="12.0"/>
+        <attnum name="banking end" unit="deg" val="0.0"/>
         <section name="Right Border">
           <attstr name="style" val="curb"/>
           <attstr name="surface" val="curb-5cm-r"/>
           <attnum name="width" unit="m" val="0.8"/>
           <attnum name="height" unit="m" val="0.06"/>
-        </section>
-        <section name="Right Side">
-          <attstr name="surface" val="grass"/>
-          <attnum name="start width" unit="m" val="4.0"/>
-          <attnum name="end width" unit="m" val="4.0"/>
         </section>
       </section>
     </section>
