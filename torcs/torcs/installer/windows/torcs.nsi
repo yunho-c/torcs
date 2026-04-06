@@ -1,7 +1,7 @@
 ;
 ;        file       : torcs.nsi
 ;        created    : Wed Feb 2 15:35:10 CET 2005
-;        copyright  : (C) 2005-2025 Bernhard Wymann
+;        copyright  : (C) 2005-2026 Bernhard Wymann
 ;        email      : berniw@bluewin.ch
 ;
 ;        This program is free software; you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 !define VER_MINOR 3
 !define VER_REVISION 9
 !define VER_EXTRA -test1
-!define VER_RELDATE 20251109
+!define VER_RELDATE 20260406
 
 !define PRODUCT_NAME "TORCS - The Open Racing Car Simulator"
 !define PRODUCT_VERSION "${VER_MAJOR}.${VER_MINOR}.${VER_REVISION}${VER_EXTRA}"
@@ -2968,9 +2968,6 @@ SetOutPath "$INSTDIR\tracks\road\hidden-valley"
 	File "base\tracks\road\hidden-valley\ZPIT3.png"
 
 
-  SetOutPath "$INSTDIR\doc\faq"
-  File "base\doc\faq\faq.html"
-
   SetOutPath "$INSTDIR\doc\userman"
   File "base\doc\userman\how_to_drive.html"
 
@@ -3016,8 +3013,6 @@ SetOutPath "$INSTDIR\tracks\road\hidden-valley"
   CreateShortCut "$SMPROGRAMS\TORCS\TORCS - The Open Racing Car Simulator.lnk" "$INSTDIR\wtorcs.exe"
 
   CreateShortCut "$SMPROGRAMS\TORCS\TORCS User Manual.lnk" "$INSTDIR\doc\userman\how_to_drive.html"
-  CreateShortCut "$SMPROGRAMS\TORCS\Frequently Asked Questions.lnk" "$INSTDIR\doc\faq\faq.html"
-
   CreateShortCut "$DESKTOP\TORCS - The Open Racing Car Simulator.lnk" "$INSTDIR\wtorcs.exe"
   CreateDirectory "$INSTDIR\results"
   CreateDirectory "$INSTDIR\results\champ"
@@ -3394,11 +3389,11 @@ SectionEnd
 
 Function un.onUninstSuccess
   HideWindow
-  MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) wurde erfolgreich deinstalliert."
+  MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully uninstalled."
 FunctionEnd
 
 Function un.onInit
-  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Möchten Sie $(^Name) und alle seinen Komponenten deinstallieren?" IDYES +2
+  MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 "Do you want to uninstall $(^Name) and all of its components?" IDYES +2
   Abort
 FunctionEnd
 

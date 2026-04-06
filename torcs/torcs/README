@@ -98,7 +98,7 @@ Using vscode in Linux:
 - run setup_win32.bat
 - run setup_win32-data-from-CVS.bat
 - select the TORCS solution (TORCS.sln), select the Win32-Release version.
-- compile project (0 build warnings)
+- compile project (33 build warnings on 64 bit version)
 - cd into the "runtime" directory.
 - run "wtorcs.exe"
 
@@ -118,7 +118,7 @@ Command line arguments:
 - run setup_win32_debug.bat
 - run setup_win32-data-from-CVS_debug.bat
 - select the TORCS solution (TORCS.sln), select the Win32-Debug version
-- compile project (0 build warnings)
+- compile project (33 build warnings on 64 bit version)
 - cd into the "runtimed" directory.
 
 Command line arguments:
@@ -237,32 +237,17 @@ Changes since 1.3.8
 - Added unittests for simuv2/steer.cpp (Bernhard).
 - Added FAQ to doxygen documentation (Bernhard).
 - Wrote and added new track manual (Bernhard).
+- Added new configuration to build 64 bit windows installer, it is able to detect
+  and clean up old 32 bit installations (Bernhard).
 
  
 12. TODO/Notes
 --------------
 
-TODO for 1.3.9
---------------
-- Check out 64 bit VS 2022 build warnings, for whatever reason there are much more than with
-  gcc on Linux
-- Testing because of new libraries etc., 32 and 64 bit release build (release a -test1  first)
-
-Optional or later:
-- Use vs redistributable for heap mamagement (required rebuilding libraries and adoption
-  of installer), put files directy into torcs install instead of using installer? -> not yet
-- Move plib into TORCS, strip local copy of plib down to ease later refactoring
-- Add unit test framework, probably gtest. Consider taking something which allows measuring
-  test coverage with sonarkube/cloud.
-- Integrate plib build into TORCS build on Windows to reduce the hassle, maybe other libraries
-  too, use vcpkg (https://github.com/microsoft/vcpkg) or similar?
-- Eventually get rifd of learning64.def
-- Define some more lib output and other paths properly, maybe after getting rid of 32 bit build?
-
-  
 
 TODO for 1.3.10 "analysed"
 ---------------
+- Continue cleaning up 64 bit build warnings on windows
 - Data recorder ("Telemetry")
 - Data analyser (high/low-pass filtering, comparison, etc.)
 - Speed/Shock
@@ -270,6 +255,14 @@ TODO for 1.3.10 "analysed"
 - Dynamic track
 - Wind/Temp
 - Brake migration (e.g. 55:45 at 0% brakes, 56.25:43.75 at 50% brakes, 57.5:42.5 at 100% brakes)
+- Use vs redistributable for heap mamagement (required rebuilding libraries and adoption
+  of installer), put files directy into torcs install instead of using installer? -> not yet
+- Integrate plib build into TORCS build on Windows to reduce the hassle, maybe other libraries
+  too, use vcpkg (https://github.com/microsoft/vcpkg) or similar?
+- Eventually get rifd of learning64.def
+- Define some more lib output and other paths properly, maybe after getting rid of 32 bit build?
+
+
 
 TODO for 1.3.11 "ruled"
 ---------------
@@ -344,7 +337,6 @@ TODO TRB
 
 TODO for Compliance
 -------------------
-155-DTM -> replace with car10-trb1
 acura -> replace with car9-trb1
 mc-larenf1 -> replace with car10-trb1
 p406 -> replace with car1-trb4
