@@ -61,7 +61,20 @@ Creating binary patches
 
 - Do not forget to update the registery, fix menus, etc.
 
+Automatic payload validation for torcs64.nsi
+-------------------------------------------
+- A PowerShell checker is available to verify that `base/` and `torcs64.nsi`
+  stay in sync:
 
+	 powershell -ExecutionPolicy Bypass -File .\validate_torcs64_payload.ps1
+
+- The script fails if:
+	- files exist in `base/` but are missing in `File` entries in `torcs64.nsi`
+	- `File "base\\..."` entries exist in `torcs64.nsi` but files are gone from `base/`
+	- Note: `base/doc/` is excluded by default; use `-IncludeDoc` to validate doc coverage.
+
+- Optional exceptions can be added to `payload-ignore.txt` (one relative path
+  per line, comments allowed with `#` or `;`).
 
 
 
