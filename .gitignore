@@ -75,3 +75,4 @@ torcs/torcs/installer/windows/base/telemetry/
 torcs/torcs/installer/windows/base/tracks/
 torcs/torcs/installer/windows/base/tux.png
 torcs/torcs/installer/windows/base/wheels/
+.opencode/package-lock.json
