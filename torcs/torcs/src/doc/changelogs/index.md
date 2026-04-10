@@ -13,3 +13,5 @@ Changelogs of TORCS releases.
 - \subpage changelog_1_3_6 "Changelog TORCS 1.3.6"
 - \subpage changelog_1_3_7 "Changelog TORCS 1.3.7"
 - \subpage changelog_1_3_8 "Changelog TORCS 1.3.8"
+- \subpage changelog_1_3_9 "Changelog TORCS 1.3.9"
+

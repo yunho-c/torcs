@@ -4,18 +4,18 @@
 
 This manual explains how TORCS tracks are authored and processed. It starts with an easy conceptual view and then goes into
 reference-level detail. It focuses on TORCS behavior and data formats, and discusses AC3D/Blender only where needed for
-alignment-safe post-editing. It covers the most recent TORCS track XML format, version 4 (`v4`).
+alignment-safe post-editing. It covers the most recent TORCS track XML format, version 4 (`v4`). The TORCS track editor is not discussed here.
 
 ## Contents
 
-- [1. Track context: XML vs 3D model](@ref track_manual_1)
+- [1. XML and 3D model](@ref track_manual_1)
 - [2. Authoring workflow overview](@ref track_manual_2)
 - [3. Tool workflow in detail (`trackgen`, `accc`)](@ref track_manual_3)
 - [4. Top-level XML structure](@ref track_manual_4)
 - [5. Main Track defaults](@ref track_manual_5)
 - [6. Segment geometry (`str`, `lft`, `rgt`)](@ref track_manual_6)
-- [7. Elevation and banking (plain language + precedence)](@ref track_manual_7)
-- [8. Profile modes (`linear` vs `spline`) in plain language](@ref track_manual_8)
+- [7. Elevation and banking](@ref track_manual_7)
+- [8. Profile modes (`linear` vs `spline`)](@ref track_manual_8)
 - [9. Interpolation and sub-segmentation](@ref track_manual_9)
 - [10. Side, border, barrier and variable width](@ref track_manual_10)
 - [11. Guidance: when to use side, border, or both](@ref track_manual_11)
@@ -29,7 +29,7 @@ alignment-safe post-editing. It covers the most recent TORCS track XML format, v
 - [19. Author checklist](@ref track_manual_19)
 
 \anchor track_manual_1
-## 1. Track context: XML vs 3D model
+## 1. XML and 3D model
 
 When you create a TORCS track, there are two related descriptions:
 
@@ -127,7 +127,7 @@ Common options:
 Example:
 
 ```bash
-trackgen -c road -n mytrack -a -E 1
+trackgen -c road -n mytrack -a
 ```
 
 ### `accc` basics
@@ -164,7 +164,7 @@ physics drift apart.
 
 #### What exactly is `(0,0,0)`
 
-TORCS computes a bounding box from generated track geometry, then shifts
+TORCS computes a bounding box from generated track geometry (track only, without terrain/scenery), then shifts
 all segment and camera coordinates so the minimum corner becomes `(0,0,0)`.
 
 - It is the corner with minimum `x`, minimum `y`, minimum `z`.
@@ -278,7 +278,7 @@ Example:
 ```
 
 \anchor track_manual_7
-## 7. Elevation and banking (plain language + precedence)
+## 7. Elevation and banking
 
 Plain language:
 
@@ -299,7 +299,7 @@ Practical advice:
 - If you combine methods, do so intentionally and test seams.
 
 \anchor track_manual_8
-## 8. Profile modes (`linear` vs `spline`) in plain language
+## 8. Profile modes (`linear` vs `spline`)
 
 `profil` controls how vertical profile changes inside a segment.
 
@@ -344,7 +344,7 @@ For `profil="linear"`: `steps = 1` in loader behavior.
 - side width (`start width` -> `end width`)
 - attached side/border/barrier geometry
 
-Worked example:
+Example:
 
 - `lg = 180m`, `profil="spline"`, `profil steps length = 15m`
 - `steps = int(180/15)+1 = 13`
@@ -362,7 +362,7 @@ Variable-width behavior:
 
 - side supports continuous taper (`start width`, `end width`)
 - border width is effectively constant within one authored segment
-- border can still change between segments
+- border can change on each segment
 
 `banking type` for sides:
 
@@ -388,12 +388,6 @@ Practical effect:
 - wheel/body height on curbs rises smoothly from one edge to the other
 - curb can carry extra ripple from the assigned surface roughness model
 
-Track mesh generation behavior (`trackgen`):
-
-- curb outer edge vertices are raised by `seg->height`
-- a small start/end offset is inserted in some transitions (`-0.1`) to close seams
-  when entering/leaving curb chains
-
 ### 10.2 Wall behavior and collision model (`style="wall"`)
 
 There are two relevant collision paths:
@@ -410,7 +404,6 @@ Important limitation from current simulation code:
 
 - dedicated solid collision generation exists for wall-style chains
 - curbs and flat plan borders are not handled as full solid wall objects in that path
-  (noted in simulation TODO comments)
 
 Authoring implication:
 
@@ -441,7 +434,7 @@ Pit merge rule of thumb:
 \anchor track_manual_example
 ### 11.1 Mini end-to-end XML example
 
-This is a full runnable example designed for copy/paste testing. It uses an oval layout
+This is a full runnable example designed for copy/paste, just try it. It uses an oval layout
 (two 180-degree turns), a realistic pit lane layout with 20 pit slots, and demonstrates
 banking plus a descending counter-straight.
 
@@ -1045,14 +1038,11 @@ Implications for authors:
 Advanced per-segment fields used by loader include:
 
 - `env map index`
-- `DoV factor`
 - `marks`
 
 Notes:
 
 - `env map index` feeds environment mapping selection in graphics modules.
-- `DoV factor` is parsed and stored in segment data, but currently not consumed by
-  runtime code paths in this repository (legacy field).
 - `marks` defines turn-marker sign distances (for example `25;50;100`) used by
   `trackgen` turn-mark generation in extension build paths.
 
