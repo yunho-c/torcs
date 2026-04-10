@@ -664,6 +664,8 @@ SetOutPath "$INSTDIR\data\music"
   File "base\data\textures\turn300R.rgb"
   File "base\data\textures\turn50L.rgb"
   File "base\data\textures\turn50R.rgb"
+  File "base\data\textures\raceline.png"
+
 
   SetOutPath "$INSTDIR\data\tracks"
   File "base\data\tracks\dirt.xml"

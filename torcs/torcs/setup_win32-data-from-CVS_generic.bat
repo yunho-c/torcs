@@ -1209,6 +1209,7 @@ if exist .\data\data\textures\turn300R.rgb copy .\data\data\textures\turn300R.rg
 if exist .\data\data\textures\turn50L.rgb copy .\data\data\textures\turn50L.rgb .\%RUNTIMEDIR%\data\textures\turn50L.rgb
 if exist .\data\data\textures\turn50R.rgb copy .\data\data\textures\turn50R.rgb .\%RUNTIMEDIR%\data\textures\turn50R.rgb
 if exist .\data\data\textures\arbor2_n.rgb copy .\data\data\textures\arbor2_n.rgb .\%RUNTIMEDIR%\data\textures\arbor2_n.rgb
+if exist .\data\data\textures\raceline.png copy .\data\data\textures\raceline.png .\%RUNTIMEDIR%\data\textures\raceline.png
 
 if exist .\data\data\tracks\*.* call .\create_dir .\%RUNTIMEDIR%
 if exist .\data\data\tracks\*.* call .\create_dir .\%RUNTIMEDIR%\data
