@@ -2,9 +2,8 @@
 
     file                 : torcsdoc.h
     created              : Sat Jul 27 14:24:31 CEST 2002
-    copyright            : (C) 2001 by Eric Espié
-    email                : Eric.Espie@torcs.org
-    version              : $Id$
+    copyright            : (C) 2001-2025 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -18,142 +17,188 @@
  ***************************************************************************/
  
 /** @file    
-    		
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
+    @author Bernhard Wymann, Eric Espie
 */
 
 #ifndef _TORCSDOC_H_
 #define _TORCSDOC_H_
 
 /**
-   @defgroup module		Dynamic Modules
-   This is the interface to load/unload the shared libraries (or DLLs).
-   <br>Two modes are allowed, the access by filename, of the access by entire directory.
-   <br>When the directory mode is used, the filenames are not known by advance, this
-   <br>allow more flexibility at runtime.
-   <br>
-   <br>The generic information can be retrieved, without keeping the DLL loaded.
-   <br>
-   <br>The gfid parameter is use to differentiate the modules using different includes.
-   <br>This functionality is not used yet.
-   <br>
-   <br>This API is not used for shared libraries linked staticaly at compilation time.
+   @defgroup ctrl Control Device Management API
+   This is the API to use control devices (Keyboard, mouse and joysticks).
 */
+
 /**
-   @defgroup gui		GUI Management.
+   @defgroup dir Directory Management API
+   This is used for directory manipulation.
+*/
+
+/**
+   @defgroup module Dynamic Modules API
+        
+    This is the interface to load/unload the shared libraries (or DLLs).
+    Two modes are allowed, the access by filename, of the access by the entire directory.
+    When the directory mode is used, the filenames are not known in advance, this allows
+    more flexibility at runtime.
+
+    The generic information can be retrieved, without keeping the DLL loaded.
+    The gfid parameter is used to differentiate the modules using different includes. This
+    functionality is not used yet. This API is not used for shared libraries linked
+    staticaly at compilation time.
+*/
+
+/**
+   @defgroup gui GUI Management API
    This is an interface to manage menus.
    @note	The screen size is fiwed to 640x480 and the origin is in the lower-left corner.
 */
+
 /**
-   @defgroup img		Image Management.
+   @defgroup hash Hash Tables API
+   Hash tables API.
+*/
+
+/**
+   @defgroup img Image Management API
    Load and store png images with easy interface.
 */
+
+
 /**
-   @defgroup dir		Directory Management.
-   This is used for directory manipulation.
-*/
-/**
-    @defgroup params	 	Parameters file management.
-    The parameters are stored in XML files and accessed only with this API.
-    <br>The parameters are structured in:
+    @defgroup params Parameter Handling API
+    @brief With this API you can handle parameter sets in TORCS, this includes
+    manipulation of data in memory, and writing into/reading from XML files.
+    
+    The parameters are structured in:
     <br><b>section</b> - containing a familly of parameters on the same topic.
-    <br><b>list</b> - containing <b>elements</b>
+    <br><b>list</b> (subsections) - containing <b>elements</b>
     of <b>numerical attributes</b> and <b>string attributes</b>.
+    <br>
+    <br>The API is not thread safe, because parameter sets and handles carry internal
+    state regarding iteration and XML parsing. The parameter sets are reference counted,
+	so usually multiple handles can refer to the same parameter set.
 */
 /**
-   @defgroup paramsfile		Parameters File manipulation.
-   Read, write, merge parameters files.
+   @defgroup conf Parameter Handling API Setup
+   Initialize and shutdown the Parameter Handling API
    @ingroup params
 */
 /**
-   @defgroup paramsdata		Parameters Data manipulation.
-   Read, write, merge parameters files.
+   @defgroup paramsfile Parameter File Handling API
+   Create, read and write parameter files
    @ingroup params
 */
 /**
-   @defgroup paramslist		Parameters List manipulation.
-   Read, write, merge parameters files.
+   @defgroup paramsdata Parameter Data Handling API
+   Handling of data in parameter sets 
    @ingroup params
 */
 /**
-   @defgroup screen		Screen management.
+   @defgroup paramslist Parameter List Handling API
+   Handling of multiple sections or subsections and the elements in parameter sets
+   @ingroup params
 */
 /**
-   @defgroup trace		Trace management.
-   Allow the trace in the file <tt>trace.txt</tt>
+   @defgroup paramshelper Parameter Helper Functions
+   Internal (not exported) helper functions, not part of the API
+   @ingroup params
 */
-/** 
-    @defgroup OS		OS dependant functions
-    OS specific function table
-*/
+
 /**
-   @defgroup definitions	Global definitions
+    @defgroup racemantools Race Managers API
+    Common functions for race managers.
+*/
+
+/**
+   @defgroup robottools Robottools API
+   API for gathering track information and handling of car setups
+*/
+
+/**
+   @defgroup screen Screen Management API
+*/
+
+/**
+   @defgroup tailq	Tail Queue Management API
+   This is the management of tail queues.
+*/
+
+/**
+   @defgroup definitions Global Definitions
    This is the global definitions used in TORCS.
 */
 /**
-   @defgroup trackstruct	Tracks Structure
+   @defgroup trackstruct Track Structure
    This is the tracks structure definition.
    <br><b>tTrack</b> is the main track structure.
    <br><b>trackSeg</b> is the segment structure.
    @ingroup definitions
 */
 /**
-   @defgroup carstruct		Cars Structure
+   @defgroup carstruct Car Structure
    This is the cars structure definition.
    <br><b>CarElt</b> is the main car structure.
    @ingroup definitions
 */
 /**
-   @defgroup raceinfo	Race Information
+   @defgroup raceinfo Race Information Structure
    This is the race information structures definition.
    @ingroup definitions
 */
-/**
-   @defgroup robottools		Tools for robots.
-   This is a collection of useful functions for programming a robot.
 
-*/
 /**
-   @defgroup modint	Modules interfaces
-   This is the interfaces for the dynamic modules.
+   @defgroup modint	Modules Interfaces
+   These are the interfaces for dynamic modules.
 */
-/**
-   @defgroup tailq	Tail Queue Management
-   This is the management of tail queues.
-*/
-/**
-   @defgroup hash	Hash tables Management
-   This is the hash computation API.
-*/
-/**
-   @defgroup ctrl	Control Device Management
-   This is the API to use control devices (Keyboard, mouse and joysticks).
+
+/** 
+    @defgroup OS OS Dependant Functions
+    OS specific function table
 */
 
 /**
-    @mainpage	Welcome to the TORCS documentation !
+   @defgroup trace		Trace Management
+   Allow the trace in the file <tt>trace.txt</tt>
+*/
 
-    @section robotlist		Robots related documentation.
-    <ul>
-    <li><a class="el" href="group__robotmodint.html">Robots functions interface.</a>
-    <li><a class="el" href="group__robottools.html">Tools for robots.</a>
-    <li><a class="el" href="group__params.html">Parameters file management.</a>
-    <li><a class="el" href="group__trackstruct.html">Tracks Structure</a>
-    <li><a class="el" href="group__carstruct.html">Cars Structure</a>
-    </ul>
+/**
+    @mainpage	Welcome to the TORCS Documentation
 
-    @section racemanlist	Race Managers related documentation.
+    @section archlist Architecture
+    
+    - [Architecture Overview](@ref architecture)
+    
+    @section doclist Other Documentation
+     
+    - [Changelogs](@ref changelogs)
+    - [Track Manual](@ref track_manual)
+    - [FAQ](@ref faq)
+    - [Car Creation Tutorial](http://www.youtube.com/playlist?list=PLq-L0hhLuRI04BLdNW0QrSxhvuyPml8zp)
+    - [Research Papers](http://scholar.google.com/scholar?q=torcs+car)
 
-    <ul>
-    <li><a class="el" href="group__racemantools.html">Tools for race managers.</a>
-    <li><a class="el" href="group__params.html">Parameters file management.</a>
-    <li><a class="el" href="group__trackstruct.html">Tracks Structure</a>
-    </ul>
+    The most recent links and news can be found on the [TORCS site](http://www.torcs.org).
+    
+    @section robotlist Robots API
+    
+    - [Robot Module Interface](@ref robotmodint)
+    - [Robottools API](@ref robottools)
+    - [Parameter Handling API](@ref params)
+    - [Track Structure](@ref trackstruct)
+    - [Car Structure](@ref carstruct)
+
+    @section racemanlist Race Manager API
+
+    - [Race Managers API](@ref racemantools)
+    - [Parameter Handling API](@ref params)
+    - [Tracks structure](@ref trackstruct)
+    
+    @section modlist Module Interfaces
+    - [Graphic Module Interface](@ref graphicmodint)
+    - [Robot Module Interface](@ref robotmodint)
+    - [Simulation Module Interface](@ref simumodint)
+    - [Track Loader Module Interface](@ref trackmodint)
 
 */
 
 #endif /* _TORCSDOC_H_ */ 
-
-
 

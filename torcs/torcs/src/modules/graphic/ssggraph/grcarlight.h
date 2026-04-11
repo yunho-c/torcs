@@ -72,7 +72,6 @@ public:
 
   virtual const char *getTypeName(void)  { return ssgVtxTable::getTypeName();}
 
-  virtual void print ( FILE *fd = stderr, char *indent = "", int how_much = 2) { ssgVtxTable::print(fd,indent,how_much);}
   virtual int load ( FILE *fd )  {return  ssgVtxTable::load(fd);}
   virtual int save ( FILE *fd )  {return  ssgVtxTable::save(fd);}
 
@@ -106,6 +105,8 @@ typedef struct tgrCarlight_t
 
 extern void grInitCarlight(int index); /* number of cars*/
 extern void grAddCarlight(tCarElt *car, int type, sgVec3 pos, double size);
+extern void grLinkCarlights(tCarElt *car);
+
 extern void grUpdateCarlight(tCarElt *car, class cGrPerspCamera *curCam, int dispflag);
 extern void grShudownCarlight(void);
 

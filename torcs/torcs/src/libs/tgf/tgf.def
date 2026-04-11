@@ -20,6 +20,7 @@ EXPORTS
 	GfParmReadFile
 	GfParmSetDTD
 	GfParmWriteFile
+	GfParmCreateDirectory
 	GfParmGetName
 	GfParmGetStr
 	GetDataDir
@@ -29,6 +30,7 @@ EXPORTS
 	GfParmGetNum
 	GfParmGetCurNum
 	GfParmSetNum
+	GfParmSetNumEx
 	GfParmSetCurNum
 	GfParmClean
 	GfParmReleaseHandle
@@ -66,3 +68,4 @@ EXPORTS
 	GetSingleTextureMode
 	GfNearestPow2
 	GfCreateDir
+	GfCreateDirForFile

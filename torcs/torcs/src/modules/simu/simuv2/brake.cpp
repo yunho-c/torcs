@@ -2,9 +2,8 @@
 
     file                 : brake.cpp
     created              : Sun Mar 19 00:05:26 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -19,48 +18,80 @@
 
 #include "sim.h"
 
-void 
-SimBrakeConfig(void *hdle, char *section, tBrake *brake)
+void SimBrakeConfig(void *hdle, const char *section, tBrake *brake)
 {
-    tdble diam, area, mu;
-    
-    diam     = GfParmGetNum(hdle, section, PRM_BRKDIAM, (char*)NULL, 0.2f);
-    area     = GfParmGetNum(hdle, section, PRM_BRKAREA, (char*)NULL, 0.002f);
-    mu       = GfParmGetNum(hdle, section, PRM_MU, (char*)NULL, 0.30f);
-    brake->coeff = diam * 0.5 * area * mu;
+	tdble diam, area, mu;
 
-    brake->I = GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.13f);
-    brake->radius = diam/2.0f;
+	diam     = GfParmGetNum(hdle, section, PRM_BRKDIAM, (char*)NULL, 0.2f);
+	area     = GfParmGetNum(hdle, section, PRM_BRKAREA, (char*)NULL, 0.002f);
+	mu       = GfParmGetNum(hdle, section, PRM_MU, (char*)NULL, 0.30f);
+	brake->coeff = diam * 0.5f * area * mu;
+
+	brake->I = GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.13f);
+	brake->radius = diam/2.0f;
 }
 
-void 
-SimBrakeUpdate(tCar *car, tWheel *wheel, tBrake *brake)
-{
-    brake->Tq = brake->coeff * brake->pressure;
 
-    brake->temp -= fabs(car->DynGC.vel.x) * 0.0001 + 0.0002;
-    if (brake->temp < 0 ) brake->temp = 0;
-    brake->temp += brake->pressure * brake->radius * fabs(wheel->spinVel) * 0.00000000005;
-    if (brake->temp > 1.0) brake->temp = 1.0;
+void SimBrakeUpdate(tCar *car, tWheel *wheel, tBrake *brake)
+{
+	brake->Tq = brake->coeff * brake->pressure;
+
+	const tdble cooling = ((tdble) fabs(car->DynGC.vel.x) * 0.02f + 0.1f) * SimDeltaTime;
+	brake->temp -= cooling;
+	if (brake->temp < 0 ) brake->temp = 0;
+	const tdble heating = (brake->pressure * brake->radius * (tdble) fabs(wheel->spinVel) * 2.5e-8f) * SimDeltaTime;
+	brake->temp += heating;
+	if (brake->temp > 1.0) brake->temp = 1.0;
 }
 
-void 
-SimBrakeSystemConfig(tCar *car)
+
+void SimBrakeSystemConfig(tCar *car)
 {
-    void *hdle = car->params;
-    
-    car->brkSyst.rep   = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREP, (char*)NULL, 0.5);
-    car->brkSyst.coeff = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKPRESS, (char*)NULL, 1000000);
-    
+	void *hdle = car->params;
+
+	car->brkSyst.rep   = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREP, (char*)NULL, 0.5f);
+	car->brkSyst.coeff = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKPRESS, (char*)NULL, 1000000);
+	car->brkSyst.repCmdClickValue = GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREPCMD_CLICKVALUE, (char*)NULL, 0.0025f);
+	car->brkSyst.repCmdMaxClicks = (int) GfParmGetNum(hdle, SECT_BRKSYST, PRM_BRKREPCMD_MAXCLICKS, (char*)NULL, 20);
 }
 
-void 
-SimBrakeSystemUpdate(tCar *car)
-{
-    tBrakeSyst	*brkSyst = &(car->brkSyst);
-    tdble	ctrl = car->ctrl->brakeCmd;
 
-    ctrl *= brkSyst->coeff;
-    car->wheel[FRNT_RGT].brake.pressure = car->wheel[FRNT_LFT].brake.pressure = ctrl * brkSyst->rep;
-    car->wheel[REAR_RGT].brake.pressure = car->wheel[REAR_LFT].brake.pressure = ctrl * (1 - brkSyst->rep);
+void SimBrakeSystemReConfig(tCar *car)
+{
+	tCarPitSetupValue* v = &car->carElt->pitcmd.setup.brakeRepartition;
+	if (SimAdjustPitCarSetupParam(v)) {
+		car->brkSyst.rep = v->value;
+	}
+
+	v = &car->carElt->pitcmd.setup.brakePressure;
+	if (SimAdjustPitCarSetupParam(v)) {
+		car->brkSyst.coeff = v->value;
+	}
+}
+
+
+void SimBrakeSystemUpdate(tCar *car)
+{
+	tBrakeSyst	*brkSyst = &(car->brkSyst);
+	tdble	ctrl = car->ctrl->brakeCmd;
+	int	brakeRepartitionCmd = car->ctrl->brakeRepartitionCmd;
+
+	// Check boundaries of allowed adjustment, adjust if out of bounds
+	if (brakeRepartitionCmd > brkSyst->repCmdMaxClicks) {
+		brakeRepartitionCmd = brkSyst->repCmdMaxClicks;
+	} else if (brakeRepartitionCmd < -brkSyst->repCmdMaxClicks) {
+		brakeRepartitionCmd = -brkSyst->repCmdMaxClicks;
+	}
+
+	// Calculate effective brake repartition considering the driver input, checking boundaries of final repartition
+	tdble repartition = brkSyst->rep + brakeRepartitionCmd*car->brkSyst.repCmdClickValue;
+	if (repartition > 1.0) {
+		repartition = 1.0;
+	} else if (repartition < 0.0) {
+		repartition = 0.0;
+	}
+
+	ctrl *= brkSyst->coeff;
+	car->wheel[FRNT_RGT].brake.pressure = car->wheel[FRNT_LFT].brake.pressure = ctrl * repartition;
+	car->wheel[REAR_RGT].brake.pressure = car->wheel[REAR_LFT].brake.pressure = ctrl * (1 - repartition);
 }

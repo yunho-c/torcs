@@ -3,9 +3,8 @@
 
     file                 : geometry.h
     created              : Mon Nov 22 0:10:00 CET 2004
-    copyright            : (C) 2004 by Christos Dimitrakakis
+    copyright            : (C) 2004-2024 by Christos Dimitrakakis, Bernhard Wymann
     email                : dimitrak@idiap.ch
-    version              : $Id$
 
  ***************************************************************************/
 
@@ -27,6 +26,8 @@
 #ifdef WIN32
 #include <float.h>
 #define isnan _isnan
+#else
+using std::isnan;
 #endif
 
 

@@ -130,7 +130,7 @@ static int do_obj_light ( char *s ) ;
 
 struct Tag
 {
-  char *token ;
+  const char *token ;
   int (*func) ( char *s ) ;
 } ;
 
@@ -156,12 +156,12 @@ static void skip_quotes ( char **s )
       t++ ;
 
     if ( *t != '\"' )
-      ulSetError ( UL_WARNING, "ac_to_gl: Mismatched double-quote ('\"') in '%s'", *s ) ;
+      ulSetError ( UL_WARNING, "ac_to_gl: Mismatched double-quote ('\"') in '%900s'", *s ) ;
 
     *t = '\0' ;
   }
   else
-    ulSetError ( UL_WARNING, "ac_to_gl: Expected double-quote ('\"') in '%s'", *s ) ;
+    ulSetError ( UL_WARNING, "ac_to_gl: Expected double-quote ('\"') in '%900s'", *s ) ;
 }
 
 
@@ -180,7 +180,7 @@ static int search ( Tag *tags, char *s )
       return (*(tags[i].func))( s ) ;
     }
 
-  ulSetError ( UL_FATAL, "ac_to_gl: Unrecognised token '%s' (%d)", s , strlen(s)) ;
+  ulSetError ( UL_WARNING, "ac_to_gl: Unrecognised token '%900s' (%d)", s , strlen(s)) ;
 
   return 0 ;  /* Should never get here */
 }
@@ -344,7 +344,7 @@ static int do_material ( char *s )
   float trans ;
 
   if ( sscanf ( s,
-  "%s rgb %f %f %f amb %f %f %f emis %f %f %f spec %f %f %f shi %d trans %f",
+  "%1023s rgb %f %f %f amb %f %f %f emis %f %f %f spec %f %f %f shi %d trans %f",
     name,
     &rgb [0], &rgb [1], &rgb [2],
     &amb [0], &amb [1], &amb [2],
@@ -353,7 +353,9 @@ static int do_material ( char *s )
     &shi,
     &trans ) != 15 )
   {
-    ulSetError ( UL_WARNING, "grloadac:do_material: Can't parse this MATERIAL:%s", s ) ;
+	// Buffer size in plib is 1024, I allow here just 900 characters, such that the WHOLE
+	// string fits the buffer.
+	ulSetError ( UL_WARNING, "grloadac:do_material: Can't parse this MATERIAL:%900s", s ) ;
   }
   else
   {
@@ -677,9 +679,19 @@ static int do_numvert  ( char *s )
   t1tab = new sgVec2 [ nv ] ;
   t2tab = new sgVec2 [ nv ] ;
   t3tab = new sgVec2 [ nv ] ;
+  
+  if (vertlist != NULL) {
+	  ssgDeRefDelete(vertlist);
+  }
+  if (striplist != NULL) {
+	  ssgDeRefDelete(striplist);
+  }
+  
   vertlist=new ssgIndexArray ();
+  vertlist->ref();
   striplist=new ssgIndexArray ();
-
+  striplist->ref();
+  
   for ( int i = 0 ; i < nv ; i++ )
   {
     FGETS ( buffer, 1024, loader_fd ) ;
@@ -1202,7 +1214,7 @@ static ssgEntity *myssgLoadAC ( const char *fname, const ssgLoaderOptions* optio
 
   if ( loader_fd == NULL )
   {
-    ulSetError ( UL_WARNING, "ssgLoadAC: Failed to open '%s' for reading", filename ) ;
+    ulSetError ( UL_WARNING, "ssgLoadAC: Failed to open '%900s' for reading", filename ) ;
     return NULL ;
   }
 
@@ -1232,7 +1244,7 @@ static ssgEntity *myssgLoadAC ( const char *fname, const ssgLoaderOptions* optio
       if ( ! ulStrNEqual ( s, "AC3D", 4 ) )
       {
         FCLOSE ( loader_fd ) ;
-        ulSetError ( UL_WARNING, "ssgLoadAC: '%s' is not in AC3D format.", filename ) ;
+        ulSetError ( UL_WARNING, "ssgLoadAC: '%900s' is not in AC3D format.", filename ) ;
         return NULL ;
       }
     }

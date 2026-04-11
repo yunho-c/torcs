@@ -2,11 +2,10 @@
 
     file                 : differential.cpp
     created              : Sun Mar 19 00:06:33 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
-***************************************************************************/
+ ***************************************************************************/
 
 /***************************************************************************
  *                                                                         *
@@ -19,256 +18,268 @@
 
 #include "sim.h"
 
-void 
-SimDifferentialConfig(void *hdle, char *section, tDifferential *differential)
+
+/**
+ * @brief Integrate wheel/axle brake torque for one simulation step.
+ *
+ * This helper encapsulates the common brake integration logic used in both
+ * spool and split-differential update paths.
+ *
+ * Behavior details preserved from the original inline code:
+ * - Brake torque opposes the current rotation sign (`SIGN(spinVel)`).
+ * - If one integration step would cross through zero, the speed is clamped
+ *   exactly to zero instead of changing sign.
+ * - If speed is exactly zero and braking requests a negative step (possible
+ *   because `SIGN(0)` is positive), the step is suppressed to keep standstill.
+ *
+ * @param[in] spinVel  Current angular speed.
+ * @param[in] brkTq    Positive brake torque magnitude for this axis.
+ * @param[in] inertia  Effective rotational inertia used for integration.
+ * @return Updated angular speed after applying brake integration for dt.
+ */
+static tdble
+applyBrakeToSpinVel(tdble spinVel, tdble brkTq, tdble inertia)
 {
-    char *type;
+	tdble BrTq = - (tdble) SIGN(spinVel) * brkTq;
+	tdble ndot = SimDeltaTime * BrTq / inertia;
 
-    differential->I     = GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.1);
-    differential->efficiency    = GfParmGetNum(hdle, section, PRM_EFFICIENCY, (char*)NULL, 1.0);
-    differential->ratio     = GfParmGetNum(hdle, section, PRM_RATIO, (char*)NULL, 1.0);
+	if (((ndot * spinVel) < 0.0f) && (fabs(ndot) > fabs(spinVel))) {
+		ndot = -spinVel;
+	}
+	if ((spinVel == 0.0f) && (ndot < 0.0f)) {
+		ndot = 0.0f;
+	}
 
-    differential->bias      = GfParmGetNum(hdle, section, PRM_BIAS, (char*)NULL, 0.1);
-    differential->dTqMin    = GfParmGetNum(hdle, section, PRM_MIN_TQ_BIAS, (char*)NULL, 0.05);
-    differential->dTqMax    = GfParmGetNum(hdle, section, PRM_MAX_TQ_BIAS, (char*)NULL, 0.80) - differential->dTqMin;
-    differential->dSlipMax  = GfParmGetNum(hdle, section, PRM_MAX_SLIP_BIAS, (char*)NULL, 0.75);
-    differential->lockInputTq   = GfParmGetNum(hdle, section, PRM_LOCKING_TQ, (char*)NULL, 300.0);
-    differential->viscosity = GfParmGetNum(hdle, section, PRM_VISCOSITY_FACTOR, (char*)NULL, 2.0);
-    differential->viscomax  = 1 - exp(-differential->viscosity);
+	return spinVel + ndot;
+}
 
-    type = GfParmGetStr(hdle, section, PRM_TYPE, VAL_DIFF_NONE);
-    if (strcmp(type, VAL_DIFF_LIMITED_SLIP) == 0) {
-        differential->type = DIFF_LIMITED_SLIP; 
-    } else if (strcmp(type, VAL_DIFF_VISCOUS_COUPLER) == 0) {
-        differential->type = DIFF_VISCOUS_COUPLER;
-    } else if (strcmp(type, VAL_DIFF_SPOOL) == 0) {
-        differential->type = DIFF_SPOOL;
-    }  else if (strcmp(type, VAL_DIFF_FREE) == 0) {
-        differential->type = DIFF_FREE;
-    } else {
-        differential->type = DIFF_NONE; 
-    }
-
-    differential->feedBack.I = differential->I * differential->ratio * differential->ratio +
-        (differential->inAxis[0]->I + differential->inAxis[1]->I) / differential->efficiency;
+void SimDifferentialConfig(void *hdle, const char *section, tDifferential *differential)
+{
+	differential->I		= GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.1f);
+	differential->efficiency	= GfParmGetNum(hdle, section, PRM_EFFICIENCY, (char*)NULL, 1.0f);
+	differential->ratio		= GfParmGetNum(hdle, section, PRM_RATIO, (char*)NULL, 1.0f);
+	differential->dTqMin	= GfParmGetNum(hdle, section, PRM_MIN_TQ_BIAS, (char*)NULL, 0.05f);
+	differential->dTqMax	= GfParmGetNum(hdle, section, PRM_MAX_TQ_BIAS, (char*)NULL, 0.80f) - differential->dTqMin;
+	if (differential->dTqMax < 0.0f) differential->dTqMax = 0.0f;
+	differential->dSlipMax	= GfParmGetNum(hdle, section, PRM_MAX_SLIP_BIAS, (char*)NULL, 0.03f);
+	differential->lockInputTq	= GfParmGetNum(hdle, section, PRM_LOCKING_TQ, (char*)NULL, 3000.0f);
+	differential->lockBrakeInputTq = GfParmGetNum(hdle, section, PRM_LOCKINGBRAKE_TQ, (char*)NULL, differential->lockInputTq*0.33f);
+	differential->viscosity	= GfParmGetNum(hdle, section, PRM_VISCOSITY_FACTOR, (char*)NULL, 1.0f);
+	
+	const char* type = GfParmGetStr(hdle, section, PRM_TYPE, VAL_DIFF_NONE);
+	if (strcmp(type, VAL_DIFF_LIMITED_SLIP) == 0) {
+		differential->type = DIFF_LIMITED_SLIP; 
+	} else if (strcmp(type, VAL_DIFF_VISCOUS_COUPLER) == 0) {
+		differential->type = DIFF_VISCOUS_COUPLER;
+	} else if (strcmp(type, VAL_DIFF_SPOOL) == 0) {
+		differential->type = DIFF_SPOOL;
+	}  else if (strcmp(type, VAL_DIFF_FREE) == 0) {
+		differential->type = DIFF_FREE;
+	} else {
+		differential->type = DIFF_NONE; 
+	}
+		
+	differential->feedBack.I = differential->I * differential->ratio * differential->ratio +
+		(differential->inAxis[0]->I + differential->inAxis[1]->I) / differential->efficiency;
 }
 
 
+void SimDifferentialReConfig(tCar* car, int index)
+{	
+	tDifferential *differential = &car->transmission.differential[index];
+
+	// Ratio
+	tCarPitSetupValue* v = &car->carElt->pitcmd.setup.diffratio[index];
+	if (SimAdjustPitCarSetupParam(v)) {
+		differential->ratio = v->value;
+		differential->feedBack.I = differential->I * differential->ratio * differential->ratio +
+			(differential->inAxis[0]->I + differential->inAxis[1]->I) / differential->efficiency;
+	}
+
+	// Min torque bias
+	v = &car->carElt->pitcmd.setup.diffmintqbias[index];
+	if (SimAdjustPitCarSetupParam(v)) {
+		differential->dTqMin = v->value;
+	}
+
+	// Max torque bias
+	v = &car->carElt->pitcmd.setup.diffmaxtqbias[index];
+	if (SimAdjustPitCarSetupParam(v)) {
+		differential->dTqMax = v->value - differential->dTqMin;
+		if (differential->dTqMax < 0.0f) {
+			differential->dTqMax = 0.0f;
+			v->value = differential->dTqMin;
+		}
+	}
+
+	// Slip bias
+	v = &car->carElt->pitcmd.setup.diffslipbias[index];
+	if (SimAdjustPitCarSetupParam(v)) {
+		differential->dSlipMax = v->value;
+	}
+
+	// Locking input torque
+	v = &car->carElt->pitcmd.setup.difflockinginputtq[index];
+	if (SimAdjustPitCarSetupParam(v)) {
+		differential->lockInputTq = v->value;
+	}
+
+	// Locking brake input torque
+	v = &car->carElt->pitcmd.setup.difflockinginputbraketq[index];
+	if (SimAdjustPitCarSetupParam(v)) {
+		differential->lockBrakeInputTq = v->value;
+	}
+}
 
 
-static void
-updateSpool(tCar *car, tDifferential *differential, int first)
+static void updateSpool(tCar *car, tDifferential *differential, int first)
 {
-    tdble   DrTq;
-    tdble   ndot;
-    tdble   spinVel;
-    tdble   BrTq;
-    tdble   engineReaction;
-    tdble   I;
-    tdble   inTq, brkTq;
-    
-    DrTq = differential->in.Tq;
-
-    I = differential->outAxis[0]->I + differential->outAxis[1]->I;
-    inTq = differential->inAxis[0]->Tq + differential->inAxis[1]->Tq;
-    brkTq = differential->inAxis[0]->brkTq + differential->inAxis[1]->brkTq;
-
-    ndot = SimDeltaTime * (DrTq - inTq) / I;
-    spinVel = differential->inAxis[0]->spinVel + ndot;
-    
-    BrTq = - SIGN(spinVel) * brkTq;
-    ndot = SimDeltaTime * BrTq / I;
-    
-    if (((ndot * spinVel) < 0.0) && (fabs(ndot) > fabs(spinVel))) {
-        ndot = -spinVel;
-    }
-    if ((spinVel == 0.0) && (ndot < 0.0)) ndot = 0;
-    
-    spinVel += ndot;
-    if (first) {
-        engineReaction = SimEngineUpdateRpm(car, spinVel);
-        if (engineReaction != 0.0) {
-            spinVel = engineReaction;
-        }
-    }
-    differential->outAxis[0]->spinVel = differential->outAxis[1]->spinVel = spinVel;
-
-    differential->outAxis[0]->Tq = (differential->outAxis[0]->spinVel - differential->inAxis[0]->spinVel) / SimDeltaTime * differential->outAxis[0]->I;
-    differential->outAxis[1]->Tq = (differential->outAxis[1]->spinVel - differential->inAxis[1]->spinVel) / SimDeltaTime * differential->outAxis[1]->I;
+	tdble	DrTq;
+	tdble	ndot;
+	tdble	spinVel;
+	tdble	engineReaction;
+	tdble	I;
+	tdble	inTq, brkTq;
+	
+	DrTq = differential->in.Tq;
+	
+	I = differential->outAxis[0]->I + differential->outAxis[1]->I;
+	inTq = differential->inAxis[0]->Tq + differential->inAxis[1]->Tq;
+	brkTq = differential->inAxis[0]->brkTq + differential->inAxis[1]->brkTq;
+	
+	ndot = SimDeltaTime * (DrTq - inTq) / I;
+	spinVel = differential->inAxis[0]->spinVel + ndot;
+	spinVel = applyBrakeToSpinVel(spinVel, brkTq, I);
+	if (first) {
+		engineReaction = SimEngineUpdateRpm(car, spinVel);
+		if (engineReaction != 0.0f) {
+			spinVel = engineReaction;
+		}
+	}
+	differential->outAxis[0]->spinVel = differential->outAxis[1]->spinVel = spinVel;
+	
+	differential->outAxis[0]->Tq = (differential->outAxis[0]->spinVel - differential->inAxis[0]->spinVel) / SimDeltaTime * differential->outAxis[0]->I;
+	differential->outAxis[1]->Tq = (differential->outAxis[1]->spinVel - differential->inAxis[1]->spinVel) / SimDeltaTime * differential->outAxis[1]->I;
 }
 
 
 void 
 SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
 {
-    tdble   DrTq, DrTq0, DrTq1;
-    tdble   ndot0, ndot1;
-    tdble   spinVel0, spinVel1;
-    tdble   inTq0, inTq1;
-    tdble   spdRatio, spdRatioMax;
-    tdble   deltaSpd, deltaTq;
-    tdble   BrTq;
-    tdble   engineReaction;
-    tdble   meanv;
+	tdble	DrTq, DrTq0, DrTq1;
+	tdble	ndot0, ndot1;
+	tdble	spinVel0, spinVel1;
+	tdble	inTq0, inTq1;
+	tdble	spdRatioMax, commomSpinVel;
+	tdble	deltaSpd, deltaTq, bias, lockTq, biassign;
+	tdble	engineReaction;
+	tdble	meanv;
+	
+	if (differential->type == DIFF_SPOOL) {
+		updateSpool(car, differential, first);
+		return;
+	}
+	
+	DrTq = differential->in.Tq;
+	
+	spinVel0 = differential->inAxis[0]->spinVel;
+	spinVel1 = differential->inAxis[1]->spinVel;
+	
+	inTq0 = differential->inAxis[0]->Tq;
+	inTq1 = differential->inAxis[1]->Tq;
 
-    if (differential->type == DIFF_SPOOL) {
-        updateSpool(car, differential, first);
-        return;
-    }
+	commomSpinVel = (tdble) (fabs(spinVel0) + fabs(spinVel1));
+	if (commomSpinVel != 0) {
+		tdble spdRatio = (tdble) fabs(spinVel0 - spinVel1) / commomSpinVel;
+		
+		switch (differential->type) {
+		case DIFF_FREE:				
+			{
+				tdble spiderTq = inTq1 - inTq0;
+				DrTq0 = (DrTq + spiderTq)*0.5f;
+				DrTq1 = (DrTq - spiderTq)*0.5f;
+			}
+			break;
+		case DIFF_LIMITED_SLIP:
+			if (DrTq > differential->lockInputTq || DrTq < -differential->lockBrakeInputTq) {
+				updateSpool(car, differential, first);
+				return;
+			}
 
-    DrTq = differential->in.Tq;
+			if (DrTq >= 0.0f) {
+				lockTq = differential->lockInputTq;
+				biassign = 1.0f;
+			} else {
+				lockTq = -differential->lockBrakeInputTq;
+				biassign = -1.0f;
+			}
 
-    spinVel0 = differential->inAxis[0]->spinVel;
-    spinVel1 = differential->inAxis[1]->spinVel;
-    
-    inTq0 = differential->inAxis[0]->Tq;
-    inTq1 = differential->inAxis[1]->Tq;
+			spdRatioMax = differential->dSlipMax - DrTq * differential->dSlipMax / lockTq;
+			bias = 0.0f;
+			if (spdRatio > spdRatioMax) {
+				deltaSpd = (spdRatio - spdRatioMax) * commomSpinVel / 2.0f;
+				if (spinVel0 > spinVel1) {
+					spinVel0 -= deltaSpd;
+					spinVel1 += deltaSpd;
+					bias = -(spdRatio - spdRatioMax);
+				} else {
+					spinVel0 += deltaSpd;
+					spinVel1 -= deltaSpd;
+					bias = (spdRatio - spdRatioMax);
+				}
+			}
 
+			{
+				tdble spiderTq = inTq1 - inTq0;
+				DrTq0 = (DrTq*(1.0f + bias*biassign) + spiderTq)*0.5f;
+				DrTq1 = (DrTq*(1.0f - bias*biassign) - spiderTq)*0.5f;
+			}			
+			break;
+		case DIFF_VISCOUS_COUPLER:
+			if (spinVel0 >= spinVel1) {
+				DrTq0 = DrTq * differential->dTqMin;
+				DrTq1 = DrTq * (1.0f - differential->dTqMin);
+			} else {
+				deltaTq = differential->dTqMin + (1.0f - (tdble) exp(-fabs(differential->viscosity * (spinVel0 - spinVel1)))) * differential->dTqMax;
+				DrTq0 = DrTq * deltaTq;
+				DrTq1 = DrTq * (1.0f - deltaTq);
+			}
+		
+			break;
+		default: /* NONE ? */
+			DrTq0 = DrTq1 = 0.0f;
+			break;
+		}
+	} else {
+		DrTq0 = DrTq / 2.0f;
+		DrTq1 = DrTq / 2.0f;
+	}
+	
+	ndot0 = SimDeltaTime * (DrTq0 - inTq0) / differential->outAxis[0]->I;
+	spinVel0 += ndot0;
+	ndot1 = SimDeltaTime * (DrTq1 - inTq1) / differential->outAxis[1]->I;
+	spinVel1 += ndot1;
 
-    spdRatio = fabs(spinVel0 + spinVel1);
-    if (spdRatio != 0) {
-        spdRatio = fabs(spinVel0 - spinVel1) / spdRatio;
-
-        switch (differential->type) {
-        case DIFF_FREE:
-            // I would think that the following is what a FREE
-            // differential should look like, with both wheels
-            // independent and linked through a spider gear.
-            //
-            // The reaction from each wheel is transmitted back to the
-            // spider gear. If both wheels react equally, then the
-            // spider gear does not turn. If one of the wheel is
-            // immobile, so that DrTq/2=inTq0 for example, then the
-            // reaction does not act against the drivetrain, but since
-            // the spider gear can turn freely, it acts on the other wheel.
-            // 
-            // This system is equivalent to a rotating gear attached
-            // in between two parallel surfaces, with DrTq being
-            // equivalent to a force acting in the center of the
-            // gear. If one surface is fixed, only the other surface
-            // moves and all the force is 'transferred' to the moving
-            // surface. Or, the way I like to think of it, the
-            // immobile surface reacts with an equal and opposite
-            // force[1] that cancels DrTq/2 exactly and which is
-            // transmitted directly with the rotating gear to the
-            // other, free, surface.
-            //
-            //
-            // A lot of explanation for 3 lines of code..  TODO: Check
-            // what bias would mean in such a system. Would it be
-            // implemented between the spider and the wheels?  Or
-            // between the spider and the drivetrain? If the latter
-            // then it meanst the spider would always be turning, even
-            // under an even load. I think in this case it is safest
-            // to ignore it completely because it is frequently used
-            // in cars with just FWD or RWD, and very frequently in
-            // just the front part of 4WD cars, while the default
-            // differential bias setting is 0.1...
-            //
-            // [1] For an object to remain at rest, all forces acting
-            // on it must sum to 0.
-            
-            {
-                float spiderTq = inTq1 - inTq0;
-                DrTq0 = DrTq*0.5f + spiderTq;
-                DrTq1 = DrTq*0.5f - spiderTq;
-            }
-            break;
-
-                       
-        case DIFF_LIMITED_SLIP:
-            // Limited slip differential with:
-            // - Gradual frictive locking
-            // - Open differential behaviour when not locked
-            //
-            // The spider gear transfers torque between the two axles
-            // When DrTq=lockInputTq, then the locking is at 66% (and
-            // almost 100% at double the torque).  When the
-            // differential is locked, there is a pressure applied due
-            // to the different amount of spin of each wheel.  This
-            // pressure creates a torque bias at the input, limited by
-            // dSlipMax.
-            // So the user should use lockInputTq to regulate how fast
-            // the differential locks and dSlipMax to regulate how much
-            // more torque should go to the slower moving wheel.
-            {
-                float spiderTq = inTq1 - inTq0; 
-                float propTq = DrTq/differential->lockInputTq;
-                float rate = 0.0f;
-                if (propTq > 0.0f) {
-                    rate = 1.0f - exp(-propTq*propTq);
-                }
-
-                float pressure = tanh(rate*(spinVel1-spinVel0));
-                float bias = differential->dSlipMax * 0.5f* pressure;
-                float open = 1.0f;// - rate;
-                DrTq0 = DrTq*(0.5f+bias) + spiderTq*open;
-                DrTq1 = DrTq*(0.5f-bias) - spiderTq*open;
-            }
-            break;
-
-        case DIFF_VISCOUS_COUPLER:
-            if (spinVel0 >= spinVel1) {
-                DrTq0 = DrTq * differential->dTqMin;
-                DrTq1 = DrTq * (1 - differential->dTqMin);
-            } else {
-                deltaTq = differential->dTqMin + (1.0 - exp(-fabs(differential->viscosity * spinVel0 - spinVel1))) /
-                    differential->viscomax * differential->dTqMax;
-                DrTq0 = DrTq * deltaTq;
-                DrTq1 = DrTq * (1 - deltaTq);
-            }
-    
-            break;
-        default: /* NONE ? */
-            DrTq0 = DrTq1 = 0;
-            break;
-        }
-    } else {
-        DrTq0 = DrTq / 2.0;
-        DrTq1 = DrTq / 2.0;
-    }
-
-
-    ndot0 = SimDeltaTime * (DrTq0 - inTq0) / differential->outAxis[0]->I;
-    spinVel0 += ndot0;
-    ndot1 = SimDeltaTime * (DrTq1 - inTq1) / differential->outAxis[1]->I;
-    spinVel1 += ndot1;
-
-    BrTq = - SIGN(spinVel0) * differential->inAxis[0]->brkTq;
-    ndot0 = SimDeltaTime * BrTq / differential->outAxis[0]->I;
-    if (((ndot0 * spinVel0) < 0.0) && (fabs(ndot0) > fabs(spinVel0))) {
-        ndot0 = -spinVel0;
-    }
-    if ((spinVel0 == 0.0) && (ndot0 < 0.0)) ndot0 = 0;
-    spinVel0 += ndot0;
-    
-    BrTq = - SIGN(spinVel1) * differential->inAxis[1]->brkTq;
-    ndot1 = SimDeltaTime * BrTq / differential->outAxis[1]->I;
-    if (((ndot1 * spinVel1) < 0.0) && (fabs(ndot1) > fabs(spinVel1))) {
-        ndot1 = -spinVel1;
-    }
-    if ((spinVel1 == 0.0) && (ndot1 < 0.0)) ndot1 = 0;
-    spinVel1 += ndot1;
-
-    if (first) {
-        meanv = (spinVel0 + spinVel1) / 2.0;
-        engineReaction = SimEngineUpdateRpm(car, meanv);
-        if (meanv != 0.0) {
-            engineReaction = engineReaction/meanv;
-            if ((spinVel1*spinVel0)>0) {
-                if (engineReaction != 0.0) {
-                    spinVel1 *= engineReaction;
-                    spinVel0 *= engineReaction;
-                }
-            }
-        }
-    }
-
-    differential->outAxis[0]->spinVel = spinVel0;
-    differential->outAxis[1]->spinVel = spinVel1;
-
-    differential->outAxis[0]->Tq = (differential->outAxis[0]->spinVel - differential->inAxis[0]->spinVel) / SimDeltaTime * differential->outAxis[0]->I;
-    differential->outAxis[1]->Tq = (differential->outAxis[1]->spinVel - differential->inAxis[1]->spinVel) / SimDeltaTime * differential->outAxis[1]->I;
+	spinVel0 = applyBrakeToSpinVel(spinVel0, differential->inAxis[0]->brkTq, differential->outAxis[0]->I);
+	spinVel1 = applyBrakeToSpinVel(spinVel1, differential->inAxis[1]->brkTq, differential->outAxis[1]->I);
+	
+	if (first) {
+		meanv = (spinVel0 + spinVel1) / 2.0f;
+		engineReaction = SimEngineUpdateRpm(car, meanv);
+		if (meanv != 0.0f) {
+			engineReaction = engineReaction / meanv;
+			if (engineReaction != 0.0f) {
+				spinVel1 *= engineReaction;
+				spinVel0 *= engineReaction;
+			}
+		}
+	}
+	
+	differential->outAxis[0]->spinVel = spinVel0;
+	differential->outAxis[1]->spinVel = spinVel1;
+	
+	differential->outAxis[0]->Tq = (differential->outAxis[0]->spinVel - differential->inAxis[0]->spinVel) / SimDeltaTime * differential->outAxis[0]->I;
+	differential->outAxis[1]->Tq = (differential->outAxis[1]->spinVel - differential->inAxis[1]->spinVel) / SimDeltaTime * differential->outAxis[1]->I;	
 }
 
 

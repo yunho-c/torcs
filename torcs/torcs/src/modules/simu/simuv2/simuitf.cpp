@@ -2,7 +2,7 @@
 
     file                 : simuitf.cpp
     created              : Sun Mar 19 00:08:04 CET 2000
-    copyright            : (C) 2000 by Eric Espie
+    copyright            : (C) 2000-2017 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
 
@@ -80,8 +80,8 @@ simuInit(int /* index */, void *pt)
 extern "C" int
 simuv2(tModInfo *modInfo)
 {
-    modInfo->name = "simu";		/* name of the module (short) */
-    modInfo->desc = "Simulation Engine V2.0";	/* description of the module (can be long) */
+    modInfo->name = strdup("simu");		/* name of the module (short) */
+    modInfo->desc = strdup("Simulation Engine V2.0");	/* description of the module (can be long) */
     modInfo->fctInit = simuInit;	/* init function */
     modInfo->gfId = SIM_IDENT;		/* ident */
     modInfo->index = 0;

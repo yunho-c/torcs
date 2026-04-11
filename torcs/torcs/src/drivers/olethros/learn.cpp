@@ -17,11 +17,13 @@
  *                                                                         *
  ***************************************************************************/
 
-
+#ifdef sun
+ #include <ieeefp.h>
+#endif
 #include "learn.h"
 #include <learning/ANN.h>
 #include <learning/string_utils.h>
-#include <iostream>
+//#include <iostream>
 
 #ifdef WIN32
 #include <float.h>
@@ -34,7 +36,7 @@
 #endif
 
 /// Check that tags match
-inline bool CheckMatchingToken (char* tag, StringBuffer* buf, FILE* f)
+inline bool CheckMatchingToken (const char* tag, StringBuffer* buf, FILE* f)
 {
     int l = 1+strlen(tag);
     buf = SetStringBufferLength (buf, l);
@@ -51,7 +53,7 @@ inline bool CheckMatchingToken (char* tag, StringBuffer* buf, FILE* f)
 }
 
 /// Write a token
-inline void WriteToken (char* tag, FILE* f)
+inline void WriteToken (const char* tag, FILE* f)
 {
     fwrite (tag, sizeof(char), 1+strlen(tag), f);
 }
@@ -224,7 +226,7 @@ void SegLearn::update(tSituation *s, tTrack *t, tCarElt *car, int alone, float o
             // if positive then we are to the left of our target.
             // theta is a simple threshold
             float target_error = fabs(target_toLeft - car->_trkPos.toLeft);
-            float theta = 0.25*seg->width - 0.5*car->_dimension_y;
+            float theta = 0.5*seg->width - 0.5*car->_dimension_y;
             float dtheta = theta - target_error;
 
             if (dtheta < 0) dtheta -= 1;
@@ -257,7 +259,6 @@ void SegLearn::update(tSituation *s, tTrack *t, tCarElt *car, int alone, float o
                 if ((car->_trkPos.toLeft - min_out_factor*car->_dimension_y<0)
                     || (car->_speed_x < 0)) {
                     dtheta = - risk_factor;
-                    PropagateUpdateBackwards (seg, -0.1f, 0.01f, 200.0f);
                     PropagateUpdateBackwards (seg->prev, -0.1f, 0.01f, 200.0f);
                     time_since_accident = 0.0f;
                     //printf ("DTH %d\n ", seg->id);
@@ -524,7 +525,6 @@ bool SegLearn::LoadParameter (float* p, int n, FILE* f)
 
 void SegLearn::loadParameters (char* fname)
 {
-    //std::cout << "Maybe load parameters from " << fname << std::endl;
     FILE* f = fopen(fname,"rb");
     if (!f) { // no error here.
         return;
@@ -535,7 +535,8 @@ void SegLearn::loadParameters (char* fname)
     int local_n_quantums;
     fread (&local_n_quantums, sizeof(int), 1, f);
     if (local_n_quantums!=n_quantums) {
-        std::cerr << "Number of quantums " << local_n_quantums << " does not agree with current (" << n_quantums << "). Aborting read.\n";
+        // cerr and cout do not work on windows in combination with tgf memory functions, use GfOut and friends, or printf.
+		//std::cerr << "Number of quantums " << local_n_quantums << " does not agree with current (" << n_quantums << "). Aborting read.\n";
         fclose(f);
         return;
     }
@@ -558,16 +559,15 @@ void SegLearn::loadParameters (char* fname)
     CheckMatchingToken("END",rtag, f);
     FreeStringBuffer(&rtag);
     fclose(f);
-    //std::cout << "Parameters loaded\n";
 }
 
 /// Save
 void SegLearn::saveParameters (char* fname)
 {
     FILE* f = fopen(fname,"wb");
-    //std::cout << "Maybe save parameters to " << fname << std::endl;
     if (!f) {
-        std::cerr << "Could not open " << fname << " for writing. Check permissions\n";
+        // cerr and cout do not work on windows in combination with tgf memory functions, use GfOut and friends, or printf.
+        // std::cerr << "Could not open " << fname << " for writing. Check permissions\n";
         return;
     }
 
@@ -595,7 +595,6 @@ void SegLearn::saveParameters (char* fname)
     WriteToken("END", f);
     //FreeStringBuffer(&rtag);
     fclose(f);
-    //std::cout << "Parameters saved\n";
 }
 
 #ifdef USE_OLETHROS_NAMESPACE

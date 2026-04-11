@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <string.h>
 #ifndef WIN32
 #include <unistd.h>
 #endif
@@ -42,7 +41,7 @@ Ac3dOpen(char *filename, int nbObjects)
 {
     FILE *save_fd;
 
-    save_fd = fopen(filename, "wa");
+    save_fd = fopen(filename, "w");
 
     if (save_fd == NULL) {
 	    GfOut("Failed to open '%s' for writing", filename);
@@ -60,7 +59,7 @@ Ac3dOpen(char *filename, int nbObjects)
 
 
 int
-Ac3dGroup(FILE *save_fd, char *name, int nbObjects)
+Ac3dGroup(FILE *save_fd, const char *name, int nbObjects)
 {
     fprintf(save_fd, "OBJECT group\n");
     fprintf(save_fd, "name \"%s\"\n", name);

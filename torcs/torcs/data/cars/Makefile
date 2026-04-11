@@ -16,7 +16,7 @@
 ##############################################################################
 
 
-DATASUBDIRS	= categories models
+DATASUBDIRS	= categories models wheels
 
 PKGSUBDIRS	= $(DATASUBDIRS)
 

@@ -2,7 +2,7 @@
                         directory.cpp -- directory management                       
                              -------------------                                         
     created              : Fri Aug 13 21:58:55 CEST 1999
-    copyright            : (C) 1999 by                          
+    copyright            : (C) 1999-2014 by Eric Espie, Bernhard Wymann                       
     email                : torcs@free.fr   
     version              : $Id$                                  
  ***************************************************************************/
@@ -17,10 +17,9 @@
  ***************************************************************************/
 
 /** @file
-    		This is used for directory manipulation.
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
-    @ingroup	dir
+    Directory API.
+    @author Bernhard Wymann, Eric Espie
+    @version $Id$
 */
 
 #include <stdlib.h>
@@ -41,7 +40,7 @@ gfDirInit(void)
     @param	dir	directory name
     @return	The list of files
  */
-tFList * GfDirGetList(char *dir)
+tFList * GfDirGetList(const char *dir)
 {
 	if (GfOs.dirGetList) {
 		return GfOs.dirGetList(dir);
@@ -51,12 +50,13 @@ tFList * GfDirGetList(char *dir)
 }
 
 
-/** Get the list of files of a given directory
+/** Get the list of files with matching suffix of a given directory
     @ingroup	dir
     @param	dir	directory name
+    @param	suffix suffix (without dot)
     @return	The list of files
  */
-tFList * GfDirGetListFiltered(char *dir, char *suffix)
+tFList * GfDirGetListFiltered(const char *dir, const char *suffix)
 {
 	if (GfOs.dirGetListFiltered) {
 		return GfOs.dirGetListFiltered(dir, suffix);
@@ -69,12 +69,12 @@ tFList * GfDirGetListFiltered(char *dir, char *suffix)
     @ingroup	dir
     @param	list	List of files
     @param	freeUserData	User function used to free the user data
+    @param	freename	If true name gets freed too
+    @param  freedispname	If true display name gets freed too
     @return	none
 */
 void GfDirFreeList(tFList *list, tfDirfreeUserData freeUserData, bool freename, bool freedispname)
 {
-	//tFList *cur;
-
 	if (list) {
 		// The list contains at least one element, checked above.
 		tFList *rl = list;
@@ -84,37 +84,14 @@ void GfDirFreeList(tFList *list, tfDirfreeUserData freeUserData, bool freename, 
 			if ((freeUserData) && (tmp->userData)) {
 				freeUserData(tmp->userData);
 			}
-			if (freename) {
+			if (freename && tmp->name != NULL) {
 				freez(tmp->name);
 			}
-			if (freedispname) {
+			if (freedispname && tmp->dispName != NULL) {
 				freez(tmp->dispName);
 			}
 			free(tmp);
 		} while (rl != list);
 	}
-
-	list = NULL;
-
-
-/*
-	while (list) {
-		if (list->next == list) {
-			if ((freeUserData) && (list->userData)) {
-				freeUserData(list->userData);
-			}
-			free(list);
-			list = NULL;
-		} else {
-			cur = list->next;
-			list->next = cur->next;
-			cur->next->prev = list;
-			if ((freeUserData) && (cur->userData)) {
-				freeUserData(cur->userData);
-			}
-			free(cur);
-		}
-	}
-*/
 }
 

@@ -15,13 +15,13 @@
 
 ROBOT       = olethros
 SHIPDIR     = drivers/${ROBOT}/9
-SHIP        = default.xml
-SHIPSUBDIRS = practice qualifying race
+SHIP        = default.xml car1-trb3.rgb
+SHIPSUBDIRS =
 #practice qualifying race
 
 PKGSUBDIRS  = ${SHIPSUBDIRS}
-src-robots-olethros_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
-src-robots-olethros_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
+src-robots-base_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
+src-robots-base_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
 include ${MAKE_DEFAULT}
 
 

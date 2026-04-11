@@ -2,7 +2,7 @@
 
     file                 : car.cpp
     created              : Sun Mar 19 00:05:43 CET 2000
-    copyright            : (C) 2000 by Eric Espie
+    copyright            : (C) 2000-2017 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
 
@@ -19,12 +19,11 @@
 
 
 
-#include <string.h>
 #include <stdio.h>
 
 #include "sim.h"
 
-const tdble aMax = 0.35f; /*  */
+const tdble aMax = 1.04f; // 60 degrees DOF limit
 
 void
 SimCarConfig(tCar *car)
@@ -87,7 +86,11 @@ SimCarConfig(tCar *car)
 		SimWheelConfig(car, i); 
 	}
 	
-	
+	/* Set the origin to GC */
+	car->wheelbase = car->wheeltrack = 0;
+	car->statGC.x = car->wheel[FRNT_RGT].staticPos.x * gcfr + car->wheel[REAR_RGT].staticPos.x * (1 - gcfr);
+
+	SimAtmosphereConfig(car);
 	SimEngineConfig(car);
 	SimTransmissionConfig(car);
 	SimSteerConfig(car);
@@ -96,11 +99,7 @@ SimCarConfig(tCar *car)
 	for (i = 0; i < 2; i++) {
 		SimWingConfig(car, i);
 	}
-	
-	/* Set the origin to GC */
-	car->wheelbase = car->wheeltrack = 0;
-	car->statGC.x = car->wheel[FRNT_RGT].staticPos.x * gcfr + car->wheel[REAR_RGT].staticPos.x * (1 - gcfr);
-	
+		
 	carElt->_dimension = car->dimension;
 	carElt->_statGC = car->statGC;
 	carElt->_tank = car->tank;
@@ -146,13 +145,8 @@ SimCarUpdateForces(tCar *car)
 	tForces	F;
 	int		i;
 	tdble	m, w, minv;
-	tdble	SinTheta;
-	tdble	Cosz, Sinz;
-	tdble	v, R, Rv, Rm, Rx, Ry;
-	
-	Cosz = car->Cosz = cos(car->DynGCg.pos.az);
-	Sinz = car->Sinz = sin(car->DynGCg.pos.az);
-	
+	tdble	v, R, Rv, Rm, Rx, Ry, Rz;
+
 	car->preDynGC = car->DynGCg;
 	
 	/* total mass */
@@ -161,28 +155,36 @@ SimCarUpdateForces(tCar *car)
 	w = -m * G;
 	
 	/* Weight */
-	SinTheta = (-car->wheel[FRNT_RGT].zRoad - car->wheel[FRNT_LFT].zRoad
-		+ car->wheel[REAR_RGT].zRoad + car->wheel[REAR_LFT].zRoad) / (2.0 * car->wheelbase);
-	F.F.x = -w * SinTheta;
-	SinTheta = (-car->wheel[FRNT_RGT].zRoad - car->wheel[REAR_RGT].zRoad
-		+ car->wheel[FRNT_LFT].zRoad + car->wheel[REAR_LFT].zRoad) / (2.0 * car->wheeltrack);
-	F.F.y = -w * SinTheta;
-	F.F.z = w; /* not 3D */
+	sgMat4 dst;
+	sgMakeRotMat4(dst, RAD2DEG(car->DynGC.pos.az), RAD2DEG(car->DynGC.pos.ax), RAD2DEG(car->DynGC.pos.ay));
+	sgMat4 dstInv;
+	sgTransposeNegateMat4(dstInv, dst);
+	sgVec3 weight = {0.0f, 0.0f, w};
+	sgXformVec3(weight, dstInv);
+	F.F.x = weight[SG_X];
+	F.F.y = weight[SG_Y];
+	F.F.z = weight[SG_Z];
+
 	F.M.x = F.M.y = F.M.z = 0;
 	
 	/* Wheels */
 	for (i = 0; i < 4; i++) {
+		tWheel* wheel = &(car->wheel[i]);
+		
 		/* forces */
-		F.F.x += car->wheel[i].forces.x;
-		F.F.y += car->wheel[i].forces.y;
-		F.F.z += car->wheel[i].forces.z;
+		F.F.x += wheel->forces.x;
+		F.F.y += wheel->forces.y;
+		F.F.z += wheel->forces.z;
+		
 		/* moments */
-		F.M.x += car->wheel[i].forces.z * car->wheel[i].staticPos.y +
-			car->wheel[i].forces.y * (car->statGC.z + car->wheel[i].rideHeight);
-		F.M.y -= car->wheel[i].forces.z * car->wheel[i].staticPos.x +
-			car->wheel[i].forces.x * (car->statGC.z + car->wheel[i].rideHeight);
-		F.M.z += -car->wheel[i].forces.x * car->wheel[i].staticPos.y +
-			car->wheel[i].forces.y * car->wheel[i].staticPos.x;
+		F.M.x += wheel->forces.z * wheel->staticPos.y +
+			wheel->forces.y * wheel->rollCenter;
+			// Eventually TODO: activate fix below and make all cars/robots fit.
+			//car->wheel[i].forces.y * (car->statGC.z + car->wheel[i].rideHeight);
+		F.M.y -= wheel->forces.z * wheel->staticPos.x +
+			wheel->forces.x * (car->statGC.z + wheel->rideHeight);
+		F.M.z += -wheel->forces.x * wheel->staticPos.y +
+			wheel->forces.y * wheel->staticPos.x;
 	}
 	
 	/* Aero Drag */
@@ -190,30 +192,31 @@ SimCarUpdateForces(tCar *car)
 	
 	/* Wings & Aero Downforce */
 	for (i = 0; i < 2; i++) {
-	/* forces */
-	F.F.z += car->wing[i].forces.z + car->aero.lift[i];
-	F.F.x += car->wing[i].forces.x;
-	/* moments */
-	F.M.y -= (car->wing[i].forces.z + car->aero.lift[i]) * car->wing[i].staticPos.x +
-		car->wing[i].forces.x * car->wing[i].staticPos.z;
+		/* forces */
+		F.F.z += car->wing[i].forces.z + car->aero.lift[i];
+		F.F.x += car->wing[i].forces.x;
+		/* moments */
+		F.M.y -= car->wing[i].forces.z * car->wing[i].staticPos.x + car->wing[i].forces.x * car->wing[i].staticPos.z;
+		F.M.y -= car->aero.lift[i] * (car->axle[i].xpos - car->statGC.x);
 	}
-	
+		
 	/* Rolling Resistance */
-	v = sqrt(car->DynGCg.vel.x * car->DynGCg.vel.x + car->DynGCg.vel.y * car->DynGCg.vel.y);
-	R = 0;
+	v = car->speed;
+	R = 0.0f;
 	for (i = 0; i < 4; i++) {
 		R += car->wheel[i].rollRes;
 	}
-	if (v > 0.00001) {
+	if (v > 0.00001f) {
 		Rv = R / v;
 		if ((Rv * minv * SimDeltaTime) > v) {
 			Rv = v * m / SimDeltaTime;
 		}
 	} else {
-		Rv = 0;
+		Rv = 0.0f;
 	}
-	Rx = Rv * car->DynGCg.vel.x;
-	Ry = Rv * car->DynGCg.vel.y;
+	Rx = Rv * car->DynGC.vel.x;
+	Ry = Rv * car->DynGC.vel.y;
+	Rz = Rv * car->DynGC.vel.z;
 	
 	if ((R * car->wheelbase / 2.0 * car->Iinv.z) > fabs(car->DynGCg.vel.az)) {
 		Rm = car->DynGCg.vel.az / car->Iinv.z;
@@ -222,14 +225,17 @@ SimCarUpdateForces(tCar *car)
 	}
 	
 	/* compute accelerations */
-	car->DynGC.acc.x = F.F.x * minv;
-	car->DynGC.acc.y = F.F.y * minv;
-	car->DynGC.acc.z = F.F.z * minv;
+	car->DynGC.acc.x = (F.F.x - Rx) * minv;
+	car->DynGC.acc.y = (F.F.y - Ry) * minv;
+	car->DynGC.acc.z = (F.F.z - Rz) * minv;
 	
-	car->DynGCg.acc.x = (F.F.x * Cosz - F.F.y * Sinz - Rx) * minv;
-	car->DynGCg.acc.y = (F.F.x * Sinz + F.F.y * Cosz - Ry) * minv;
-	car->DynGCg.acc.z = car->DynGC.acc.z;
+	sgVec3 accel = {car->DynGC.acc.x, car->DynGC.acc.y, car->DynGC.acc.z};
+	sgXformVec3(accel, dst);
 	
+	car->DynGCg.acc.x = accel[SG_X];
+	car->DynGCg.acc.y = accel[SG_Y];
+	car->DynGCg.acc.z = accel[SG_Z];
+
 	car->DynGCg.acc.ax = car->DynGC.acc.ax = F.M.x * car->Iinv.x;
 	car->DynGCg.acc.ay = car->DynGC.acc.ay = F.M.y * car->Iinv.y;
 	car->DynGCg.acc.az = car->DynGC.acc.az = (F.M.z - Rm) * car->Iinv.z;
@@ -238,14 +244,6 @@ SimCarUpdateForces(tCar *car)
 static void
 SimCarUpdateSpeed(tCar *car)
 {
-	tdble	Cosz, Sinz;
-	tdble	mass;
-	
-	mass = car->mass + car->fuel;
-		
-	Cosz = car->Cosz;
-	Sinz = car->Sinz;
-	
 	car->DynGCg.vel.x += car->DynGCg.acc.x * SimDeltaTime;
 	car->DynGCg.vel.y += car->DynGCg.acc.y * SimDeltaTime;
 	car->DynGCg.vel.z += car->DynGCg.acc.z * SimDeltaTime;
@@ -263,37 +261,36 @@ SimCarUpdateSpeed(tCar *car)
 	car->DynGC.vel.ay = car->DynGCg.vel.ay;
 	car->DynGC.vel.az = car->DynGCg.vel.az;
 	
-	car->DynGC.vel.x = car->DynGCg.vel.x * Cosz + car->DynGCg.vel.y * Sinz;
-	car->DynGC.vel.y = -car->DynGCg.vel.x * Sinz + car->DynGCg.vel.y * Cosz;
-	car->DynGC.vel.z = car->DynGCg.vel.z;
+	sgMat4 dst;
+	sgMakeRotMat4(dst, RAD2DEG(car->DynGC.pos.az), RAD2DEG(car->DynGC.pos.ax), RAD2DEG(car->DynGC.pos.ay));
+	sgTransposeNegateMat4(dst);
+	sgVec3 vel;
+	sgXformVec3(vel, (float *) &(car->DynGCg.vel), dst);
+	car->DynGC.vel.x = vel[SG_X];
+	car->DynGC.vel.y = vel[SG_Y];
+	car->DynGC.vel.z = vel[SG_Z];
 }
 
 void
 SimCarUpdateWheelPos(tCar *car)
-{
+{	
+	sgMat4 dst;
+	sgMakeRotMat4(dst, RAD2DEG(car->DynGC.pos.az), RAD2DEG(car->DynGC.pos.ax), RAD2DEG(car->DynGC.pos.ay));
+		
 	int i;
-	tdble vx;
-	tdble vy;
-	tdble Cosz, Sinz;
-	
-	Cosz = car->Cosz;
-	Sinz = car->Sinz;
-	vx = car->DynGC.vel.x;
-	vy = car->DynGC.vel.y;
-	
+		
 	/* Wheels data */
 	for (i = 0; i < 4; i++) {
-		tdble x = car->wheel[i].staticPos.x;
-		tdble y = car->wheel[i].staticPos.y;
-		tdble dx = x * Cosz - y * Sinz;
-		tdble dy = x * Sinz + y * Cosz;
+		tWheel* wheel = &(car->wheel[i]);
+		sgVec3 dstVec;
+		sgXformVec3(dstVec, (float *) &(wheel->staticPos.x), dst);
+
+		wheel->pos.x = car->DynGCg.pos.x + dstVec[0];
+		wheel->pos.y = car->DynGCg.pos.y + dstVec[1];
+		wheel->pos.z = car->DynGCg.pos.z + dstVec[2];
 		
-		car->wheel[i].pos.x = car->DynGCg.pos.x + dx;
-		car->wheel[i].pos.y = car->DynGCg.pos.y + dy;
-		car->wheel[i].pos.z = car->DynGCg.pos.z - car->statGC.z - x * sin(car->DynGCg.pos.ay) + y * sin(car->DynGCg.pos.ax);
-		
-		car->wheel[i].bodyVel.x = vx - car->DynGC.vel.az * y;
-		car->wheel[i].bodyVel.y = vy + car->DynGC.vel.az * x;
+		wheel->bodyVel.x = car->DynGC.vel.x - car->DynGC.vel.az * car->wheel[i].staticPos.y;
+		wheel->bodyVel.y = car->DynGC.vel.y + car->DynGC.vel.az * car->wheel[i].staticPos.x;
 	}
 }
 
@@ -301,13 +298,9 @@ static void
 SimCarUpdatePos(tCar *car)
 {
 	tdble vx, vy;
-	tdble accx, accy;
 	
 	vx = car->DynGCg.vel.x;
 	vy = car->DynGCg.vel.y;
-	
-	accx = car->DynGCg.acc.x;
-	accy = car->DynGCg.acc.y;
 	
 	car->DynGCg.pos.x += vx * SimDeltaTime;
 	car->DynGCg.pos.y += vy * SimDeltaTime;
@@ -338,40 +331,49 @@ SimCarUpdatePos(tCar *car)
 static void
 SimCarUpdateCornerPos(tCar *car)
 {
+	sgMat4 dst;
+	sgMakeRotMat4(dst, RAD2DEG(car->DynGC.pos.az), RAD2DEG(car->DynGC.pos.ax), RAD2DEG(car->DynGC.pos.ay));
+
 	tdble Cosz = car->Cosz;
 	tdble Sinz = car->Sinz;
-	tdble vx = car->DynGCg.vel.x;
-	tdble vy = car->DynGCg.vel.y;
 	int i;
 	
 	for (i = 0; i < 4; i++) {
-		tdble x = car->corner[i].pos.x + car->statGC.x;
-		tdble y = car->corner[i].pos.y + car->statGC.y;
-		tdble dx = x * Cosz - y * Sinz;
-		tdble dy = x * Sinz + y * Cosz;
+		tPosd* corner = &(car->corner[i].pos);
+		sgVec3 localPos;
 		
-		car->corner[i].pos.ax = car->DynGCg.pos.x + dx;
-		car->corner[i].pos.ay = car->DynGCg.pos.y + dy;
-		/*car->corner[i].pos.az = car->DynGC.pos.z - car->statGC.z + x * sin(car->DynGC.pos.ay) + y * sin(car->DynGC.pos.ax);*/
+		localPos[0] = corner->x + car->statGC.x;
+		localPos[1] = corner->y + car->statGC.y;
+		localPos[2] = corner->z - car->statGC.z;
+
+		sgVec3 dstVec;
+		sgXformVec3(dstVec, localPos, dst);
 		
-		/* add the body rotation to the wheel        */
+		car->corner[i].pos.ax = car->DynGCg.pos.x + dstVec[0];
+		car->corner[i].pos.ay = car->DynGCg.pos.y + dstVec[1];
+		car->corner[i].pos.az = car->DynGCg.pos.z + dstVec[2];
+
+		/* add the body rotation to the corner       */
 		/* the speed is vel.az * r                   */
 		/* where r = sqrt(x*x + y*y)                 */
 		/* the tangent vector is -y / r and x / r    */
 		// compute corner velocity at local frame
-		car->corner[i].vel.ax = - car->DynGC.vel.az * y;
-		car->corner[i].vel.ay = car->DynGC.vel.az * x;
+		car->corner[i].vel.ax = - car->DynGC.vel.az * localPos[1];
+		car->corner[i].vel.ay = car->DynGC.vel.az * localPos[0];
+		car->corner[i].vel.az = car->DynGC.vel.ax * localPos[1] - car->DynGC.vel.ay * localPos[0];
 		
 		// rotate to global and add global center of mass velocity
 		// note: global to local.
-		car->corner[i].vel.x = vx
+		car->corner[i].vel.x = car->DynGCg.vel.x
 			+ car->corner[i].vel.ax * Cosz - car->corner[i].vel.ay * Sinz;
-		car->corner[i].vel.y = vy
+		car->corner[i].vel.y = car->DynGCg.vel.y
 			+ car->corner[i].vel.ax * Sinz + car->corner[i].vel.ay * Cosz;
-		
+		car->corner[i].vel.z = car->DynGCg.vel.z + car->corner[i].vel.az;
+
 		// add local center of mass velocity
 		car->corner[i].vel.ax += car->DynGC.vel.x;
 		car->corner[i].vel.ay += car->DynGC.vel.y;
+		car->corner[i].vel.az += car->DynGC.vel.z;
 	}
 }
 
@@ -418,6 +420,7 @@ SimCarUpdate(tCar *car, tSituation * /* s */)
 	CHECK(car);
 	SimCarCollideXYScene(car);
 	CHECK(car);
+	car->speed = sqrt(car->DynGC.vel.x*car->DynGC.vel.x + car->DynGC.vel.y*car->DynGC.vel.y + car->DynGC.vel.z*car->DynGC.vel.z);
 }
 
 void

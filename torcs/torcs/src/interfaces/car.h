@@ -2,9 +2,8 @@
 
     file                 : car.h
     created              : Sun Jan 30 12:00:15 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -20,7 +19,6 @@
 /** @file
     		This is the car structure.
     @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
     @ingroup	carstruct
     @note	Short cuts are to be used with the carElt structure.
 */
@@ -55,6 +53,7 @@ typedef struct
     tdble	tireWidth;	/**< Tire width */
     tdble	brakeDiskRadius; /**< Brake disk radius */
     tdble	wheelRadius;	/**< Overall wheel radius */
+    tdble	idealTemperature; // Tire ideal temperature
 } tWheelSpec;
 /* structure access short cuts */
 #define _rimRadius(i)		info.wheel[i].rimRadius 	/**< short cut to tWheelSpec#rimRadius */
@@ -140,11 +139,13 @@ GF_TAILQ_HEAD(CarPenaltyHead, struct CarPenalty);
 /** Race Administrative info */
 typedef struct {
     double		bestLapTime;
+    bool commitBestLapTime;		/* If a rule violation happens (e.g. cutting a corner) the laptime is not commited (false) */
     double		deltaBestLapTime;
     double		curLapTime;
     double		lastLapTime;
     double		curTime;
     tdble		topSpeed;
+	tdble		currentMinSpeedForLap;	// Min speed on current lap, reset on start line crossing
     int			laps;
     int			nbPitStops;
     int			remainingLaps;
@@ -159,14 +160,17 @@ typedef struct {
     tTrackOwnPit 	*pit;
     int			event;
     tCarPenaltyHead	penaltyList;	/**< List of current penalties */
+	tdble penaltyTime;
 } tCarRaceInfo;
 /* structure access */
 #define _bestLapTime		race.bestLapTime
+#define _commitBestLapTime race.commitBestLapTime
 #define _deltaBestLapTime	race.deltaBestLapTime
 #define _curLapTime		race.curLapTime
 #define _curTime		race.curTime
 #define _lastLapTime		race.lastLapTime
 #define _topSpeed		race.topSpeed
+#define _currentMinSpeedForLap	race.currentMinSpeedForLap
 #define _laps			race.laps
 #define _nbPitStops		race.nbPitStops
 #define _remainingLaps		race.remainingLaps
@@ -181,11 +185,13 @@ typedef struct {
 #define _scheduledEventTime	race.scheduledEventTime
 #define _event			race.event
 #define _penaltyList		race.penaltyList
+#define _penaltyTime	race.penaltyTime
 
 /** Public info on the cars */
 typedef struct {
     tDynPt	DynGC;		/**< GC data (car axis) */    
-    tDynPt	DynGCg;		/**< GC data (world axis) */    
+    tDynPt	DynGCg;		/**< GC data (world axis) */
+	tdble	speed;		// total speed, sqrt(vx*vx + vy*vy + vz*vz)
     sgMat4	posMat;		/**< position matrix */
     tTrkLocPos	trkPos;		/**< current track position. The segment is the track segment (not sides)*/
     int		state;	    	/**< state of the car.
@@ -247,13 +253,15 @@ typedef struct {
     int		state;		/**< wheel state */
     tTrackSeg	*seg;		/**< Track segment where the wheel is */
     tdble rollRes;              /**< rolling resistance, useful for sound */
-	tdble   temp_in, temp_mid, temp_out;
-	tdble   condition;
 	tdble slipSide;
 	tdble slipAccel;
 	tdble Fx;
 	tdble Fy;
 	tdble Fz;
+	tdble currentPressure;		// current tire pressure considering temperature
+	tdble currentTemperature;	// current temperature
+	tdble currentWear;			// [0..1], 1 means totally worn (tread thickness 0)
+	tdble currentGraining;		// [0..1], 1 means totally grained
 } tWheelState;
 #define _ride(i)	priv.wheel[i].relPos.z
 #define _brakeTemp(i)	priv.wheel[i].brakeTemp
@@ -264,11 +272,6 @@ typedef struct {
 #define _wheelFx(i) priv.wheel[i].Fx
 #define _wheelFy(i) priv.wheel[i].Fy
 #define _wheelFz(i) priv.wheel[i].Fz
-#define _tyreT_in(i) priv.wheel[i].temp_in
-#define _tyreT_mid(i) priv.wheel[i].temp_mid
-#define _tyreT_out(i) priv.wheel[i].temp_out
-#define _tyreCondition(i) priv.wheel[i].condition
-
 
 #define MAX_GEARS	10	/* including reverse and neutral */
 
@@ -288,8 +291,6 @@ typedef struct {
     tPosd	corner[4];	/**< car's corners position */
     int		gear;	    	/**< current gear */
     tdble	fuel;	    	/**< remaining fuel (liters) */
-	tdble   fuel_consumption_total; // l
-	tdble   fuel_consumption_instant; // l/100km (>100 means infinity)
     tdble	enginerpm;
     tdble	enginerpmRedLine;
     tdble	enginerpmMax;
@@ -302,17 +303,22 @@ typedef struct {
     int		gearOffset;		/**< gearRatio[gear + gearOffset] is the ratio for gear */
     tdble	skid[4];		/**< skid intensity */
     tdble	reaction[4];    /**< reaction on wheels */
-    int		collision;
+    int		collision;		/**< Collision value for graphics and sound, clearing is managed by consumers */
+	int		simcollision;	/**< For rules etc. reflects the collision state from simu */
 	float   smoke;
     t3Dd	normal;
     t3Dd	collpos;        /**< Collision position, useful for sound*/
     int		dammage;
     int		debug;
 	tCollisionState collision_state; /**< collision state */
+	tdble localPressure;	// Environment pressure at cars location
+	int repCmdMaxClicks;	// Driver adjustable range for brake repartition during driving
+	int brakeRepartitionCmd; // Current clicks
+	tdble otherSurfaceContribution[4]; // Tire overlap to other surface [0..0.5]
+	tTrackSeg* otherSurfaceSeg[4];		// Other segment where the tire overlaps to
+
 } tPrivCar;
 /* structure access */
-#define _fuelTotal priv.fuel_consumption_total
-#define _fuelInstant priv.fuel_consumption_instant
 #define _driverIndex	priv.driverIndex
 #define _paramsHandle	priv.paramsHandle
 #define _carHandle	priv.carHandle
@@ -350,6 +356,7 @@ typedef struct {
     int		lightCmd;    /**< Lights command */
 #define RM_LIGHT_HEAD1		0x00000001	/**< head light 1 */
 #define RM_LIGHT_HEAD2		0x00000002	/**< head light 2 */
+	int brakeRepartitionCmd;	/**< Brake balance "clicks", positive is to the front */
 } tCarCtrl;
 #define _steerCmd	ctrl.steer
 #define _accelCmd	ctrl.accelCmd
@@ -363,6 +370,66 @@ typedef struct {
 
 struct RobotItf;
 
+typedef struct 
+{
+	tdble value;
+	tdble min;
+	tdble max;
+} tCarPitSetupValue;
+
+
+
+typedef struct 
+{
+	// Steer
+	tCarPitSetupValue steerLock;
+	
+	//Wheel
+	tCarPitSetupValue wheelcamber[4];
+	tCarPitSetupValue wheeltoe[4];
+	tCarPitSetupValue wheelrideheight[4];
+	tCarPitSetupValue wheelcaster[4];
+
+	// Brake
+	tCarPitSetupValue brakePressure;
+	tCarPitSetupValue brakeRepartition;
+
+	//Suspension
+	tCarPitSetupValue suspspring[4];
+	tCarPitSetupValue susppackers[4];
+	tCarPitSetupValue suspslowbump[4];
+	tCarPitSetupValue suspslowrebound[4];
+	tCarPitSetupValue suspfastbump[4];
+	tCarPitSetupValue suspfastrebound[4];
+	tCarPitSetupValue suspbumpthreshold[4];
+	tCarPitSetupValue suspreboundthreshold[4];
+
+	// Anti-rollbar
+	tCarPitSetupValue arbspring[2];
+
+	// Third element
+	tCarPitSetupValue thirdspring[2];
+	tCarPitSetupValue thirdbump[2];
+	tCarPitSetupValue thirdrebound[2];
+	tCarPitSetupValue thirdX0[2];
+
+	// Gears [1-8]
+	tCarPitSetupValue gearsratio[MAX_GEARS - 2];	// without reverse/neutral
+
+	// Wings
+	tCarPitSetupValue wingangle[2];
+
+	// Differential
+	tCarPitSetupValue diffratio[3];
+	tCarPitSetupValue diffmintqbias[3];
+	tCarPitSetupValue diffmaxtqbias[3];
+	tCarPitSetupValue diffslipbias[3];
+	tCarPitSetupValue difflockinginputtq[3];
+	tCarPitSetupValue difflockinginputbraketq[3];
+	enum TDiffType { NONE = 0, SPOOL = 1, FREE = 2, LIMITED_SLIP = 3, VISCOUS_COUPLER = 4};
+	TDiffType diffType[3];
+} tCarPitSetup;
+
 /** Command issued by the car during pit stop */
 typedef struct 
 {
@@ -371,6 +438,11 @@ typedef struct
 #define RM_PIT_REPAIR		0
 #define RM_PIT_STOPANDGO	1
     int			stopType;
+	tCarPitSetup setup;
+	
+	enum TireChange { NONE = 0, ALL = 1};
+
+	TireChange tireChange;
 } tCarPitCmd;
 #define _pitFuel	pitcmd.fuel
 #define _pitRepair	pitcmd.repair
@@ -461,9 +533,9 @@ typedef struct CarElt
 #define PRM_TIREWIDTH		"tire width"
 #define PRM_TIRERATIO		"tire height-width ratio"
 #define PRM_RIDEHEIGHT		"ride height"
-#define PRM_ROLLINGRESIST	"rolling resistance"
 #define PRM_TOE			"toe"
 #define PRM_CAMBER		"camber"
+#define PRM_CASTER		"caster"
 #define PRM_CA			"stiffness"
 #define PRM_RFACTOR		"dynamic friction"
 #define PRM_EFACTOR		"elasticity factor"
@@ -471,6 +543,11 @@ typedef struct CarElt
 #define PRM_LOADFMAX		"load factor max"
 #define PRM_LOADFMIN		"load factor min"
 #define PRM_OPLOAD		"operating load"
+#define PRM_TREADTHICKNESS	"tread thickness"
+#define PRM_RIMMASS		"rim mass"
+#define PRM_HYSTERESIS	"hysteresis"
+#define PRM_IDEALTEMP	"ideal temperature"
+#define PRM_WEAR		"wear"
 
 
 #define PRM_SPR			"spring"
@@ -481,6 +558,8 @@ typedef struct CarElt
 #define PRM_SLOWREBOUND		"slow rebound"
 #define PRM_FASTBUMP		"fast bump"
 #define PRM_FASTREBOUND		"fast rebound"
+#define PRM_BUMPTHRESHOLD	"fast bump threshold"
+#define PRM_REBOUNDTHRESHOLD	"fast rebound threshold"
 
 #define PRM_XPOS		"xpos"
 #define PRM_YPOS		"ypos"
@@ -493,6 +572,8 @@ typedef struct CarElt
 #define PRM_BRKAREA		"piston area"
 #define PRM_BRKREP		"front-rear brake repartition"
 #define PRM_BRKPRESS		"max pressure"
+#define PRM_BRKREPCMD_MAXCLICKS	"brake repartition max clicks"
+#define PRM_BRKREPCMD_CLICKVALUE "brake repartition offset per click"
 
 #define PRM_CX			"Cx"
 #define PRM_FCL			"front Clift"
@@ -537,6 +618,7 @@ typedef struct CarElt
 #define PRM_MAX_TQ_BIAS		"max torque bias"
 #define PRM_MAX_SLIP_BIAS	"max slip bias"
 #define PRM_LOCKING_TQ		"locking input torque"
+#define PRM_LOCKINGBRAKE_TQ		"locking brake input torque"
 #define PRM_VISCOSITY_FACTOR	"viscosity factor"
 
 
@@ -585,7 +667,8 @@ typedef struct CarElt
 #define PRM_SPEEDO_MAXANG	"speedometer max angle"
 #define PRM_SPEEDO_DIGITAL  "speedometer digital"
 
-#define PRM_WHEEL_3D        "3d wheel"
+#define PRM_WHEEL_3D        "3d wheel basename"
+#define PRM_WHEEL_3D_DIR    "3d wheel directory"
 
 /* Lights */
 #define	VAL_LIGHT_HEAD1		"head1"

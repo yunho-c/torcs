@@ -33,6 +33,7 @@
 #include <car.h>
 #include <graphic.h>
 #include <robottools.h>
+#include <portability.h>
 
 #include "grmain.h"
 #include "grshadow.h"
@@ -71,11 +72,6 @@ ssgBase *ssgVtxTableCarlight::clone(int clone_flags)
 
 ssgVtxTableCarlight::ssgVtxTableCarlight()
 {
-	sgVec3 p;
-	p[0] = 0;
-	p[1] = 0;
-	p[2] = 0;
-	ssgVtxTableCarlight(0, 0, p);
 }
 
 
@@ -127,7 +123,7 @@ void ssgVtxTableCarlight::draw_geometry ()
 		return;
 	}
 
-	alpha = 0.5f;
+	alpha = 0.75f;
 	glDepthMask(GL_FALSE);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -226,12 +222,10 @@ ssgSimpleState	*breaklight2 = NULL;
 
 tgrCarlight * theCarslight = NULL;
 
-ssgBranch *CarlightCleanupAnchor;
-
-
 void grInitCarlight(int index)
 {
-	char buf[256];
+	const int BUFSIZE=256;
+	char buf[BUFSIZE];
 	int i = 0;
 	theCarslight = (tgrCarlight *)malloc(sizeof(tgrCarlight)*index);
 	memset(theCarslight, 0, sizeof(tgrCarlight)*index);
@@ -241,7 +235,7 @@ void grInitCarlight(int index)
 	}
 
 	if (!frontlight1) {
-		sprintf(buf, "data/textures;data/img;.");
+		snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 		frontlight1 = (ssgSimpleState*)grSsgLoadTexStateEx("frontlight1.rgb", buf, FALSE, FALSE);
 		if (frontlight1 != NULL) {
 			frontlight1->disable(GL_LIGHTING);
@@ -249,11 +243,12 @@ void grInitCarlight(int index)
 			frontlight1->disable(GL_CULL_FACE);
 			frontlight1->setTranslucent();
 			frontlight1->setColourMaterial(GL_AMBIENT_AND_DIFFUSE);
+			frontlight1->ref();
 		}
 	}
 
 	if (!frontlight2) {
-		sprintf(buf, "data/textures;data/img;.");
+		snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 		frontlight2 = (ssgSimpleState*)grSsgLoadTexStateEx("frontlight2.rgb", buf, FALSE, FALSE);
 		if (frontlight2 != NULL) {
 			frontlight2->disable(GL_LIGHTING);
@@ -261,11 +256,12 @@ void grInitCarlight(int index)
 			frontlight2->disable(GL_CULL_FACE);
 			frontlight2->setTranslucent();
 			frontlight2->setColourMaterial(GL_AMBIENT_AND_DIFFUSE);
+			frontlight2->ref();
 		}
 	}
 
 	if (!rearlight1) {
-		sprintf(buf, "data/textures;data/img;.");
+		snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 		rearlight1 = (ssgSimpleState*)grSsgLoadTexStateEx("rearlight1.rgb", buf, FALSE, FALSE);
 		if (rearlight1 != NULL) {
 			rearlight1->disable(GL_LIGHTING);
@@ -273,11 +269,12 @@ void grInitCarlight(int index)
 			rearlight1->disable(GL_CULL_FACE);
 			rearlight1->setTranslucent();
 			rearlight1->setColourMaterial(GL_AMBIENT_AND_DIFFUSE);
+			rearlight1->ref();
 		}
 	}
 
 	if (!rearlight2) {
-		sprintf(buf, "data/textures;data/img;.");
+		snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 		rearlight2 = (ssgSimpleState*)grSsgLoadTexStateEx("rearlight2.rgb", buf, FALSE, FALSE);
 		if (rearlight2 != NULL) {
 			rearlight2->disable(GL_LIGHTING);
@@ -285,11 +282,12 @@ void grInitCarlight(int index)
 			rearlight2->disable(GL_CULL_FACE);
 			rearlight2->setTranslucent();
 			rearlight2->setColourMaterial(GL_AMBIENT_AND_DIFFUSE);
+			rearlight2->ref();
 		}
 	}
 
 	if (!breaklight1) {
-		sprintf(buf, "data/textures;data/img;.");
+		snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 		breaklight1 = (ssgSimpleState*)grSsgLoadTexStateEx("breaklight1.rgb", buf, FALSE, FALSE);
 		if (breaklight1 != NULL) {
 			breaklight1->disable(GL_LIGHTING);
@@ -297,11 +295,12 @@ void grInitCarlight(int index)
 			breaklight1->disable(GL_CULL_FACE);
 			breaklight1->setTranslucent();
 			breaklight1->setColourMaterial(GL_AMBIENT_AND_DIFFUSE);
+			breaklight1->ref();
 		}
 	}
 
 	if (!breaklight2) {
-		sprintf(buf, "data/textures;data/img;.");
+		snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 		breaklight2 = (ssgSimpleState*)grSsgLoadTexStateEx("breaklight2.rgb", buf, FALSE, FALSE);
 		if (breaklight2 != NULL) {
 			breaklight2->disable(GL_LIGHTING);
@@ -309,20 +308,50 @@ void grInitCarlight(int index)
 			breaklight2->disable(GL_CULL_FACE);
 			breaklight2->setTranslucent();
 			breaklight2->setColourMaterial(GL_AMBIENT_AND_DIFFUSE);
+			breaklight2->ref();
 		}
 	}
-
-	CarlightCleanupAnchor = new ssgBranch();
 }
 
 
 void grShudownCarlight(void)
 {
 	CarlightAnchor->removeAllKids();
-	CarlightCleanupAnchor->removeAllKids();
-	delete CarlightCleanupAnchor;
+	int i, j;
+	for (i = 0; i < grNbCars; i++) {
+		for (j = 0; j < theCarslight[i].numberCarlight; j++) {
+			ssgDeRefDelete(theCarslight[i].lightArray[j]);
+		}
+	}
+
 	free(theCarslight);
 	theCarslight=NULL;
+
+	if (frontlight1 != NULL) {
+		ssgDeRefDelete(frontlight1);
+		frontlight1 = NULL;
+	}
+
+	if (frontlight2 != NULL) {
+		ssgDeRefDelete(frontlight2);
+		frontlight2 = NULL;
+	}
+	if (rearlight1 != NULL) {
+		ssgDeRefDelete(rearlight1);
+		rearlight1 = NULL;
+	}
+	if (rearlight2 != NULL) {
+		ssgDeRefDelete(rearlight2);
+		rearlight2 = NULL;
+	}
+	if (breaklight1 != NULL) {
+		ssgDeRefDelete(breaklight1);
+		breaklight1 = NULL;
+	}
+	if (breaklight2 != NULL) {
+		ssgDeRefDelete(breaklight2);
+		breaklight2 = NULL;
+	}
 }
 
 
@@ -331,8 +360,9 @@ void grAddCarlight(tCarElt *car, int type, sgVec3 pos, double size)
 	ssgVertexArray *light_vtx = new ssgVertexArray(1);
 
 	light_vtx->add(pos);
-	theCarslight[car->index].lightArray[theCarslight[car->index].numberCarlight]= new ssgVtxTableCarlight(light_vtx, size,pos);
-
+	theCarslight[car->index].lightArray[theCarslight[car->index].numberCarlight] = new ssgVtxTableCarlight(light_vtx, size,pos);
+	theCarslight[car->index].lightArray[theCarslight[car->index].numberCarlight]->ref();
+	
 	switch (type) {
 		case LIGHT_TYPE_FRONT :
 			theCarslight[car->index].lightArray[theCarslight[car->index].numberCarlight]->setState(frontlight1);
@@ -366,18 +396,19 @@ void grAddCarlight(tCarElt *car, int type, sgVec3 pos, double size)
 		theCarslight[car->index].lightArray[theCarslight[car->index].numberCarlight]->clone(SSG_CLONE_GEOMETRY);
 
 	theCarslight[car->index].lightAnchor->addKid(theCarslight[car->index].lightCurr[theCarslight[car->index].numberCarlight]);
-	CarlightCleanupAnchor->addKid(theCarslight[car->index].lightArray[theCarslight[car->index].numberCarlight]);
-	CarlightAnchor->addKid(theCarslight[car->index].lightAnchor);
 	theCarslight[car->index].numberCarlight++;
+}
+
+
+void grLinkCarlights(tCarElt *car)
+{
+	CarlightAnchor->addKid(theCarslight[car->index].lightAnchor);
 }
 
 
 void grUpdateCarlight(tCarElt *car,class cGrPerspCamera *curCam, int disp)
 {
 	int i = 0;
-	sgVec3 *campos;
-	sgVec3 *centerpos;
-	sgVec3 * lightpos;
 	ssgVtxTableCarlight	*clight;
 
 	for (i = 0; i < theCarslight[car->index].numberCarlight; i++) {
@@ -385,9 +416,6 @@ void grUpdateCarlight(tCarElt *car,class cGrPerspCamera *curCam, int disp)
 			theCarslight[car->index].lightAnchor->removeKid(theCarslight[car->index].lightCurr[i]);
 		}
 	}
-
-	campos = curCam->getPosv();
-	centerpos = curCam->getCenterv();
 
 	for (i = 0; i < theCarslight[car->index].numberCarlight; i++) {
 		if (!disp) {
@@ -400,7 +428,6 @@ void grUpdateCarlight(tCarElt *car,class cGrPerspCamera *curCam, int disp)
 		clight->transform(grCarInfo[car->index].carPos);
 		theCarslight[car->index].lightCurr[i]=clight;
 		theCarslight[car->index].lightAnchor->addKid(clight);
-		lightpos=clight->getPos();
 
 		switch (theCarslight[car->index].lightType[i]) {
 			case LIGHT_TYPE_BRAKE:

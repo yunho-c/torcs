@@ -36,9 +36,9 @@
 			"firstname VARCHAR(20) NOT NULL DEFAULT '', " .
 			"lastname VARCHAR(20) NOT NULL DEFAULT '', " .
 			"active ENUM('activated','pending','disabled') NOT NULL DEFAULT 'pending', " .  // for email activation
-			"registered DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " . // for email activation
-			"lastlogin DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " . // login, not yet used
-			"lastvisit DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " . // session, not yet used
+			"registered DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " . // for email activation
+			"lastlogin DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " . // login, not yet used
+			"lastvisit DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " . // session, not yet used
 			"account ENUM('spectator','racer','admin') NOT NULL DEFAULT 'spectator', " .
 			"postings INT NOT NULL DEFAULT '0', " .
 			"PRIMARY KEY (id), " .
@@ -253,8 +253,8 @@
 		$sql = "CREATE TABLE $tablename (" .
 			"pollid INT NOT NULL AUTO_INCREMENT, " .
 			"question TEXT NOT NULL, " .
-			"start DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .	// voting enabled at this time
-			"end DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .	// voting disabled at this time
+			"start DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .	// voting enabled at this time
+			"end DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .	// voting disabled at this time
 			"groups SET('spectator','racer','admin','anonymous') NOT NULL, " .
 			"owner INT NOT NULL, " .
 			"PRIMARY KEY (pollid))";
@@ -370,7 +370,7 @@
 			"description TEXT NOT NULL, " .
 			"modulename VARCHAR(40) NOT NULL, " .
 			"carid INT NOT NULL, " .
-			"created DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
+			"created DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
 			"owner INT NOT NULL, " .
 			"races INT NOT NULL DEFAULT '0', " .
 			"distance FLOAT NOT NULL DEFAULT '0.0', " .
@@ -397,7 +397,7 @@
 			"distance FLOAT NOT NULL DEFAULT '0.0', " .
 			"points FLOAT NOT NULL DEFAULT '0', " .
 			"races INT NOT NULL DEFAULT '0', " .
-			"created DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
+			"created DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
 			"UNIQUE KEY (name) , " .
 			"UNIQUE KEY (racenumber) , " .
 			"PRIMARY KEY (driverid))";
@@ -445,10 +445,10 @@
 			"eventid INT NOT NULL AUTO_INCREMENT, " .
 			"name VARCHAR(60) NOT NULL, " .
 			"description TEXT NOT NULL, " .
-			"signin_start DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
-			"signin_end DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
-			"startdate  DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
-			"enddate  DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
+			"signin_start DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
+			"signin_end DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
+			"startdate  DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
+			"enddate  DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
 			"maxteams INT NOT NULL DEFAULT '0', " .
 			"pointsystem INT NOT NULL, " .
 			"PRIMARY KEY (eventid))";
@@ -466,10 +466,10 @@
 			"raceid INT NOT NULL AUTO_INCREMENT, " .
 			"eventid INT NOT NULL, " .
 			"trackid INT NOT NULL, " .
-			"robot_submission_start DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
-			"robot_submission_end DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
-			"result_submission_start DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
-			"result_submission_end DATETIME NOT NULL DEFAULT '0000-00-00 00:00:00', " .
+			"robot_submission_start DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
+			"robot_submission_end DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
+			"result_submission_start DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
+			"result_submission_end DATETIME NOT NULL DEFAULT '1970-01-01 00:00:00', " .
 			"report_updated ENUM('yes','no') NOT NULL DEFAULT 'no', " .
 			"PRIMARY KEY (raceid))";
 		$result = mysql_query($sql);
@@ -633,4 +633,81 @@
 		$result = mysql_query($sql);
 		echo "Created Table $tablename: " . mysql_error() . "<br>\n";
 	}
+
+	// ----------------------------- TBL_VERSION --------------------------------
+	$tablename = $db_prefix . TBL_VERSION;
+	if (existsTable($tablename)) {
+		echo "Table $tablename already exists, doing nothing.<br>\n";
+	} else {
+		// Create VERSION table.
+		$sql = "CREATE TABLE $tablename (" .
+			   "id INT NOT NULL AUTO_INCREMENT, " .
+			   "name VARCHAR(100) NOT NULL DEFAULT '', " .
+			   "PRIMARY KEY (id))";
+		$result = mysql_query($sql);
+		echo "Created Table $tablename: " . mysql_error() . "<br>\n";
+	}
+
+	// ----------------------------- INDICES --------------------------------
+	$tablename = $db_prefix . TBL_LOGIN_LOG;
+	$sql = "ALTER TABLE $tablename ADD INDEX `login` ( `id` , `ip` , `pf` , `username` , `time` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `time` )";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_USERS;
+	$sql = "ALTER TABLE $tablename ADD INDEX `user` ( `username` , `password` , `active` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `username` , `cookie` , `active` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `username` , `cookie` , `session` , `ip` , `active` )";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_FORUM;
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `id` , `id_thread` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `id_parent` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `id_parent` , `id_thread` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `created` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `author` )";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD FULLTEXT `subjecttext` (`subject`,`text`)";
+	$result = mysql_query($sql);
+	$sql = "ALTER TABLE $tablename ADD FULLTEXT `subject` (`subject`)";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_FORUM_TOPICDATA;
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `lastpost` )";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_SESSIONCOUNT;
+	$sql = "ALTER TABLE $tablename ADD INDEX ( `start` )";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_SESSIONCOUNT;
+	$sql = "ALTER TABLE $tablename CHANGE `session` `session` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT ''";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_USERS;
+	$sql = "ALTER TABLE $tablename CHANGE `session` `session` VARCHAR( 255 ) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT ''";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_RACE;
+	$sql = "ALTER TABLE $tablename ADD `versionid` INT NOT NULL DEFAULT '0' AFTER `trackid`";
+	$result = mysql_query($sql);
+	
+	$tablename = $db_prefix . TBL_TRACK;
+	$sql = "ALTER TABLE $tablename ADD `internalname` VARCHAR(255) NULL DEFAULT NULL AFTER `description`;";
+	$result = mysql_query($sql);
+
+	$tablename = $db_prefix . TBL_RACE;
+	$sql = "ALTER TABLE $tablename ADD `qualifyingseed` FLOAT NULL DEFAULT NULL AFTER `report_updated`";
+	$result = mysql_query($sql);
+	
+	$tablename = $db_prefix . TBL_RACE;
+	$sql = "ALTER TABLE $tablename ADD `raceseed` FLOAT NULL DEFAULT NULL AFTER `qualifyingseed`";
+	$result = mysql_query($sql);
 ?>

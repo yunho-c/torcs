@@ -15,12 +15,12 @@
 
 ROBOT       = bt
 SHIPDIR     = drivers/${ROBOT}/0
-SHIP        = default.xml cg-nascar-rwd.rgb
+SHIP        = default.xml car1-stock1.rgb
 SHIPSUBDIRS = practice qualifying race
 
 PKGSUBDIRS  = ${SHIPSUBDIRS}
-src-robots-bt_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
-src-robots-bt_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
+src-robots-base_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
+src-robots-base_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
 include ${MAKE_DEFAULT}
 
 

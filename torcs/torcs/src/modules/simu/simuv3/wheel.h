@@ -25,7 +25,6 @@
 #undef USE_THICKNESS
 #define N_THICKNESS_SEGMENTS 16
 #define SEGMENT_RANGE 4
-#define PRM_DYNAMIC_CAMBER "steering dynamic camber rate"
 
 typedef struct
 {
@@ -98,8 +97,6 @@ typedef struct
     tdble	camber;		/* camber, negative toward exterior on both sides */
     tdble	pressure;	/* tire pressure */
     tdble   rel_vel;    /* relative velocity - used for realstic suspension movement*/
-    tdble   dynamic_camber; /* steering dynamic camber angle */
-    tdble   bump_force;  /* bumps due to realistic suspension movement */
 
 	/* axis damage */
 	tdble rotational_damage_x;

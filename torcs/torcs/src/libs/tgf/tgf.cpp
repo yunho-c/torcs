@@ -2,7 +2,7 @@
                           tgf.cpp -- The Gaming Framework                            
                              -------------------                                         
     created              : Fri Aug 13 22:31:43 CEST 1999
-    copyright            : (C) 1999 by Eric Espie
+    copyright            : (C) 1999-2014 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
  ***************************************************************************/
@@ -24,15 +24,15 @@
 #include <sys/types.h>
 #endif
 #include <errno.h>
+#include <portability.h>
 
 #include <tgf.h>
 #include <time.h>
-#include <string.h>
 
 extern void gfDirInit(void);
 extern void gfModInit(void);
 extern void gfOsInit(void);
-extern void gfParamInit(void);
+extern void GfParmInit(void);
 extern void gfRlstInit(void);
 
 
@@ -140,7 +140,7 @@ void GfInit(void)
 	gfDirInit();
 	gfModInit();
 	gfOsInit();
-	gfParamInit();
+	GfParmInit();
 }
 
 
@@ -182,38 +182,17 @@ tdble gfMean(tdble v, tMeanVal *pvt, int n, int w)
 }
 
 
-static char bufstr[1024];
-
-char * GfGetTimeStr(void)
-{
-	struct tm *stm;
-	time_t t;
-
-	t = time(NULL);
-	stm = localtime(&t);
-	sprintf(bufstr, "%4d%02d%02d%02d%02d%02d",
-		stm->tm_year+1900,
-		stm->tm_mon+1,
-		stm->tm_mday,
-		stm->tm_hour,
-		stm->tm_min,
-		stm->tm_sec);
-
-	return bufstr;
-}
-
-
 /** Convert a time in seconds (float) to an ascii string.
     @ingroup	screen
+    @param	result	buffer for the formatted string
+    @param	resultSize	size of the buffer
     @param	sec	Time to convert
     @param	sgn	Flag to indicate if the sign (+) is to be displayed for positive values of time.
     @return	Time string.
-    @warning	The returned string has to be free by the caller.
  */
-char * GfTime2Str(tdble sec, int sgn)
+void GfTime2Str(char *result, int resultSize, tdble sec, int sgn)
 {
-	char buf[256];
-	char* sign;
+	const char* sign;
 
 	if (sec < 0.0) {
 		sec = -sec;
@@ -235,19 +214,18 @@ char * GfTime2Str(tdble sec, int sgn)
 	int c = (int)floor((sec) * 100.0);
 
 	if (h) {
-		(void)sprintf(buf, "%s%2.2d:%2.2d:%2.2d:%2.2d", sign,h,m,s,c);
+		snprintf(result, resultSize, "%s%2.2d:%2.2d:%2.2d:%2.2d", sign, h, m, s, c);
 	} else if (m) {
-		(void)sprintf(buf, "   %s%2.2d:%2.2d:%2.2d", sign,m,s,c);
+		snprintf(result, resultSize, "   %s%2.2d:%2.2d:%2.2d", sign, m, s, c);
 	} else {
-		(void)sprintf(buf, "      %s%2.2d:%2.2d", sign,s,c);
+		snprintf(result, resultSize, "      %s%2.2d:%2.2d", sign, s, c);
 	}
-	return strdup(buf);
 }
 
 
-static char *localDir = "";
-static char *libDir = "";
-static char *dataDir = "";
+static char *localDir = strdup("");
+static char *libDir = strdup("");
+static char *dataDir = strdup("");
 
 
 char * GetLocalDir(void)
@@ -258,6 +236,7 @@ char * GetLocalDir(void)
 
 void SetLocalDir(char *buf)
 {
+	free(localDir);
 	localDir = strdup(buf);
 }
 
@@ -270,6 +249,7 @@ char * GetLibDir(void)
 
 void SetLibDir(char *buf)
 {
+	free(libDir);
 	libDir = strdup(buf);
 }
 
@@ -282,6 +262,7 @@ char * GetDataDir(void)
 
 void SetDataDir(char *buf)
 {
+	free(dataDir);
 	dataDir = strdup(buf);
 }
 
@@ -320,6 +301,11 @@ int GfNearestPow2 (int x)
 }
 
 
+/** @brief Create directory for given path recursively, so all missing parent directories are created as well
+ *  @param[in] path Path
+ *  @return #GF_DIR_CREATED if directory was created or already exits
+ *  <br>#GF_DIR_CREATION_FAILED if directory could not be created
+ */
 int GfCreateDir(char *path)
 {
 	if (path == NULL) {
@@ -329,7 +315,6 @@ int GfCreateDir(char *path)
 	const int BUFSIZE = 1024;
 	char buf[BUFSIZE];
 	strncpy(buf, path, BUFSIZE);
-	path = buf;
 
 #ifdef WIN32
 #define mkdir(x) _mkdir(x)
@@ -369,3 +354,29 @@ int GfCreateDir(char *path)
 	}
 }
 
+
+/** @brief Create directory for given file path recursively, so all missing parent directories are created as well
+ *  @param[in] filenameandpath Path including file name
+ *  @return #GF_DIR_CREATED if directory was created or already exits
+ *  <br>#GF_DIR_CREATION_FAILED if directory could not be created
+ *  @see GfCreateDir
+ */
+int GfCreateDirForFile(const char *filenameandpath)
+{
+	if (filenameandpath == 0) {
+		return GF_DIR_CREATION_FAILED;
+	}
+	
+	const char* lastdelim = strrchr(filenameandpath, '/');
+	if (lastdelim != NULL && lastdelim != filenameandpath) {
+		const int BUFSIZE = 1024;
+		char buf[BUFSIZE];
+		const int size = MIN(lastdelim - filenameandpath, BUFSIZE - 1);
+		snprintf(buf, BUFSIZE, "%s", filenameandpath);
+		buf[size] = '\0';
+
+		return GfCreateDir(buf);
+	}
+
+	return GF_DIR_CREATED;
+}

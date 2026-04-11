@@ -2,9 +2,8 @@
 
     file                 : track.h
     created              : Sun Jan 30 23:00:06 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -18,12 +17,18 @@
  ***************************************************************************/
 
 /** @file
-    		This is the track structure.
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
+    Track Structure and Track Loader Module Definition.
+    @author	<a href=mailto:torcs@free.fr>Bernhard Wymann, Eric Espie</a>
     @version	$Id$
-    @ingroup	trackstruct
+    @ingroup trackstruct
+    @ingroup trackmodint
 */
 
+/**
+   @defgroup trackmodint Track Loader Module Interface
+   @brief Interface for track loader modules, the track loader module is discovered and loaded during runtime.   
+   @ingroup	modint
+*/
  
 #ifndef _TRACKV1_H_
 #define _TRACKV1_H_
@@ -109,6 +114,7 @@
 #define TRK_ATT_REBOUND  "rebound"
 #define TRK_ATT_TEXTURE  "texture name"
 #define TRK_ATT_BUMPNAME "bump name"
+#define TRK_ATT_RACELINENAME "raceline name"
 #define TRK_ATT_TEXTYPE  "texture type"
 #define TRK_ATT_TEXLINK  "texture link with previous"
 #define TRK_ATT_TEXSIZE  "texture size"
@@ -130,6 +136,9 @@
 #define TRK_SECT_MAIN	"Main Track"
 #define TRK_LST_SEGMENTS	"Track Segments"
 #define TRK_ATT_TYPE		"type"
+#define TRK_ATT_RLEXT	"raceline ext"
+#define TRK_ATT_RLINT	"raceline int"
+#define TRK_ATT_RLWIDTHSCALE "raceline widthscale"
 
 #define TRK_VAL_STR		"str"
 #define TRK_VAL_LFT		"lft"
@@ -233,7 +242,7 @@ typedef struct SegExt
 typedef struct trackSurface {
     struct trackSurface *next;	/**< Next surface in list */
 
-    char *material;		/**< Type of material used */
+    const char *material;		/**< Type of material used */
 
     tdble kFriction;		/**< Coefficient of friction */
     tdble kRebound;		/**< Coefficient of energy restitution */
@@ -265,7 +274,7 @@ typedef struct trackBarrier {
     @ingroup trackstruct
 */
 typedef struct trackSeg {
-    char *name;			/**< Segment name */
+    const char *name;			/**< Segment name */
     int	id;			/**< Segment number */
 
     int type;			/**< Geometrical type:
@@ -307,13 +316,13 @@ typedef struct trackSeg {
     tdble width;		/**< Width of the segment (if constant width) */
     tdble startWidth;		/**< Width of the beginning of the segment */
     tdble endWidth;		/**< Width of the end of the segment */
-    tdble lgfromstart;		/**< Length of begining of segment from starting line */
+    tdble lgfromstart;		/**< Length of beginning of segment from starting line */
     tdble radius;		/**< Radius in meters of the middle of the track (>0) */
     tdble radiusr;		/**< Radius in meters of the right side of the track (>0) */
     tdble radiusl;		/**< Radius in meters of the left side of the track (>0) */
     tdble arc;			/**< Arc in rad of the curve (>0) */
     t3Dd center;		/**< Center of the curve */
-    t3Dd vertex[4];		/**< Coord of the 4 corners of the segment.
+    t3Dd vertex[4];		/**< Coordinates of the 4 corners of the segment.
 				   <br>Index in:
 				   - TR_SL
 				   - TR_SL
@@ -415,14 +424,14 @@ typedef struct
 				   - TR_LPOS_TRACK
 				 */
 
-#define TR_LPOS_MAIN	0	/**< Relative to the main segment */
-#define TR_LPOS_SEGMENT	1	/**< If the point is on a side, relative to this side */
-#define TR_LPOS_TRACK	2	/**< Local pos includes all the track width */
+#define TR_LPOS_MAIN	0	/**< Relative to the main segment, mostly used for racing on the main track */
+#define TR_LPOS_SEGMENT	1	/**< Relative to the segment which the point is located, including border and sides, mostly used for contact physics */
+#define TR_LPOS_TRACK	2	/**< Local position relative to the outermost barriers, mostly used for collision detection with barrier */
 
     tdble	toStart;	/**< Distance to start of segment (or arc if turn) */
-    tdble	toRight;	/**< Distance to right side of segment (+ to inside of track - to outside) */
-    tdble	toMiddle;	/**< Distance to middle of segment (+ to left - to right) */
-    tdble	toLeft;		/**< Distance to left side of segment (+ to inside of track - to outside) */
+    tdble	toRight;	/**< Distance (+ to left, - to right) relative to the right side of segment */
+    tdble	toMiddle;	/**< Distance (+ to left, - to right) relative to the middle of segment */
+    tdble	toLeft;		/**< Distance (- to left, + to right) relative to left side of segment  */
 } tTrkLocPos;
 
 struct CarElt;
@@ -478,12 +487,12 @@ typedef struct
 
 typedef struct 
 {
-    char		*background;
+    const char *background;
     char		*background2;
     int			bgtype;
     float		bgColor[3];
     int			envnb;
-    char		**env;
+    const char		**env;
     tTurnMarksInfo	turnMarksInfo;
 } tTrackGraphicInfo;
 
@@ -492,12 +501,12 @@ typedef struct
 */
 typedef struct
 {
-    char	  *name;	/**< Name of the track */
-    char	  *author;	/**< Author's name */
+    const char *name;	/**< Name of the track */
+    const char *author;	/**< Author's name */
     char	  *filename;	/**< Filename of the track description */
     void	  *params;	/**< Parameters handle */
     char	  *internalname; /**< Internal name of the track */
-    char	  *category;	/**< Category of the track */
+    const char *category;	/**< Category of the track */
     int		  nseg;		/**< Number of segments */
     int		  version;	/**< Version of the track type */
     tdble	  length;	/**< main track length */
@@ -512,26 +521,95 @@ typedef struct
 } tTrack;
 
 
+/** @brief Read given track from @e filename into tTrack struct.
+ *  @ingroup trackmodint
+ *  @param[in] filename filename including path to file
+ *  @return tTrack structure on success
+ *  @note The given file must exist and must be correct
+ */ 
+typedef tTrack*(*tfTrackBuild)(char* filename);
 
-typedef tTrack*(*tfTrackBuild)(char*);
-typedef tdble(*tfTrackHeightG)(tTrackSeg*, tdble, tdble);
-typedef tdble(*tfTrackHeightL)(tTrkLocPos*);
-typedef void(*tfTrackGlobal2Local)(tTrackSeg* /*seg*/, tdble /*X*/, tdble /*Y*/, tTrkLocPos* /*pos*/, int /*sides*/);
-typedef void(*tfTrackLocal2Global)(tTrkLocPos*, tdble *, tdble *);
-typedef void(*tfTrackSideNormal)(tTrackSeg*, tdble, tdble, int, t3Dd*);
-typedef void(*tfTrackSurfaceNormal)(tTrkLocPos *, t3Dd*);
+/** @brief Returns the absolute height in meters of the road at the given global position.
+ *  @ingroup trackmodint 
+ *  @param[in] seg Segment tTrackSeg to start search for coordinates
+ *  @param[in] X Global X coordinate
+ *  @param[in] Y Global Y coordinate
+ *  @return Height in meters
+ *  @see RtTrackHeightG
+ *  @see RtTrackHeightL
+ */
+typedef tdble(*tfTrackHeightG)(tTrackSeg* seg, tdble X, tdble Y);
+
+/** @brief Returns the absolute height in meters of the road at the local position
+ *  @ingroup trackmodint
+ *  @param[in] pos tTrkLocPos containing the loacal position
+ *  @return Height in meters
+ *  @see RtTrackHeightL
+ */
+typedef tdble(*tfTrackHeightL)(tTrkLocPos* pos);
+
+/** @brief Convert a global position (segment, X, Y) into a local position (segment, toRight, toStart)
+ *  @ingroup trackmodint
+ *  @param[in] seg	Segment tTrackSeg to start search for coordinates
+ *  @param[in] X Global X coordinate
+ *  @param[in] Y Global Y coordinate
+ *  @param[in,out] pos tTrkLocPos passed from the caller to fill in the local position
+ *  @param[in] type Type of local position desired:
+ *  - #TR_LPOS_MAIN Relative to the main segment
+ *  - #TR_LPOS_SEGMENT If the point is on a side, relative to this side
+ *  - #TR_LPOS_TRACK Local position includes all the track width (distance to barrier)
+ *  @see RtTrackGlobal2Local
+ */ 
+typedef void(*tfTrackGlobal2Local)(tTrackSeg* seg, tdble X, tdble Y, tTrkLocPos* pos, int type);
+
+/** @brief Convert a local position (segment, toRight, toStart) into a global one (X, Y)
+ *  @ingroup trackmodint
+ *  @param[in] pos Local position
+ *  @param[in,out] X Pointer to tdble passed by the caller to fill in X position
+ *  @param[in,out] Y Pointer to tdble passed by the caller to fill in Y position
+ *  @see RtTrackLocal2Global
+ */
+typedef void(*tfTrackLocal2Global)(tTrkLocPos* pos, tdble* X, tdble* Y);
+
+/** @brief Get the normal vector (in global coordinate system) of the border of the track including the sides.
+ *  @ingroup trackmodint
+ *  @param[in] seg Current segment
+ *  @param[in] X Global X position
+ *  @param[in] Y Global Y position
+ *  @param[in] side Side where the normal is wanted
+ *  - #TR_LFT for left side
+ *  - #TR_RGT for right side
+ *  @param[in,out] norm t3Dd passed from the caller to fill in the normalized side normal vector
+ *  @see RtTrackSideNormalG
+ */
+typedef void(*tfTrackSideNormal)(tTrackSeg* seg, tdble X, tdble Y, int side, t3Dd* norm);
+
+/** @brief Get the normal vector of the road (pointing upward).
+ *  @ingroup trackmodint
+ *  @param[in] pos Local position
+ *  @param[in,out] norm t3Dd passed from the caller to fill in the normal vector
+ *  @see RtTrackSurfaceNormalL
+ */
+typedef void(*tfTrackSurfaceNormal)(tTrkLocPos *pos, t3Dd* norm);
+
+/** @brief Release current track and all its resources
+ *  @ingroup trackmodint
+ */
 typedef void(*tfTrackShutdown)(void);
 
+/** @brief Interface Structure for Track Loader
+ *  @ingroup trackmodint
+ */
 typedef struct {
-    tfTrackBuild		trkBuild;		/* build track structure for simu */
-    tfTrackBuild		trkBuildEx;		/* build with graphic extensions  */
-    tfTrackHeightG		trkHeightG;
-    tfTrackHeightL		trkHeightL;
-    tfTrackGlobal2Local		trkGlobal2Local;
-    tfTrackLocal2Global		trkLocal2Global;
-    tfTrackSideNormal   	trkSideNormal;
-    tfTrackSurfaceNormal	trkSurfaceNormal;
-    tfTrackShutdown		trkShutdown;
+	tfTrackBuild			trkBuild;		/**< build track structure for simu */
+	tfTrackBuild			trkBuildEx;		/**< build with graphic extensions (used by trackgen tool) */
+	tfTrackHeightG			trkHeightG;
+	tfTrackHeightL			trkHeightL;
+	tfTrackGlobal2Local		trkGlobal2Local;
+	tfTrackLocal2Global		trkLocal2Global;
+	tfTrackSideNormal   	trkSideNormal;
+	tfTrackSurfaceNormal	trkSurfaceNormal;
+	tfTrackShutdown			trkShutdown;
 } tTrackItf;
 
 

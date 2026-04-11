@@ -2,7 +2,7 @@
 
     file        : control.cpp
     created     : Thu Mar  6 22:01:33 CET 2003
-    copyright   : (C) 2003 by Eric Espié                        
+    copyright   : (C) 2003-2015 by Eric Espie, Bernhard Wymann                        
     email       : eric.espie@torcs.org   
     version     : $Id$                                  
 
@@ -18,21 +18,20 @@
  ***************************************************************************/
 
 /** @file   
-    		Human control (joystick, mouse and keyboard).
-    @author	<a href=mailto:eric.espie@torcs.org>Eric Espie</a>
-    @version	$Id$
-    @ingroup	ctrl
+    Human control (joystick, mouse and keyboard).
+    @author bernhard Wymann, Eric Espie
+    @version $Id$
 */
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <js.h>
+#include <plib/js.h>
 
 #include <tgfclient.h>
+#include <portability.h>
+#include <playerpref.h>
 
-
-static char *GfJoyBtn[] = {
+static const char *GfJoyBtn[] = {
 "BTN1-0","BTN2-0","BTN3-0","BTN4-0","BTN5-0","BTN6-0","BTN7-0","BTN8-0","BTN9-0","BTN10-0","BTN11-0","BTN12-0","BTN13-0","BTN14-0","BTN15-0","BTN16-0",
 "BTN17-0","BTN18-0","BTN19-0","BTN20-0","BTN21-0","BTN22-0","BTN23-0","BTN24-0","BTN25-0","BTN26-0","BTN27-0","BTN28-0","BTN29-0","BTN30-0","BTN31-0","BTN32-0",
 "BTN1-1","BTN2-1","BTN3-1","BTN4-1","BTN5-1","BTN6-1","BTN7-1","BTN8-1","BTN9-1","BTN10-1","BTN11-1","BTN12-1","BTN13-1","BTN14-1","BTN15-1","BTN16-1",
@@ -51,24 +50,24 @@ static char *GfJoyBtn[] = {
 "BTN17-7","BTN18-7","BTN19-7","BTN20-7","BTN21-7","BTN22-7","BTN23-7","BTN24-7","BTN25-7","BTN26-7","BTN27-7","BTN28-7","BTN29-7","BTN30-7","BTN31-7","BTN32-7"
 };
 
-static char *GfJoyAxis[] = {
-    "AXIS0-0", "AXIS1-0", "AXIS2-0", "AXIS3-0", "AXIS4-0", "AXIS5-0", "AXIS6-0", "AXIS7-0", "AXIS8-0", "AXIS9-0", "AXIS10-0", "AXIS11-0",
-    "AXIS0-1", "AXIS1-1", "AXIS2-1", "AXIS3-1", "AXIS4-1", "AXIS5-1", "AXIS6-1", "AXIS7-1", "AXIS8-1", "AXIS9-1", "AXIS10-1", "AXIS11-1",
-    "AXIS0-2", "AXIS1-2", "AXIS2-2", "AXIS3-2", "AXIS4-2", "AXIS5-2", "AXIS6-2", "AXIS7-2", "AXIS8-2", "AXIS9-2", "AXIS10-2", "AXIS11-2",
-    "AXIS0-3", "AXIS1-3", "AXIS2-3", "AXIS3-3", "AXIS4-3", "AXIS5-3", "AXIS6-3", "AXIS7-3", "AXIS8-3", "AXIS9-3", "AXIS10-3", "AXIS11-3",
-    "AXIS0-4", "AXIS1-4", "AXIS2-4", "AXIS3-4", "AXIS4-4", "AXIS5-4", "AXIS6-4", "AXIS7-4", "AXIS8-4", "AXIS9-4", "AXIS10-4", "AXIS11-4",
-    "AXIS0-5", "AXIS1-5", "AXIS2-5", "AXIS3-5", "AXIS4-5", "AXIS5-5", "AXIS6-5", "AXIS7-5", "AXIS8-5", "AXIS9-5", "AXIS10-5", "AXIS11-5",
-    "AXIS0-6", "AXIS1-6", "AXIS2-6", "AXIS3-6", "AXIS4-6", "AXIS5-6", "AXIS6-6", "AXIS7-6", "AXIS8-6", "AXIS9-6", "AXIS10-6", "AXIS11-6",
-    "AXIS0-7", "AXIS1-7", "AXIS2-7", "AXIS3-7", "AXIS4-7", "AXIS5-7", "AXIS6-7", "AXIS7-7", "AXIS8-7", "AXIS9-7", "AXIS10-7", "AXIS11-7"
+static const char *GfJoyAxis[] = {
+    "AXIS0-0", "AXIS1-0", "AXIS2-0", "AXIS3-0", "AXIS4-0", "AXIS5-0", "AXIS6-0", "AXIS7-0", "AXIS8-0", "AXIS9-0", "AXIS10-0", "AXIS11-0", "AXIS12-0", "AXIS13-0", "AXIS14-0", "AXIS15-0",
+    "AXIS0-1", "AXIS1-1", "AXIS2-1", "AXIS3-1", "AXIS4-1", "AXIS5-1", "AXIS6-1", "AXIS7-1", "AXIS8-1", "AXIS9-1", "AXIS10-1", "AXIS11-1", "AXIS12-1", "AXIS13-1", "AXIS14-1", "AXIS15-1",
+    "AXIS0-2", "AXIS1-2", "AXIS2-2", "AXIS3-2", "AXIS4-2", "AXIS5-2", "AXIS6-2", "AXIS7-2", "AXIS8-2", "AXIS9-2", "AXIS10-2", "AXIS11-2", "AXIS12-2", "AXIS13-2", "AXIS14-2", "AXIS15-2",
+    "AXIS0-3", "AXIS1-3", "AXIS2-3", "AXIS3-3", "AXIS4-3", "AXIS5-3", "AXIS6-3", "AXIS7-3", "AXIS8-3", "AXIS9-3", "AXIS10-3", "AXIS11-3", "AXIS12-3", "AXIS13-3", "AXIS14-3", "AXIS15-3",
+    "AXIS0-4", "AXIS1-4", "AXIS2-4", "AXIS3-4", "AXIS4-4", "AXIS5-4", "AXIS6-4", "AXIS7-4", "AXIS8-4", "AXIS9-4", "AXIS10-4", "AXIS11-4", "AXIS12-4", "AXIS13-4", "AXIS14-4", "AXIS15-4",
+    "AXIS0-5", "AXIS1-5", "AXIS2-5", "AXIS3-5", "AXIS4-5", "AXIS5-5", "AXIS6-5", "AXIS7-5", "AXIS8-5", "AXIS9-5", "AXIS10-5", "AXIS11-5", "AXIS12-5", "AXIS13-5", "AXIS14-5", "AXIS15-5",
+    "AXIS0-6", "AXIS1-6", "AXIS2-6", "AXIS3-6", "AXIS4-6", "AXIS5-6", "AXIS6-6", "AXIS7-6", "AXIS8-6", "AXIS9-6", "AXIS10-6", "AXIS11-6", "AXIS12-6", "AXIS13-6", "AXIS14-6", "AXIS15-6",
+    "AXIS0-7", "AXIS1-7", "AXIS2-7", "AXIS3-7", "AXIS4-7", "AXIS5-7", "AXIS6-7", "AXIS7-7", "AXIS8-7", "AXIS9-7", "AXIS10-7", "AXIS11-7", "AXIS12-7", "AXIS13-7", "AXIS14-7", "AXIS15-7"
 };
 
-static char *GfMouseBtn[] = {"MOUSE_LEFT_BTN", "MOUSE_MIDDLE_BTN", "MOUSE_RIGHT_BTN"}; /* glut order */
+static const char *GfMouseBtn[] = {"MOUSE_LEFT_BTN", "MOUSE_MIDDLE_BTN", "MOUSE_RIGHT_BTN"}; /* glut order */
 
-static char *GfMouseAxis[] = {"MOUSE_LEFT", "MOUSE_RIGHT", "MOUSE_UP", "MOUSE_DOWN"};
+static const char *GfMouseAxis[] = {"MOUSE_LEFT", "MOUSE_RIGHT", "MOUSE_UP", "MOUSE_DOWN"};
 
 typedef struct
 {
-    char	*descr;
+    const char *descr;
     int		val;
 } tgfKeyBinding;
 
@@ -118,65 +117,69 @@ static jsJoystick *js[NUM_JOY] = {NULL};
 /** Get a control reference by its name
     @ingroup	ctrl
     @param	name	name of the control
-    @return	pointer on a static structure tCtrlRef
+    @param	ref	Pointer to tCtrlRef to fill in
     @see	tCtrlRef
 */
-tCtrlRef *
-GfctrlGetRefByName(char *name)
+void GfctrlGetRefByName(const char *name, tCtrlRef* ref)
 {
-    static tCtrlRef	ref;
-    int 		i;
+	int i;
+	
+	if (!name || !strlen(name)) {
+		ref->index = -1;
+		ref->type = GFCTRL_TYPE_NOT_AFFECTED;
+		return;
+	}
 
-    if (!name || !strlen(name)) {
-	ref.index = -1;
-	ref.type = GFCTRL_TYPE_NOT_AFFECTED;
-	return &ref;
-    }
-    for (i = 0; i < gfmaxJoyButton; i++) {
-	if (strcmp(name, GfJoyBtn[i]) == 0) {
-	    ref.index = i;
-	    ref.type = GFCTRL_TYPE_JOY_BUT;
-	    return &ref;
+	for (i = 0; i < gfmaxJoyButton; i++) {
+		if (strcmp(name, GfJoyBtn[i]) == 0) {
+			ref->index = i;
+			ref->type = GFCTRL_TYPE_JOY_BUT;
+			return;
+		}
 	}
-    }
-    for (i = 0; i < gfmaxJoyAxis; i++) {
-	if (strcmp(name, GfJoyAxis[i]) == 0) {
-	    ref.index = i;
-	    ref.type = GFCTRL_TYPE_JOY_AXIS;
-	    return &ref;
+
+	for (i = 0; i < gfmaxJoyAxis; i++) {
+		if (strcmp(name, GfJoyAxis[i]) == 0) {
+			ref->index = i;
+			ref->type = GFCTRL_TYPE_JOY_AXIS;
+			return;
+		}
 	}
-    }
-    for (i = 0; i < gfmaxMouseButton; i++) {
-	if (strcmp(name, GfMouseBtn[i]) == 0) {
-	    ref.index = i;
-	    ref.type = GFCTRL_TYPE_MOUSE_BUT;
-	    return &ref;
+
+	for (i = 0; i < gfmaxMouseButton; i++) {
+		if (strcmp(name, GfMouseBtn[i]) == 0) {
+			ref->index = i;
+			ref->type = GFCTRL_TYPE_MOUSE_BUT;
+			return;
+		}
 	}
-    }
-    for (i = 0; i < gfmaxMouseAxis; i++) {
-	if (strcmp(name, GfMouseAxis[i]) == 0) {
-	    ref.index = i;
-	    ref.type = GFCTRL_TYPE_MOUSE_AXIS;
-	    return &ref;
+
+	for (i = 0; i < gfmaxMouseAxis; i++) {
+		if (strcmp(name, GfMouseAxis[i]) == 0) {
+			ref->index = i;
+			ref->type = GFCTRL_TYPE_MOUSE_AXIS;
+			return;
+		}
 	}
-    }
-    for (i = 0; i < gfmaxSKey; i++) {
-	if (strcmp(name, GfSKey[i].descr) == 0) {
-	    ref.index = GfSKey[i].val;
-	    ref.type = GFCTRL_TYPE_SKEYBOARD;
-	    return &ref;
+
+	for (i = 0; i < gfmaxSKey; i++) {
+		if (strcmp(name, GfSKey[i].descr) == 0) {
+			ref->index = GfSKey[i].val;
+			ref->type = GFCTRL_TYPE_SKEYBOARD;
+			return;
+		}
 	}
-    }
-    for (i = 0; i < gfmaxKey; i++) {
-	if (strcmp(name, GfKey[i].descr) == 0) {
-	    ref.index = GfKey[i].val;
-	    ref.type = GFCTRL_TYPE_KEYBOARD;
-	    return &ref;
+
+	for (i = 0; i < gfmaxKey; i++) {
+		if (strcmp(name, GfKey[i].descr) == 0) {
+			ref->index = GfKey[i].val;
+			ref->type = GFCTRL_TYPE_KEYBOARD;
+			return;
+		}
 	}
-    }
-    ref.index = name[0];
-    ref.type = GFCTRL_TYPE_KEYBOARD;
-    return &ref;
+
+	ref->index = name[0];
+	ref->type = GFCTRL_TYPE_KEYBOARD;
 }
 
 /** Get a control name by its reference
@@ -185,89 +188,108 @@ GfctrlGetRefByName(char *name)
     @param	index	reference index
     @return	pointer on a static structure tCtrlRef
 */
-char *
-GfctrlGetNameByRef(int type, int index)
+const char *GfctrlGetNameByRef(GfCtrlType type, int index)
 {
-    static char buf[4];
+	static const int BUFSIZE = 4; 
+    static char buf[BUFSIZE];
     int i;
     
     switch (type) {
-    case GFCTRL_TYPE_NOT_AFFECTED:
-	return NULL;
-    case GFCTRL_TYPE_JOY_BUT:
-	if (index < gfmaxJoyButton) {
-	    return GfJoyBtn[index];
-	} else {
-	    return NULL;
-	}
-	break;
-    case GFCTRL_TYPE_JOY_AXIS:
-	if (index < gfmaxJoyAxis) {
-	    return GfJoyAxis[index];
-	} else {
-	    return NULL;
-	}
-	break;
-    case GFCTRL_TYPE_MOUSE_BUT:
-	if (index < gfmaxMouseButton) {
-	    return GfMouseBtn[index];
-	} else {
-	    return NULL;
-	}
-	break;
-    case GFCTRL_TYPE_MOUSE_AXIS:
-	if (index < gfmaxMouseAxis) {
-	    return GfMouseAxis[index];
-	} else {
-	    return NULL;
-	}
-	break;
-    case GFCTRL_TYPE_SKEYBOARD:
-	for (i = 0; i < gfmaxSKey; i++) {
-	    if (index == GfSKey[i].val) {
-		return GfSKey[i].descr;
-	    }
-	}
-	return NULL;
-	break;
-    case GFCTRL_TYPE_KEYBOARD:
-	for (i = 0; i < gfmaxKey; i++) {
-	    if (index == GfKey[i].val) {
-		return GfKey[i].descr;
-	    }
-	}
-	if (isprint(index)) {
-	    sprintf(buf, "%c", index);
-	    return buf;
-	}
-	return NULL;
-	break;
-    default:
-	break;
+		case GFCTRL_TYPE_NOT_AFFECTED:
+			return NULL;
+
+		case GFCTRL_TYPE_JOY_BUT:
+			if (index < gfmaxJoyButton) {
+				return GfJoyBtn[index];
+			} else {
+				return NULL;
+			}
+			break;
+
+		case GFCTRL_TYPE_JOY_AXIS:
+			if (index < gfmaxJoyAxis) {
+				return GfJoyAxis[index];
+			} else {
+				return NULL;
+			}
+			break;
+
+		case GFCTRL_TYPE_MOUSE_BUT:
+			if (index < gfmaxMouseButton) {
+				return GfMouseBtn[index];
+			} else {
+				return NULL;
+			}
+			break;
+
+		case GFCTRL_TYPE_MOUSE_AXIS:
+			if (index < gfmaxMouseAxis) {
+				return GfMouseAxis[index];
+			} else {
+				return NULL;
+			}
+			break;
+
+		case GFCTRL_TYPE_SKEYBOARD:
+			for (i = 0; i < gfmaxSKey; i++) {
+				if (index == GfSKey[i].val) {
+					return GfSKey[i].descr;
+				}
+			}
+			return NULL;
+			break;
+
+		case GFCTRL_TYPE_KEYBOARD:
+			for (i = 0; i < gfmaxKey; i++) {
+				if (index == GfKey[i].val) {
+					return GfKey[i].descr;
+				}
+			}
+			if (isprint(index)) {
+				snprintf(buf, BUFSIZE, "%c", index);
+				return buf;
+			}
+			return NULL;
+			break;
+
+		default:
+			break;
     }
+
     return NULL;
 }
 
 
-static void
-gfJoyFirstInit(void)
+static void gfJoyFirstInit(void)
 {
     int index;
     
     gfctrlJoyPresent = GFCTRL_JOY_NONE;
 
     for (index = 0; index < NUM_JOY; index++) {
-	if (js[index] == NULL) {
-	    js[index] = new jsJoystick(index);
-	}
-    
-	if (js[index]->notWorking()) {
-	    /* don't configure the joystick */
-	    js[index] = NULL;
-	} else {
-	    gfctrlJoyPresent = GFCTRL_JOY_PRESENT;
-	}
+		if (js[index] == NULL) {
+			js[index] = new jsJoystick(index);
+		}
+	    
+		if (js[index]->notWorking()) {
+			/* don't configure the joystick */
+			js[index] = NULL;
+		} else {
+			gfctrlJoyPresent = GFCTRL_JOY_PRESENT;
+		}
     }
+}
+
+
+const char *GfctrlGetDefaultSection(GfCtrlType type)
+{
+	switch (type) {
+		case GFCTRL_TYPE_JOY_AXIS:
+			return HM_SECT_JSPREF;
+		default:
+			return HM_SECT_MOUSEPREF;
+	}
+	return "";
 }
 
 /** Initialize the joystick control
@@ -278,27 +300,25 @@ gfJoyFirstInit(void)
     @see	GfctrlJoyRelease
     @see	tCtrlJoyInfo
 */
-tCtrlJoyInfo *
-GfctrlJoyInit(void)
+tCtrlJoyInfo *GfctrlJoyInit(void)
 {
-    tCtrlJoyInfo	*joyInfo = NULL;
+    tCtrlJoyInfo *joyInfo = NULL;
 
     if (gfctrlJoyPresent == GFCTRL_JOY_UNTESTED) {
-	gfJoyFirstInit();
+		gfJoyFirstInit();
     }
 
     joyInfo = (tCtrlJoyInfo *)calloc(1, sizeof(tCtrlJoyInfo));
-    
     return joyInfo;
 }
+
 
 /** Release the tCtrlJoyInfo structure
     @ingroup	ctrl
     @param	joyInfo	joystick structure
     @return	none
 */
-void
-GfctrlJoyRelease(tCtrlJoyInfo *joyInfo)
+void GfctrlJoyRelease(tCtrlJoyInfo *joyInfo)
 {
     FREEZ(joyInfo);
 }
@@ -309,11 +329,10 @@ GfctrlJoyRelease(tCtrlJoyInfo *joyInfo)
     @return	GFCTRL_JOY_NONE	if no joystick
 		<br>GFCTRL_JOY_PRESENT if a joystick is present
 */
-int
-GfctrlJoyIsPresent(void)
+int GfctrlJoyIsPresent(void)
 {
     if (gfctrlJoyPresent == GFCTRL_JOY_UNTESTED) {
-	gfJoyFirstInit();
+		gfJoyFirstInit();
     }
 
     return gfctrlJoyPresent;
@@ -327,48 +346,47 @@ GfctrlJoyIsPresent(void)
 		<br><tt>-1 .. </tt>Error
     @note	The tCtrlJoyInfo structure is updated with the new values
 */
-int
-GfctrlJoyGetCurrent(tCtrlJoyInfo *joyInfo)
+int GfctrlJoyGetCurrent(tCtrlJoyInfo *joyInfo)
 {
-    int			ind;
-    int			i;
-    int			b;
-    unsigned int	mask;
+    int ind;
+    int i;
+    int b;
+    unsigned int mask;
 
     if (gfctrlJoyPresent == GFCTRL_JOY_PRESENT) {
     	for (ind = 0; ind < NUM_JOY; ind++) {
-	    if (js[ind]) {
-		js[ind]->read(&b, &(joyInfo->ax[MAX_AXES * ind]));
+			if (js[ind]) {
+				js[ind]->read(&b, &(joyInfo->ax[_JS_MAX_AXES * ind]));
 
-		/* Joystick buttons */
-		for (i = 0, mask = 1; i < GFCTRL_JOY_MAXBUTTON; i++, mask *= 2) {
-		    if (((b & mask) != 0) && ((joyInfo->oldb[ind] & mask) == 0)) {
-			joyInfo->edgeup[i + GFCTRL_JOY_MAXBUTTON * ind] = 1;
-		    } else {
-			joyInfo->edgeup[i + GFCTRL_JOY_MAXBUTTON * ind] = 0;
-		    }
-		    if (((b & mask) == 0) && ((joyInfo->oldb[ind] & mask) != 0)) {
-			joyInfo->edgedn[i + GFCTRL_JOY_MAXBUTTON * ind] = 1;
-		    } else {
-			joyInfo->edgedn[i + GFCTRL_JOY_MAXBUTTON * ind] = 0;
-		    }
-		    if ((b & mask) != 0) {
-			joyInfo->levelup[i + GFCTRL_JOY_MAXBUTTON * ind] = 1;
-		    } else {
-			joyInfo->levelup[i + GFCTRL_JOY_MAXBUTTON * ind] = 0;
-		    }
+				/* Joystick buttons */
+				for (i = 0, mask = 1; i < GFCTRL_JOY_MAXBUTTON; i++, mask *= 2) {
+					if (((b & mask) != 0) && ((joyInfo->oldb[ind] & mask) == 0)) {
+						joyInfo->edgeup[i + GFCTRL_JOY_MAXBUTTON * ind] = 1;
+					} else {
+						joyInfo->edgeup[i + GFCTRL_JOY_MAXBUTTON * ind] = 0;
+					}
+
+					if (((b & mask) == 0) && ((joyInfo->oldb[ind] & mask) != 0)) {
+						joyInfo->edgedn[i + GFCTRL_JOY_MAXBUTTON * ind] = 1;
+					} else {
+						joyInfo->edgedn[i + GFCTRL_JOY_MAXBUTTON * ind] = 0;
+					}
+
+					if ((b & mask) != 0) {
+						joyInfo->levelup[i + GFCTRL_JOY_MAXBUTTON * ind] = 1;
+					} else {
+						joyInfo->levelup[i + GFCTRL_JOY_MAXBUTTON * ind] = 0;
+					}
+				}
+				joyInfo->oldb[ind] = b;
+			}
 		}
-		joyInfo->oldb[ind] = b;
-	    }
-	}
     } else {
-	return -1;
+		return -1;
     }
 
     return 0;
 }
-
-
 
 
 /** Initialize the mouse control
@@ -378,26 +396,24 @@ GfctrlJoyGetCurrent(tCtrlJoyInfo *joyInfo)
     @note	call GfctrlMouseRelease to free the tCtrlMouseInfo structure
     @see	GfctrlMouseRelease
 */
-tCtrlMouseInfo *
-GfctrlMouseInit(void)
+tCtrlMouseInfo *GfctrlMouseInit(void)
 {
     tCtrlMouseInfo	*mouseInfo = NULL;
-
     mouseInfo = (tCtrlMouseInfo *)calloc(1, sizeof(tCtrlMouseInfo));
-
     return mouseInfo;
 }
+
 
 /** Release the tCtrlMouseInfo structure
     @ingroup	ctrl
     @param	mouseInfo	mouse structure
     @return	none
 */
-void
-GfctrlMouseRelease(tCtrlMouseInfo *mouseInfo)
+void GfctrlMouseRelease(tCtrlMouseInfo *mouseInfo)
 {
     FREEZ(mouseInfo);
 }
+
 
 static tMouseInfo refMouse;
 
@@ -408,46 +424,46 @@ static tMouseInfo refMouse;
 		<br><tt>-1 .. </tt>Error
     @note	The tCtrlMouseInfo structure is updated with the new values
 */
-int
-GfctrlMouseGetCurrent(tCtrlMouseInfo *mouseInfo)
+int GfctrlMouseGetCurrent(tCtrlMouseInfo *mouseInfo)
 {
     float	mouseMove;
     tMouseInfo	*mouse;
     int		i;
 
     mouse = GfuiMouseInfo();
-
     mouseMove = (float)(refMouse.X - mouse->X);
     
     if (mouseMove < 0) {
-	mouseInfo->ax[1] = -mouseMove;
-	mouseInfo->ax[0] = 0;
+		mouseInfo->ax[1] = -mouseMove;
+		mouseInfo->ax[0] = 0;
     } else {
-	mouseInfo->ax[0] = mouseMove;
-	mouseInfo->ax[1] = 0;
+		mouseInfo->ax[0] = mouseMove;
+		mouseInfo->ax[1] = 0;
     }
+
     mouseMove = (float)(refMouse.Y - mouse->Y);
     if (mouseMove < 0) {
-	mouseInfo->ax[2] = -mouseMove;
-	mouseInfo->ax[3] = 0;
+		mouseInfo->ax[2] = -mouseMove;
+		mouseInfo->ax[3] = 0;
     } else {
-	mouseInfo->ax[3] = mouseMove;
-	mouseInfo->ax[2] = 0;
+		mouseInfo->ax[3] = mouseMove;
+		mouseInfo->ax[2] = 0;
     }
+
     for (i = 0; i < 3; i++) {
-	if (mouseInfo->button[i] != mouse->button[i]) {
-	    if (mouse->button[i]) {
-		mouseInfo->edgedn[i] = 1;
-		mouseInfo->edgeup[i] = 0;
-	    } else {
-		mouseInfo->edgeup[i] = 1;
-		mouseInfo->edgedn[i] = 0;
-	    }
-	    mouseInfo->button[i] = mouse->button[i];
-	} else {
-	    mouseInfo->edgeup[i] = 0;
-	    mouseInfo->edgedn[i] = 0;
-	}
+		if (mouseInfo->button[i] != mouse->button[i]) {
+			if (mouse->button[i]) {
+				mouseInfo->edgedn[i] = 1;
+				mouseInfo->edgeup[i] = 0;
+			} else {
+				mouseInfo->edgeup[i] = 1;
+				mouseInfo->edgedn[i] = 0;
+			}
+			mouseInfo->button[i] = mouse->button[i];
+		} else {
+			mouseInfo->edgeup[i] = 0;
+			mouseInfo->edgedn[i] = 0;
+		}
     }
     return 0;
 }
@@ -457,8 +473,7 @@ GfctrlMouseGetCurrent(tCtrlMouseInfo *mouseInfo)
     @ingroup	ctrl
     @return	none
 */
-void
-GfctrlMouseCenter(void)
+void GfctrlMouseCenter(void)
 {
     int sw, sh, vw, vh;
 
@@ -466,12 +481,31 @@ GfctrlMouseCenter(void)
     GfuiMouseSetPos(sw / 2, sh / 2);
 }
 
+
 /** Get the reference position.
     @ingroup	ctrl
     @return	none
 */
-void
-GfctrlMouseInitCenter(void)
+void GfctrlMouseInitCenter(void)
 {
     memcpy(&refMouse, GfuiMouseInfo(), sizeof(refMouse));
+}
+
+
+/** Check if given event is blacklisted (used for buttons or axis which fire a button AND move event).
+    @ingroup	ctrl
+	@param		parmHandle Parameters containing the blacklist
+	@param		driversSection Specific parameter section
+	@param		event Name of the event, usually obtaned with #GfctrlGetRefByName, e.g. "BTN7-0"
+	@return		true if blacklisted, false otherwise
+*/
+bool GfctrlIsEventBlacklisted(void *parmHandle, const char* driversSection, const char* event)
+{
+	const char* eventBlacklist = GfParmGetStr(parmHandle, driversSection, HM_ATT_EVENTBLACKLIST, NULL);
+	if (eventBlacklist && strstr(eventBlacklist, event)) {
+		GfOut("Blacklisted event: %s\n", event);
+		return true;
+	}
+
+	return false;
 }

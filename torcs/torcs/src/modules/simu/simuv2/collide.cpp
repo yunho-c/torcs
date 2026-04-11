@@ -2,7 +2,7 @@
 
     file                 : collide.cpp
     created              : Sun Mar 19 00:06:19 CET 2000
-    copyright            : (C) 2000-2005 by Eric Espie, Bernhard Wymann
+    copyright            : (C) 2000-2017 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
 
@@ -25,38 +25,74 @@
 void SimCarCollideZ(tCar *car)
 {
 	int i;
-	t3Dd normal;
-	tdble dotProd;
-	tWheel *wheel;
 	const float CRASH_THRESHOLD = -5.0f;
 
 	if (car->carElt->_state & RM_CAR_STATE_NO_SIMU) {
 		return;
 	}
 
+	// Calculate transformation matrix to transform the surface normal into the car body local coordinate system.
+	// Because this is just a rotation matrix the inverse is the transposed matrix.
+	sgMat4 dst;
+	sgMakeRotMat4(dst, RAD2DEG(car->DynGC.pos.az), RAD2DEG(car->DynGC.pos.ax), RAD2DEG(car->DynGC.pos.ay));
+	sgTransposeNegateMat4(dst);
+	
+	// Get the normal of the surface under the center of gravity of the car. Beware, TR_LPOS_SEGMENT must
+	// be set to get this result.
+	t3Dd normal;
+	tTrkLocPos normalPos;
+	RtTrackGlobal2Local(car->trkPos.seg, car->DynGCg.pos.x, car->DynGCg.pos.y, &normalPos, TR_LPOS_SEGMENT);
+	RtTrackSurfaceNormalL(&normalPos, &normal);
+
+	// Now transform the normal to the car body coordinate system.
+	sgVec3 dstVec;
+	sgXformVec3(dstVec, (float *) &normal.x, dst);
+	tdble sumdz = 0.0f;
+
+	// Check if any car corners are below the surface. If so, try to rotate the corner out of the ground.
 	for (i = 0; i < 4; i++) {
-		wheel = &(car->wheel[i]);
-		if (wheel->state & SIM_SUSP_COMP) {
-			car->DynGCg.pos.z += wheel->susp.spring.packers - wheel->rideHeight;
-			RtTrackSurfaceNormalL(&(wheel->trkPos), &normal);
-			dotProd = (car->DynGCg.vel.x * normal.x + car->DynGCg.vel.y * normal.y + car->DynGCg.vel.z * normal.z) * wheel->trkPos.seg->surface->kRebound;
-			if (dotProd < 0) {
-				if (dotProd < CRASH_THRESHOLD) {
-					car->collision |= SEM_COLLISION_Z_CRASH;
-				}
-				car->collision |= SEM_COLLISION | SEM_COLLISION_Z;
-				car->DynGCg.vel.x -= normal.x * dotProd;
-				car->DynGCg.vel.y -= normal.y * dotProd;
-				car->DynGCg.vel.z -= normal.z * dotProd;
-				if ((car->carElt->_state & RM_CAR_STATE_FINISH) == 0) {
-					car->dammage += (int)(wheel->trkPos.seg->surface->kDammage * fabs(dotProd) * simDammageFactor[car->carElt->_skillLevel]);
-				}
+		tTrkLocPos cornerPos;
+		RtTrackGlobal2Local(car->trkPos.seg, car->corner[i].pos.ax, car->corner[i].pos.ay, &cornerPos, TR_LPOS_SEGMENT);
+		tdble z = RtTrackHeightL(&cornerPos);
+		tdble dz = car->corner[i].pos.az - z;
+		sumdz += dz;
+
+		// Car corner below surface
+		if (dz < 0.0f) {
+			tdble dPosAy = dz/car->corner[i].pos.x*fabs(dstVec[0]);
+			car->DynGCg.pos.ay += dPosAy;
+			tdble dPosAx = dz/car->corner[i].pos.y*fabs(dstVec[1]);
+			car->DynGCg.pos.ax -= dPosAx;
+			car->collision |= SEM_COLLISION | SEM_COLLISION_Z;
+		}
+	}
+
+	if (sumdz > 0.0f) sumdz = 0.0f;
+
+	// The above part cannot resolve the collision in all cases, e.g. when all corners are below the surface.
+	// For this case we check if the car floor below the center of gravity is eventually below the ground too.
+	tdble z = RtTrackHeightG(car->trkPos.seg, car->DynGCg.pos.x, car->DynGCg.pos.y);
+	tdble dz =  car->DynGCg.pos.z - (car->statGC.z - sumdz)/normal.z - z;
+
+	if (dz < 0.0f) {
+		tdble dotProd = (car->DynGCg.vel.x * normal.x + car->DynGCg.vel.y * normal.y + car->DynGCg.vel.z * normal.z);
+		if (dotProd < 0.0f) {
+			if (dotProd < CRASH_THRESHOLD) {
+				car->collision |= SEM_COLLISION_Z_CRASH;
+			}
+			car->collision |= SEM_COLLISION | SEM_COLLISION_Z;
+			car->DynGCg.vel.x -= normal.x * dotProd;
+			car->DynGCg.vel.y -= normal.y * dotProd;
+			car->DynGCg.vel.z -= normal.z * dotProd;
+
+			if ((car->carElt->_state & RM_CAR_STATE_FINISH) == 0) {
+				car->dammage += (int)(normalPos.seg->surface->kDammage * fabs(dotProd) * rulesDamageFactor * simDammageFactor[car->carElt->_skillLevel]);
 			}
 		}
 	}
 }
 
-const tdble BorderFriction = 0.00;
+const tdble BorderFriction = 0.0f;
 
 // Collision of car/track borders.
 // Be aware that it does not work for convex edges (e.g. e-track-2, end of the straight, left),
@@ -123,7 +159,7 @@ void SimCarCollideXYScene(tCar *car)
 		car->DynGCg.vel.y -= ny * dotProd;
 		dotprod2 = (nx * cx + ny * cy);
 
-		// Angular velocity change caused by friction of collisding car part with wall.
+		// Angular velocity change caused by friction of colliding car part with wall.
 		static tdble VELSCALE = 10.0f;
 		static tdble VELMAX = 6.0f;
 		car->DynGCg.vel.az -= dotprod2 * dotProd / VELSCALE;
@@ -131,11 +167,11 @@ void SimCarCollideXYScene(tCar *car)
 			car->DynGCg.vel.az = SIGN(car->DynGCg.vel.az) * VELMAX;
 		}
 
-		// Dammage.
+		// Damage.
 		dotProd = initDotProd;
 		if (dotProd < 0.0f && (car->carElt->_state & RM_CAR_STATE_FINISH) == 0) {
-			dmg = curBarrier->surface->kDammage * fabs(0.5*dmgDotProd*dmgDotProd) * simDammageFactor[car->carElt->_skillLevel];
-			car->dammage += (int)dmg;
+			dmg = curBarrier->surface->kDammage * (0.5f*dmgDotProd*dmgDotProd + 0.005f*fabs(1.0f-cosa)*absvel) * rulesDamageFactor * simDammageFactor[car->carElt->_skillLevel];
+			car->dammage += (int) dmg;
 		} else {
 			dmg = 0.0f;
 		}
@@ -200,8 +236,13 @@ static void SimCarCollideResponse(void * /*dummy*/, DtObjectRef obj1, DtObjectRe
 	}
 
 	sgNormaliseVec2(n);
+    
+	// Because of the type conversion and the transformation to 2D the length of the normal might be 0 now, which could cause NaN
+	if (isnan(n[0]) || isnan(n[1])) {
+		return;
+	}
 
-	sgVec2 rg[2];	// raduis oriented in global coordinates, still relative to CG (rotated aroung CG).
+	sgVec2 rg[2];	// radius oriented in global coordinates, still relative to CG (rotated aroung CG).
 	tCarElt *carElt;
 
 	for (i = 0; i < 2; i++) {
@@ -262,7 +303,7 @@ static void SimCarCollideResponse(void * /*dummy*/, DtObjectRef obj1, DtObjectRe
 	rpn[0] = sgScalarProductVec2(rg[0], n);
 	rpn[1] = sgScalarProductVec2(rg[1], n);
 
-	// Pesudo cross product to find out if we are left or right.
+	// Pseudo cross product to find out if we are left or right.
 	// TODO: SIGN, scrap value?
 	float rpsign[2];
 	rpsign[0] =  n[0]*rg[0][1] - n[1]*rg[0][0];
@@ -291,7 +332,7 @@ static void SimCarCollideResponse(void * /*dummy*/, DtObjectRef obj1, DtObjectRe
 		}
 
 		if ((car[i]->carElt->_state & RM_CAR_STATE_FINISH) == 0) {
-			car[i]->dammage += (int)(CAR_DAMMAGE * fabs(j) * damFactor * simDammageFactor[car[i]->carElt->_skillLevel]);
+			car[i]->dammage += (int)(CAR_DAMMAGE * fabs(j) * damFactor * rulesDamageFactor * simDammageFactor[car[i]->carElt->_skillLevel]);
 		}
 
 		// Compute collision velocity.
@@ -323,7 +364,6 @@ static void SimCarCollideResponse(void * /*dummy*/, DtObjectRef obj1, DtObjectRe
 						RAD2DEG(carElt->_roll), RAD2DEG(carElt->_pitch));
 		dtSelectObject(car[i]);
 		dtLoadIdentity();
-		dtTranslate(-carElt->_statGC_x, -carElt->_statGC_y, 0.0f);
 		dtMultMatrixf((const float *)(carElt->_posMat));
 
 		car[i]->collision |= SEM_COLLISION_CAR;
@@ -359,6 +399,11 @@ static void SimCarWallCollideResponse(void *clientdata, DtObjectRef obj1, DtObje
 	n[1] = nsign * (float) collData->normal[1];
 	float pdist = sgLengthVec2(n);	// Distance of collision points.
 	sgNormaliseVec2(n);
+	
+	// Because of the type conversion and the transformation to 2D the length of the normal might be 0 now, which could cause NaN
+	if (isnan(n[0]) || isnan(n[1])) {
+		return;
+	}
 
 	sgVec2 r;
 	sgSubVec2(r, p, (const float*)&(car->statGC));
@@ -413,7 +458,7 @@ static void SimCarWallCollideResponse(void *clientdata, DtObjectRef obj1, DtObje
 
 	static const float DMGFACTOR = 0.00002f;
 	if ((car->carElt->_state & RM_CAR_STATE_FINISH) == 0) {
-		car->dammage += (int)(CAR_DAMMAGE * (DMGFACTOR*j*j) * damFactor * simDammageFactor[car->carElt->_skillLevel]);
+		car->dammage += (int)(CAR_DAMMAGE * (DMGFACTOR*j*j) * damFactor * rulesDamageFactor * simDammageFactor[car->carElt->_skillLevel]);
 	}
 
 	sgScaleVec2(tmpv, n, j * car->Minv);
@@ -440,7 +485,6 @@ static void SimCarWallCollideResponse(void *clientdata, DtObjectRef obj1, DtObje
 					RAD2DEG(carElt->_roll), RAD2DEG(carElt->_pitch));
 	dtSelectObject(car);
 	dtLoadIdentity();
-	dtTranslate(-carElt->_statGC_x, -carElt->_statGC_y, 0.0f);
 	dtMultMatrixf((const float *)(carElt->_posMat));
 
 	car->collision |= SEM_COLLISION_CAR;
@@ -669,7 +713,18 @@ SimCarCollideConfig(tCar *car, tTrack *track)
 	// TODO: car body/curbs collision.
 	// TODO: car body/flat wall collision (e.g. for pavement, sidewalk).
 	// TODO: define static objects in XML file/tTrack, collide with them as well.
+}
 
+
+void
+SimCarCollideInit(tTrack *track)
+{
+	dtSetDefaultResponse(SimCarCollideResponse, DT_SMART_RESPONSE, NULL);
+	// Hmm, why is caching disabled, are our objects too fast, so it does not work?
+	// TODO: understand this and reconsider caching.
+	dtDisableCaching();
+	dtSetTolerance(0.001);
+	
 	fixedid = 0;
 
 	if (track != NULL) {
@@ -684,19 +739,7 @@ SimCarCollideConfig(tCar *car, tTrack *track)
 			dtCreateObject(&fixedobjects[i], fixedobjects[i]);
 			dtSetObjectResponse(&fixedobjects[i], SimCarWallCollideResponse, DT_SMART_RESPONSE, &fixedobjects[i]);
 		}
-
-	}
-}
-
-
-void
-SimCarCollideInit(void)
-{
-	dtSetDefaultResponse(SimCarCollideResponse, DT_SMART_RESPONSE, NULL);
-	// Hmm, why is caching disabled, are our objects too fast, so it does not work?
-	// TODO: understand this and reconsider caching.
-	dtDisableCaching();
-	dtSetTolerance(0.001);
+	}	
 }
 
 
@@ -718,7 +761,6 @@ SimCarCollideCars(tSituation *s)
 		dtSelectObject(car);
 		// Fit the bounding box around the car, statGC's are the static offsets.
 		dtLoadIdentity();
-		dtTranslate(-carElt->_statGC_x, -carElt->_statGC_y, 0.0f);
 		// Place the bounding box such that it fits the car in the world.
 		dtMultMatrixf((const float *)(carElt->_posMat));
 		memset(&(car->VelColl), 0, sizeof(tPosd));

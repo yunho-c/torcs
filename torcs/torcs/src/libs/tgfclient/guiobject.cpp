@@ -17,7 +17,6 @@
  ***************************************************************************/
 
 
-#include <string.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -30,7 +29,7 @@ gfuiObjectInit(void)
 }
 
 void 
-gfuiPrintString(int x, int y, GfuiFontClass *font, char *string)
+gfuiPrintString(int x, int y, GfuiFontClass *font, const char *string)
 {
     glEnable(GL_TEXTURE_2D);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -41,26 +40,26 @@ gfuiPrintString(int x, int y, GfuiFontClass *font, char *string)
     glDisable(GL_TEXTURE_2D);
 }
 
-void GfuiPrintString(char *text, float *fgColor, int font, int x, int y, int align)
+void GfuiPrintString(const char *text, float *fgColor, int font, int x, int y, int align)
 {
-    glEnable(GL_TEXTURE_2D);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    glEnable(GL_ALPHA_TEST);
-    glAlphaFunc(GL_GREATER, 0.1) ;
-    glColor4fv(fgColor);
-    switch(align&0xF0) {
-    case 0x00 /* LEFT */:
-	gfuiFont[font]->output(x, y, text);
-	break;
-    case 0x10 /* CENTER */:
-	gfuiFont[font]->output(x - gfuiFont[font]->getWidth(text) / 2, y, text);
-	break;
-    case 0x20 /* RIGHT */:
-	gfuiFont[font]->output(x - gfuiFont[font]->getWidth(text), y, text);
-	break;
-    }
-    glDisable(GL_ALPHA_TEST);
-    glDisable(GL_TEXTURE_2D);
+	glEnable(GL_TEXTURE_2D);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glEnable(GL_ALPHA_TEST);
+	glAlphaFunc(GL_GREATER, 0.1) ;
+	glColor4fv(fgColor);
+	switch(align&0xF0) {
+		case 0x00 /* LEFT */:
+			gfuiFont[font]->output(x, y, text);
+			break;
+		case 0x10 /* CENTER */:
+			gfuiFont[font]->output(x - gfuiFont[font]->getWidth(text) / 2, y, text);
+			break;
+		case 0x20 /* RIGHT */:
+			gfuiFont[font]->output(x - gfuiFont[font]->getWidth(text), y, text);
+			break;
+	}
+	glDisable(GL_ALPHA_TEST);
+	glDisable(GL_TEXTURE_2D);
 }
 
 int GfuiFontHeight(int font)
@@ -68,7 +67,7 @@ int GfuiFontHeight(int font)
     return gfuiFont[font]->getHeight();
 }
 
-int GfuiFontWidth(int font, char *text)
+int GfuiFontWidth(int font, const char *text)
 {
     return gfuiFont[font]->getWidth(text);
 }
@@ -201,6 +200,10 @@ GfuiUnSelectCurrent(void)
 static void
 gfuiLoseFocus(tGfuiObject *obj)
 {
+	if (obj->state == GFUI_DISABLE) {
+		return;
+	}
+
     tGfuiButton		*button;
     tGfuiEditbox	*editbox;
     tGfuiGrButton	*grbutton;
@@ -235,7 +238,11 @@ gfuiLoseFocus(tGfuiObject *obj)
 static void
 gfuiSetFocus(tGfuiObject *obj)
 {
-    tGfuiButton		*button;
+	if (obj->state == GFUI_DISABLE) {
+		return;
+	}
+
+	tGfuiButton		*button;
     tGfuiEditbox	*editbox;
     tGfuiGrButton	*grbutton;
     
@@ -453,20 +460,24 @@ gfuiMouseAction(void *vaction)
 
     curObject = GfuiScreen->hasFocus;
     if (curObject != NULL) {
-	switch (curObject->widget) {
-	case GFUI_BUTTON:
-	    gfuiButtonAction((int)action);
-	    break;
-	case GFUI_GRBUTTON:
-	    gfuiGrButtonAction((int)action);
-	    break;
-	case GFUI_SCROLLIST:
-	    gfuiScrollListAction((int)action);
-	    break;
-	case GFUI_EDITBOX:
-	    gfuiEditboxAction((int)action);
-	    break;
-	}
+		if (curObject->state == GFUI_DISABLE) {
+			return;
+		}
+		
+		switch (curObject->widget) {
+		case GFUI_BUTTON:
+			gfuiButtonAction((int)action);
+			break;
+		case GFUI_GRBUTTON:
+			gfuiGrButtonAction((int)action);
+			break;
+		case GFUI_SCROLLIST:
+			gfuiScrollListAction((int)action);
+			break;
+		case GFUI_EDITBOX:
+			gfuiEditboxAction((int)action);
+			break;
+		}
     }
 }
 

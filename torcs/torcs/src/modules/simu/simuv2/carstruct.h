@@ -2,7 +2,7 @@
 
     file                 : carstruct.h
     created              : Sun Mar 19 00:06:07 CET 2000
-    copyright            : (C) 2000 by Eric Espie
+    copyright            : (C) 2000-2013 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
 
@@ -85,6 +85,10 @@ typedef struct
     tDynPt	restPos;	/* target rest position after the car is broken */
 
     int		collisionAware;
+	tdble	speed;		// total speed = sqrt(vx*vx + vy*vy + vz*vz)
+
+	tdble	localTemperature;	// Environment temperature for the car
+	tdble	localPressure;		// Environment pressure for the car
 } tCar;
 
 #if 0

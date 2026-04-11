@@ -18,7 +18,6 @@
  ***************************************************************************/
 
 #include <stdlib.h>
-#include <string.h>
 
 #include <GL/glut.h>
 
@@ -26,57 +25,82 @@
 #include <client.h>
 
 #include "linuxspec.h"
+#include <raceinit.h>
+
+extern bool bKeepModules;
 
 static void
-init_args(int argc, char **argv)
+init_args(int argc, char **argv, const char **raceconfig)
 {
-    int		i;
-    char	*buf;
+	int i;
+	char *buf;
 
-    i = 1;
-    while (i < argc) {
-	if (strncmp(argv[i], "-l", 2) == 0) {
-	    i++;
-	    if (i < argc) {
-		buf = (char *)malloc(strlen(argv[i]) + 2);
-		sprintf(buf, "%s/", argv[i]);
-		SetLocalDir(buf);
-		free(buf);
-		i++;
-	    }
-	} else if (strncmp(argv[i], "-L", 2) == 0) {
-	    i++;
-	    if (i < argc) {
-		buf = (char *)malloc(strlen(argv[i]) + 2);
-		sprintf(buf, "%s/", argv[i]);
-		SetLibDir(buf);
-		free(buf);
-		i++;
-	    }
-	} else if (strncmp(argv[i], "-D", 2) == 0) {
-	    i++;
-	    if (i < argc) {
-		buf = (char *)malloc(strlen(argv[i]) + 2);
-		sprintf(buf, "%s/", argv[i]);
-		SetDataDir(buf);
-		free(buf);
-		i++;
-	    }
-	} else if (strncmp(argv[i], "-s", 2) == 0) {
-	    i++;
-	    SetSingleTextureMode ();
-	    
+	i = 1;
+
+	while(i < argc) {
+		if(strncmp(argv[i], "-l", 2) == 0) {
+			i++;
+
+			if(i < argc) {
+				buf = (char *)malloc(strlen(argv[i]) + 2);
+				sprintf(buf, "%s/", argv[i]);
+				SetLocalDir(buf);
+				free(buf);
+				i++;
+			}
+		} else if(strncmp(argv[i], "-L", 2) == 0) {
+			i++;
+
+			if(i < argc) {
+				buf = (char *)malloc(strlen(argv[i]) + 2);
+				sprintf(buf, "%s/", argv[i]);
+				SetLibDir(buf);
+				free(buf);
+				i++;
+			}
+		} else if(strncmp(argv[i], "-D", 2) == 0) {
+			i++;
+
+			if(i < argc) {
+				buf = (char *)malloc(strlen(argv[i]) + 2);
+				sprintf(buf, "%s/", argv[i]);
+				SetDataDir(buf);
+				free(buf);
+				i++;
+			}
+		} else if(strncmp(argv[i], "-s", 2) == 0) {
+			i++;
+			SetSingleTextureMode();
+		} else if(strncmp(argv[i], "-k", 2) == 0) {
+			i++;
+			// Keep modules in memory (for valgrind)
+			printf("Unloading modules disabled, just intended for valgrind runs.\n");
+			bKeepModules = true;
 #ifndef FREEGLUT
-	} else if (strncmp(argv[i], "-m", 2) == 0) {
-	    i++;
-	    GfuiMouseSetHWPresent(); /* allow the hardware cursor */
+		} else if(strncmp(argv[i], "-m", 2) == 0) {
+			i++;
+			GfuiMouseSetHWPresent(); /* allow the hardware cursor */
 #endif
-	} else {
-	    i++;		/* ignore bad args */
+		} else if(strncmp(argv[i], "-r", 2) == 0) {
+			i++;
+			*raceconfig = "";
+
+			if(i < argc) {
+				*raceconfig = argv[i];
+				i++;
+			}
+
+			if((strlen(*raceconfig) == 0) || (strstr(*raceconfig, ".xml") == 0)) {
+				printf("Please specify a race configuration xml when using -r\n");
+				exit(1);
+			}
+		} else {
+			i++;		/* ignore bad args */
+		}
 	}
-    }
+
 #ifdef FREEGLUT
-    GfuiMouseSetHWPresent(); /* allow the hardware cursor (freeglut pb ?) */
+	GfuiMouseSetHWPresent(); /* allow the hardware cursor (freeglut pb ?) */
 #endif
 }
 
@@ -88,27 +112,32 @@ init_args(int argc, char **argv)
  *	LINUX entry point of TORCS
  *
  * Parameters
- *	
+ *
  *
  * Return
- *	
+ *
  *
  * Remarks
- *	
+ *
  */
-int 
+int
 main(int argc, char *argv[])
 {
-    init_args(argc, argv);
-    
-    LinuxSpecInit();		/* init specific linux functions */
-    
-    GfScrInit(argc, argv);	/* init screen */
+	const char *raceconfig = "";
 
-    TorcsEntry();		/* launch TORCS */
-    
-    glutMainLoop();		/* event loop of glut */
+	init_args(argc, argv, &raceconfig);
+	LinuxSpecInit();			/* init specific linux functions */
 
-    return 0;			/* just for the compiler, never reached */
+	if(strlen(raceconfig) == 0) {
+		GfScrInit(argc, argv);	/* init screen */
+		TorcsEntry();			/* launch TORCS */
+		glutMainLoop();			/* event loop of glut */
+	} else {
+		// Run race from console, no Window, no OpenGL/OpenAL etc.
+		// Thought for blind scripted AI training
+		ReRunRaceOnConsole(raceconfig);
+	}
+
+	return 0;					/* just for the compiler, never reached */
 }
 

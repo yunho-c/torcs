@@ -15,6 +15,7 @@
 #include <list>
 #include <vector>
 #include "Trajectory.h"
+#include <time.h>
 
 
 
@@ -27,28 +28,25 @@ Point Trajectory::GetPoint (Segment& s, float w)
                   w*s.left.z + v*s.right.z);
 }
 
-#undef EXP_COST
+#define EXP_COST
 #undef DBG_OPTIMISE
 /// Optimise a track trajectory
-void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float margin, char* fname, bool reset)
+void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, const char* fname, bool reset)
 {
     int N = track.size();
     clock_t start_time = clock();
     int min_iter = max_iter/2; // minimum number of iterations to do
-    float time_limit = 4.0f; // if more than min_iter have been done, exit when time elapsed is larger than the time limit
+    float time_limit = 2.0f; // if more than min_iter have been done, exit when time elapsed is larger than the time limit
     float beta = 0.75f; // amount to reduce alpha to when it seems to be too large
-    float eta = 1.0f; // exp constant!
-    float zeta = 0.0f; // flatten around 0
     w.resize(N);
     dw.resize(N);
     dw2.resize(N);
     indices.resize(N);
     accel.resize(N);
 
-    //float penalty_start = 1.0f/track.average_width;
-    float penalty_start = 0.5f * margin/track.average_width;
     // initialise vectors
-    for (int i=0; i<N; ++i) {
+	int i;
+    for (i=0; i<N; ++i) {
         if (reset) {w[i] = 0.5f;}
         dw2[i] = 1.0f;
         indices[i] = i;
@@ -58,7 +56,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
     // Shuffle thoroughly
 #if 1
     srand(12358);
-    for (int i=0; i<N-1; ++i) {
+    for (i=0; i<N-1; ++i) {
         int z = rand()%(N-i);
         int tmp = indices[i];
         indices[i] = indices[z+i];
@@ -66,11 +64,11 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
     }
 #endif
 
-    float prevC = 0.0;
+    //float prevC = 0.0f;
     float Z = 10.0f;
-    float lambda = 0.9;
+    float lambda = 0.9f;
     float delta_C = 0.0f;
-    float prev_dCdw2 = 0.0;
+    float prev_dCdw2 = 0.0f;
 
     for (int iter=0; iter<max_iter; iter++) {
 
@@ -91,19 +89,19 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
             //int i_n3 = (i + 3)%N;
             int i_n2 = (i + 2)%N;
             int i_n1 = (i + 1)%N;
-            Segment s_prv3 = track[i_p3];
-            Segment s_prv2 = track[i_p2];
-            Segment s_prv = track[i_p1];
+            //Segment s_prv3 = track[i_p3];
+            //Segment s_prv2 = track[i_p2];
+            //Segment s_prv = track[i_p1];
             Segment s_cur = track[i];
-            Segment s_nxt = track[i_n1];
-            Segment s_nxt2 = track[i_n2];
-            Point prv3 = GetPoint(track[i_p3], w[i_p3]);
+            //Segment s_nxt = track[i_n1];
+            //Segment s_nxt2 = track[i_n2];
+            //Point prv3 = GetPoint(track[i_p3], w[i_p3]);
             Point prv2 = GetPoint(track[i_p2], w[i_p2]);
             Point prv = GetPoint(track[i_p1], w[i_p1]);
             Point cur = GetPoint(track[i], w[i]);
             Point nxt = GetPoint(track[i_n1], w[i_n1]);
             Point nxt2 = GetPoint(track[i_n2], w[i_n2]);
-            Point u_prv2 = prv2 - prv3;
+            //Point u_prv2 = prv2 - prv3;
             Point u_prv = prv - prv2;
             Point u_cur = cur - prv;
             Point u_nxt = nxt - cur;
@@ -145,10 +143,9 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
                     float dnorm = sqrt(dnorm2);
                     float dxdynorm = d.x * d.y / dnorm;
 #ifdef EXP_COST
-                    float tmp = exp(eta*(a_cur.x*a_cur.x + a_cur.y*a_cur.y)) - zeta;
-
+                    float tmp = exp(a_cur.x*a_cur.x + a_cur.y*a_cur.y);
                     dCdw += tmp * a_cur.x * lr.x * (dnorm + d.x/dnorm + dxdynorm);
-                    dCdw += tmp * a_cur.y * lr.y * (dnorm + d.y/dnorm + dxdynorm);
+                    dCdw += tmp *a_cur.y * lr.y * (dnorm + d.y/dnorm + dxdynorm);
 #else
                     dCdw += a_cur.x * lr.x * (dnorm + d.x/dnorm + dxdynorm);
                     dCdw += a_cur.y * lr.y * (dnorm + d.y/dnorm + dxdynorm);
@@ -161,8 +158,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
                     float dnorm = sqrt(dnorm2);
                     float dxdynorm = d.x * d.y / dnorm;
 #ifdef EXP_COST
-                    float tmp = exp(eta*(a_cur.x*a_cur.x + a_cur.y*a_cur.y)) - zeta;
-
+                    float tmp = exp(a_cur.x*a_cur.x + a_cur.y*a_cur.y);
                     dCdw += tmp * a_cur.x * lr.x * (dnorm + d.x/dnorm + dxdynorm);
                     dCdw += tmp *a_cur.y * lr.y * (dnorm + d.y/dnorm + dxdynorm);
 #else
@@ -180,7 +176,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
                     float dnorm = sqrt(dnorm2);
                     float dxdynorm = d.x * d.y / dnorm;
 #ifdef EXP_COST
-                    float tmp = exp(eta*(a_nxt.x*a_nxt.x + a_nxt.y*a_nxt.y)) - zeta;
+                    float tmp = exp(a_nxt.x*a_nxt.x + a_nxt.y*a_nxt.y);
                     dCdw -= tmp * a_nxt.x * lr.x * (dnorm + d.x/dnorm + dxdynorm);
                     dCdw -= tmp * a_nxt.y * lr.y * (dnorm + d.y/dnorm + dxdynorm);
 #else
@@ -198,7 +194,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
                     float dnorm = sqrt(dnorm2);
                     float dxdynorm = d.x * d.y / dnorm;
 #ifdef EXP_COST
-                    float tmp = exp(eta*(a_prv.x*a_prv.x + a_prv.y*a_prv.y)) - zeta;
+                    float tmp = exp(a_prv.x*a_prv.x + a_prv.y*a_prv.y);
                     dCdw -= tmp*a_prv.x * lr.x * (dnorm + d.x/dnorm + dxdynorm);
                     dCdw -= tmp*a_prv.y * lr.y * (dnorm + d.y/dnorm + dxdynorm);
 #else
@@ -210,7 +206,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
             float K = 10.0;
             float penalty = 0.0;//K*(0.5f - w[i])*(exp(fabs(0.5-w[i]))-1);
             if (1) {
-                float b = penalty_start;
+                float b = 0.1f;
                 if (w[i] < b) {
                     penalty += K*(b - w[i]);
                 } else if (w[i] > 1.0 -b) {
@@ -226,7 +222,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
             w[i] += alpha * delta;
             
             if (1) {
-                float b = 0.5f*penalty_start;
+                float b = 0.0;
                 if (w[i] < b) {
                     w[i] = b;
                 } else if (w[i] > 1.0 -b) {
@@ -247,7 +243,7 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
         }
         Z = (dCdw2);
         if (Z<0.01) {
-            Z = 0.01;
+            Z = 0.01f;
         }
 
 
@@ -282,21 +278,10 @@ void Trajectory::Optimise(SegmentList track, int max_iter, float alpha, float ma
 #endif
             break;
         }
-        prevC = C;
+        //prevC = C;
     }
 
 
-    if (fname && strcmp(fname, "")) {
-#ifdef DBG_OPTIMISE
-        fprintf (stderr, "# writing output to %s\n", fname);
-#endif
-        FILE* f = fopen (fname, "w");
-        for (int i=0; i<N; ++i) {
-            Point p = GetPoint(track[i], w[i]);
-            fprintf (f, "%f %f\n", p.x, p.y);
-        }
-        fclose(f);
-    }
 
 }
 

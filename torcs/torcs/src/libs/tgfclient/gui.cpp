@@ -25,7 +25,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <time.h>
 
 #include <tgfclient.h>
@@ -40,8 +39,6 @@ tMouseInfo	GfuiMouse;
 int		GfuiMouseHW = 0;
 
 float		GfuiColor[GFUI_COLORNB][4];
-static		char buf[1024];
-
 
 static int	ScrW, ScrH, ViewW, ViewH;
 
@@ -53,10 +50,13 @@ static double LastTimeClick;
 static void
 gfuiColorInit(void)
 {
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	
 	void *hdle;
 	int  i, j;
-	char *rgba[4] = {GFSCR_ATTR_RED, GFSCR_ATTR_GREEN, GFSCR_ATTR_BLUE, GFSCR_ATTR_ALPHA};
-	char *clr[GFUI_COLORNB] = {
+	const char *rgba[4] = {GFSCR_ATTR_RED, GFSCR_ATTR_GREEN, GFSCR_ATTR_BLUE, GFSCR_ATTR_ALPHA};
+	const char *clr[GFUI_COLORNB] = {
 		GFSCR_ELT_BGCOLOR, GFSCR_ELT_TITLECOLOR, GFSCR_ELT_BGBTNFOCUS, GFSCR_ELT_BGBTNCLICK,
 		GFSCR_ELT_BGBTNENABLED, GFSCR_ELT_BGBTNDISABLED, GFSCR_ELT_BTNFOCUS, GFSCR_ELT_BTNCLICK,
 		GFSCR_ELT_BTNENABLED, GFSCR_ELT_BTNDISABLED, GFSCR_ELT_LABELCOLOR, GFSCR_ELT_TIPCOLOR,
@@ -65,12 +65,12 @@ gfuiColorInit(void)
 		GFSCR_ELT_EDITCURSORCLR
 	};
 	
-	sprintf(buf, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
 	hdle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
 
 	for (i = 0; i < GFUI_COLORNB; i++) {
 		for (j = 0; j < 4; j++) {
-			sprintf(buf, "%s/%s/%s", GFSCR_SECT_MENUCOL, GFSCR_LIST_COLORS, clr[i]);
+			snprintf(buf, BUFSIZE, "%s/%s/%s", GFSCR_SECT_MENUCOL, GFSCR_LIST_COLORS, clr[i]);
 			GfuiColor[i][j] = GfParmGetNum(hdle, buf, rgba[j], (char*)NULL, 1.0);
 		}
 	}
@@ -162,17 +162,35 @@ GfuiDisplay(void)
 		glClear(GL_COLOR_BUFFER_BIT);
 	}
 	
-	if (GfuiScreen->bgImage != 0) {
+	if (glIsTexture(GfuiScreen->bgImage) == GL_TRUE) {
+		GLfloat tx1 = 0.0f, tx2 = 1.0f, ty1 = 0.0f, ty2 = 1.0f;
+		
+		// All background images are 16:10 images which are stored as quadratic images.
+		// Compute texture coordinates to ensure proper unskewed/unstretched display of
+		// image content.
+		tdble rfactor = (16.0f*ViewH)/(10.0f*ViewW);
+		if (rfactor >= 1.0f) {
+			// Aspect ratio of view is smaller than 16:10, "cut off" sides
+			tdble tdx = (1.0f-1.0f/rfactor)/2.0f;
+			tx1 += tdx;
+			tx2 -= tdx;
+		} else {
+			// Aspect ratio of view is larger than 16:10, "cut off" top and bottom
+			tdble tdy = (1.0f-rfactor)/2.0f;
+			ty1 += tdy;
+			ty2 -= tdy;
+		}
+
 		glDisable(GL_BLEND);
 		glEnable(GL_TEXTURE_2D);
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 		glColor3f(0.0, 0.0, 1.0);
 		glBindTexture(GL_TEXTURE_2D, GfuiScreen->bgImage);
 		glBegin(GL_QUADS);
-		glTexCoord2f(0.0, 0.0); glVertex3f(0.0, 0.0, 0.0);
-		glTexCoord2f(0.0, 1.0); glVertex3f(0.0, GfuiScreen->height, 0.0);
-		glTexCoord2f(1.0, 1.0); glVertex3f(GfuiScreen->width, GfuiScreen->height, 0.0);
-		glTexCoord2f(1.0, 0.0); glVertex3f(GfuiScreen->width, 0.0, 0.0);
+		glTexCoord2f(tx1, ty1); glVertex3f(0.0, 0.0, 0.0);
+		glTexCoord2f(tx1, ty2); glVertex3f(0.0, GfuiScreen->height, 0.0);
+		glTexCoord2f(tx2, ty2); glVertex3f(GfuiScreen->width, GfuiScreen->height, 0.0);
+		glTexCoord2f(tx2, ty1); glVertex3f(GfuiScreen->width, 0.0, 0.0);
 		glEnd();
 		glDisable(GL_TEXTURE_2D);
 		glEnable(GL_BLEND);
@@ -459,7 +477,7 @@ GfuiScreenActivate(void *screen)
 	glutMouseFunc(gfuiMouse);
 	glutMotionFunc(gfuiMotion);
 	glutPassiveMotionFunc(gfuiPassiveMotion);
-	glutIdleFunc(GfuiIdle);
+	glutIdleFunc((void(*)(void))NULL);
 	
 	if (GfuiScreen->onlyCallback == 0) {
 		if (GfuiScreen->hasFocus == NULL) {
@@ -488,8 +506,6 @@ void
 GfuiScreenReplace(void *screen)
 {
 	tGfuiScreen	*oldScreen = GfuiScreen;
-
-	//GfuiScreenActivate(screen);
 
 	if (oldScreen) {
 		GfuiScreenRelease(oldScreen);
@@ -539,8 +555,6 @@ GfuiScreenCreate(void)
 		screen->bgColor[i] = GfuiColor[GFUI_BGCOLOR][i];
 	}
 
-
-	// screen->bgColor = &(GfuiColor[GFUI_BGCOLOR][0]);
 	screen->mouseColor[0] = &(GfuiColor[GFUI_MOUSECOLOR1][0]);
 	screen->mouseColor[1] = &(GfuiColor[GFUI_MOUSECOLOR2][0]);
 	screen->mouseAllowed = 1;
@@ -582,16 +596,7 @@ GfuiScreenCreateEx(float *bgColor,
 			screen->bgColor[i] = GfuiColor[GFUI_BGCOLOR][i];
 		}
 	}
-	
-	/*
-	if (bgColor != NULL) {
-		screen->bgColor = (float*)calloc(4, sizeof(float));
-		for(i = 0; i < 4; i++) {
-			screen->bgColor[i] = bgColor[i];
-		}
-	} else {
-		screen->bgColor = &(GfuiColor[GFUI_BGCOLOR][0]);
-	}*/
+
 	screen->mouseColor[0] = &(GfuiColor[GFUI_MOUSECOLOR1][0]);
 	screen->mouseColor[1] = &(GfuiColor[GFUI_MOUSECOLOR2][0]);
 	screen->onActivate = onActivate;
@@ -622,7 +627,7 @@ GfuiScreenRelease(void *scr)
 		GfuiScreenDeactivate();
 	}
 
-	if (screen->bgImage != 0) {
+	if (glIsTexture(screen->bgImage) == GL_TRUE) {
 		glDeleteTextures(1, &screen->bgImage);
 	}
 
@@ -734,11 +739,12 @@ GfuiSKeyEventRegisterCurrent(tfuiSKeyCallback onSKeyAction)
     @param	onKeyReleased	Callback function
  */
 void
-GfuiAddKey(void *scr, unsigned char key, char *descr, void *userData, tfuiCallback onKeyPressed, tfuiCallback onKeyReleased)
+GfuiAddKey(void *scr, unsigned char key, const char *descr, void *userData, tfuiCallback onKeyPressed, tfuiCallback onKeyReleased)
 {
 	tGfuiKey	*curKey;
 	tGfuiScreen	*screen = (tGfuiScreen*)scr;
-	char	buf[16];
+	const int BUFSIZE = 16;
+	char buf[BUFSIZE];
 	
 	curKey = (tGfuiKey*)calloc(1, sizeof(tGfuiKey));
 	curKey->key = key;
@@ -768,7 +774,7 @@ GfuiAddKey(void *scr, unsigned char key, char *descr, void *userData, tfuiCallba
 			curKey->name = strdup("space");
 			break;
 		default:
-			sprintf(buf, "%c", key);
+			snprintf(buf, BUFSIZE, "%c", key);
 			curKey->name = strdup(buf);
 			break;
 	}
@@ -807,7 +813,7 @@ GfuiRegisterKey(unsigned char key, char *descr, void *userData, tfuiCallback onK
     @param	onKeyReleased	Callback function
  */
 void
-GfuiAddSKey(void *scr, int key, char *descr, void *userData, tfuiCallback onKeyPressed, tfuiCallback onKeyReleased)
+GfuiAddSKey(void *scr, int key, const char *descr, void *userData, tfuiCallback onKeyPressed, tfuiCallback onKeyReleased)
 {
 	tGfuiKey	*curKey;
 	tGfuiScreen	*screen = (tGfuiScreen*)scr;
@@ -907,13 +913,14 @@ void
 GfuiScreenShot(void * /* notused */)
 {
 	unsigned char *img;
-	char buf[1024];
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
 	struct tm *stm;
 	time_t t;
 	int sw, sh, vw, vh;
-	char path[1024];
+	char path[BUFSIZE];
 	
-	snprintf(path, 1024, "%sscreenshots", GetLocalDir());
+	snprintf(path, BUFSIZE, "%sscreenshots", GetLocalDir());
 	// Ensure that screenshot directory exists.
 	if (GfCreateDir(path) == GF_DIR_CREATED) {
 	
@@ -930,7 +937,7 @@ GfuiScreenShot(void * /* notused */)
 		
 		t = time(NULL);
 		stm = localtime(&t);
-		snprintf(buf, 1024, "%s/torcs-%4d%02d%02d%02d%02d%02d.png",
+		snprintf(buf, BUFSIZE, "%s/torcs-%4d%02d%02d%02d%02d%02d.png",
 			path,
 			stm->tm_year+1900,
 			stm->tm_mon+1,
@@ -951,19 +958,21 @@ GfuiScreenShot(void * /* notused */)
     @return	None.
  */
 void
-GfuiScreenAddBgImg(void *scr, char *filename)
+GfuiScreenAddBgImg(void *scr, const char *filename)
 {
 	tGfuiScreen	*screen = (tGfuiScreen*)scr;
 	void *handle;
 	float screen_gamma;
 	GLbyte *tex;
 	int w,h;
-
-	if (screen->bgImage != 0) {
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	
+	if (glIsTexture(screen->bgImage) == GL_TRUE) {
 		glDeleteTextures(1, &screen->bgImage);
 	}
 
-	sprintf(buf, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
 	handle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
 	screen_gamma = (float)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_GAMMA, (char*)NULL, 2.0);
 	tex = (GLbyte*)GfImgReadPng(filename, &w, &h, screen_gamma);

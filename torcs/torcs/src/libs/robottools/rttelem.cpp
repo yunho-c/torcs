@@ -17,6 +17,8 @@
  *                                                                         *
  ***************************************************************************/
 
+#if 0
+
 /** @file	
     		This is a collection of useful functions for using telemetry in a robot.
 		You can see an example of telemetry usage in the human driver.
@@ -30,16 +32,18 @@
     <br>The graphs are build by gnuplot.
     @ingroup	robottools
 */
-    
+
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
 #include <telemetry.h>
 #include <robottools.h>
 #include <tgf.h>
+#include <portability.h>
 
 #if 0
 static tTelemItf	tlm;
@@ -55,11 +59,12 @@ static tModList		*modlist = (tModList*)NULL;
 void RtTelemInit(tdble ymin, tdble ymax)
 {
 #ifdef later
-    char	buf[256];
+	const int BUFSIZE = 256;
+    char	buf[BUFSIZE];
     tModInfo	*curModInfo;
 
     memset(&tlm, 0, sizeof(tTelemItf));
-    sprintf(buf, "%smodules/telemetry/%s.%s", "telemetry", GetLibDir (), DLLEXT);
+    snprintf(buf, BUFSIZE, "%smodules/telemetry/%s.%s", "telemetry", GetLibDir (), DLLEXT);
     if (GfModLoad(TLM_IDENT, buf, &modlist)) return;
     GfOut("--- %s loaded ---\n", modlist->modInfo->name);
     curModInfo = modlist->modInfo;

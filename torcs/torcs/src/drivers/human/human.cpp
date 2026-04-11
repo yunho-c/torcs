@@ -2,9 +2,8 @@
 
     file                 : human.cpp
     created              : Sat Mar 18 23:16:38 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -17,10 +16,9 @@
  *                                                                         *
  ***************************************************************************/
 
-/** @file   
-    		
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
+/** @file
+	Human driver
+	@author	Bernhard Wymann, Eric Espie
 */
 
 
@@ -31,11 +29,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <math.h>
-#include <js.h>
+#include <plib/js.h>
 
 #include <tgfclient.h>
+#include <portability.h>
 
 #include <track.h>
 #include <car.h>
@@ -47,6 +45,9 @@
 #include "pref.h"
 #include "human.h"
 
+#define DRWD 0
+#define DFWD 1
+#define D4WD 2
 
 static void initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSituation *s);
 static void drive_mt(int index, tCarElt* car, tSituation *s);
@@ -56,13 +57,9 @@ static int  pitcmd(int index, tCarElt* car, tSituation *s);
 
 int joyPresent = 0;
 
-static char	sstring[1024];
-static char	buf[1024];
-
 static tTrack	*curTrack;
-//static void	*DrvInfo;
 
-static float color[] = {0.0, 0.0, 1.0, 1.0};
+static float color[] = {0.5, 0.5, 1.0, 1.0};
 
 static tCtrlJoyInfo	*joyInfo = NULL;
 static tCtrlMouseInfo	*mouseInfo = NULL;
@@ -102,13 +99,11 @@ BOOL WINAPI DllEntryPoint (HINSTANCE hDLL, DWORD dwReason, LPVOID Reserved)
 static void
 shutdown(int index)
 {
-	//static int	firstTime = 1;
-	int		idx = index - 1;
+	int	idx = index - 1;
 
 	free (HCtx[idx]);
 
 	if (firstTime) {
-		//GfParmReleaseHandle(DrvInfo);
 		GfParmReleaseHandle(PrefHdle);
 		GfctrlJoyRelease(joyInfo);
 		GfctrlMouseRelease(mouseInfo);
@@ -125,7 +120,7 @@ shutdown(int index)
  *	InitFuncPt
  *
  * Description
- *	Robot functions initialisation
+ *	Robot functions initialization
  *
  * Parameters
  *	pt	pointer on functions structure
@@ -148,7 +143,6 @@ InitFuncPt(int index, void *pt)
 
 	if (firstTime < 1) {
 		firstTime = 1;
-		//DrvInfo = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 		joyInfo = GfctrlJoyInit();
 		if (joyInfo) {
 			joyPresent = 1;
@@ -199,32 +193,31 @@ InitFuncPt(int index, void *pt)
  *
  */
 
-#define MAXNAMELEN 100
-
-static char names[10][MAXNAMELEN];
 
 extern "C" int
 human(tModInfo *modInfo)
 {
 	int i;
-	char *driver;
+	const char *driver;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	char sstring[BUFSIZE];
 
 	memset(modInfo, 0, 10*sizeof(tModInfo));
 
-	sprintf(buf, "%sdrivers/human/human.xml", GetLocalDir());
+	snprintf(buf, BUFSIZE, "%sdrivers/human/human.xml", GetLocalDir());
 	void *DrvInfo = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 
 	if (DrvInfo != NULL) {
 		for (i = 0; i < 10; i++) {
-			sprintf(sstring, "Robots/index/%d", i+1);
+			snprintf(sstring, BUFSIZE, "Robots/index/%d", i+1);
 			driver = GfParmGetStr(DrvInfo, sstring, "name", "");
 			if (strlen(driver) == 0) {
 				break;
 			}
-			strncpy(names[i], driver, MAXNAMELEN);
-			modInfo->name    = names[i];	/* name of the module (short) */
-			//modInfo->name    = driver;	/* name of the module (short) */
-			modInfo->desc    = "Joystick controlable driver";	/* description of the module (can be long) */
+
+			modInfo->name    = strdup(driver);	/* name of the module (short) */
+			modInfo->desc    = strdup("Joystick controllable driver");	/* description of the module (can be long) */
 			modInfo->fctInit = InitFuncPt;	/* init function */
 			modInfo->gfId    = ROB_IDENT;	/* supported framework version */
 			modInfo->index   = i+1;
@@ -259,65 +252,59 @@ human(tModInfo *modInfo)
  */
 static void initTrack(int index, tTrack* track, void *carHandle, void **carParmHandle, tSituation *s)
 {
-	char *carname;
-	char *s1, *s2;
-	char trackname[256];
+	const char *carname;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	char sstring[BUFSIZE];
 	tdble fuel;
 	int idx = index - 1;
 
 	curTrack = track;
-	s1 = strrchr(track->filename, '/') + 1;
-	s2 = strchr(s1, '.');
-	strncpy(trackname, s1, s2-s1);
-	trackname[s2-s1] = 0;
-	sprintf(sstring, "Robots/index/%d", index);
 
-	sprintf(buf, "%sdrivers/human/human.xml", GetLocalDir());
+	snprintf(sstring, BUFSIZE, "Robots/index/%d", index);
+	snprintf(buf, BUFSIZE, "%sdrivers/human/human.xml", GetLocalDir());
 	void *DrvInfo = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 	carname = "";
 	if (DrvInfo != NULL) {
 		carname = GfParmGetStr(DrvInfo, sstring, "car name", "");
 	}
 
-	sprintf(sstring, "%sdrivers/human/tracks/%s/car-%s-%d.xml", GetLocalDir(), trackname, carname, index);
-	*carParmHandle = GfParmReadFile(sstring, GFPARM_RMODE_REREAD);
-	if (*carParmHandle != NULL) {
-		GfOut("Player: %s Loaded\n", sstring);
-	} else {
-		sprintf(sstring, "%sdrivers/human/tracks/%s/car-%s.xml", GetLocalDir(), trackname, carname);
-		*carParmHandle = GfParmReadFile(sstring, GFPARM_RMODE_REREAD);
-		if (*carParmHandle != NULL) {
-			GfOut("Player: %s Loaded\n", sstring);
-		} else {
-			sprintf(sstring, "%sdrivers/human/car-%s-%d.xml", GetLocalDir(), carname, index);
-			*carParmHandle = GfParmReadFile(sstring, GFPARM_RMODE_REREAD);
-			if (*carParmHandle != NULL) {
-				GfOut("Player: %s Loaded\n", sstring);
-			} else {
-				sprintf(sstring, "%sdrivers/human/car-%s.xml", GetLocalDir(), carname);
-				*carParmHandle = GfParmReadFile(sstring, GFPARM_RMODE_REREAD);
-				if (*carParmHandle != NULL) {
-					GfOut("Player: %s Loaded\n", sstring);
-				} else {
-					sprintf(sstring, "%sdrivers/human/car.xml", GetLocalDir ());
-					*carParmHandle = GfParmReadFile(sstring, GFPARM_RMODE_REREAD);
-					if (*carParmHandle != NULL) {
-						GfOut("Player: %s Loaded\n", sstring);
-					}
-				}
-			}
-		}
+	*carParmHandle = NULL;
+	// If session type is "race" and we have a race setup use it
+	if (s->_raceType == RM_TYPE_RACE) {
+		*carParmHandle = RtParmReadSetup(RACE, "human", index, track->internalname, carname);
 	}
 
+	// If session type is "qualifying" and we have a qualifying setup use it, use qualifying setup as 
+	// fallback if not race setup is available
+	if (s->_raceType == RM_TYPE_QUALIF || (*carParmHandle == NULL && s->_raceType == RM_TYPE_RACE)) {
+		*carParmHandle = RtParmReadSetup(QUALIFYING, "human", index, track->internalname, carname);
+	}
+
+	// If we have not yet loaded a setup we have not found a fitting one or want to use the practice setup,
+	// so try to load this
+	if (*carParmHandle == NULL) {
+		*carParmHandle = RtParmReadSetup(PRACTICE, "human", index, track->internalname, carname);
+	}
+
+	// Absolute fallback, nothing found
+	if (*carParmHandle == NULL) {
+		snprintf(sstring, BUFSIZE, "%sdrivers/human/car.xml", GetLocalDir ());
+		*carParmHandle = GfParmReadFile(sstring, GFPARM_RMODE_REREAD);
+	}
+
+
 	if (curTrack->pits.type != TR_PIT_NONE) {
-		sprintf(sstring, "%s/%s/%d", HM_SECT_PREF, HM_LIST_DRV, index);
+		snprintf(sstring, BUFSIZE, "%s/%s/%d", HM_SECT_PREF, HM_LIST_DRV, index);
 		HCtx[idx]->NbPitStopProg = (int)GfParmGetNum(PrefHdle, sstring, HM_ATT_NBPITS, (char*)NULL, 0);
 		GfOut("Player: index %d , Pits stops %d\n", index, HCtx[idx]->NbPitStopProg);
 	} else {
 		HCtx[idx]->NbPitStopProg = 0;
 	}
 	fuel = 0.0008 * curTrack->length * (s->_totLaps + 1) / (1.0 + ((tdble)HCtx[idx]->NbPitStopProg)) + 20.0;
-	GfParmSetNum(*carParmHandle, SECT_CAR, PRM_FUEL, (char*)NULL, fuel);
+	if (*carParmHandle) {
+		GfParmSetNum(*carParmHandle, SECT_CAR, PRM_FUEL, (char*)NULL, fuel);
+	}
 	Vtarget = curTrack->pits.speedLimit;
 	if (DrvInfo != NULL) {
 		GfParmReleaseHandle(DrvInfo);
@@ -341,17 +328,7 @@ static void initTrack(int index, tTrack* track, void *carHandle, void **carParmH
 
 void newrace(int index, tCarElt* car, tSituation *s)
 {
-	int i;
 	int idx = index - 1;
-
-	for (i = 0; i < MAX_GEARS; i++) {
-		if (car->_gearRatio[i] != 0) {
-			HCtx[idx]->shiftThld[i] = car->_enginerpmRedLine * car->_wheelRadius(2) * 0.85 / car->_gearRatio[i];
-			GfOut("Gear %d: Spd %f\n", i, HCtx[idx]->shiftThld[i] * 3.6);
-		} else {
-	    	HCtx[idx]->shiftThld[i] = 10000.0;
-		}
-	}
 
 	if (HCtx[idx]->MouseControlUsed) {
 		GfctrlMouseCenter();
@@ -380,6 +357,21 @@ void newrace(int index, tCarElt* car, tSituation *s)
 #endif
 #endif
 
+	const char *traintype =GfParmGetStr(car->_carHandle, SECT_DRIVETRAIN, PRM_TYPE, VAL_TRANS_RWD);
+	if (strcmp(traintype, VAL_TRANS_RWD) == 0) {
+		HCtx[idx]->drivetrain = DRWD;
+	} else if (strcmp(traintype, VAL_TRANS_FWD) == 0) {
+		HCtx[idx]->drivetrain = DFWD;
+	} else if (strcmp(traintype, VAL_TRANS_4WD) == 0) {
+		HCtx[idx]->drivetrain = D4WD;
+	} 
+
+	tControlCmd	*cmd = HCtx[idx]->CmdControl;
+	if (cmd[CMD_CLUTCH].type != GFCTRL_TYPE_JOY_AXIS && 
+			cmd[CMD_CLUTCH].type != GFCTRL_TYPE_MOUSE_AXIS)
+		HCtx[idx]->autoClutch = 1;
+	else
+		HCtx[idx]->autoClutch = 0;
 }
 
 static void
@@ -454,15 +446,18 @@ onSKeyAction(int key, int modifier, int state)
 static void common_drive(int index, tCarElt* car, tSituation *s)
 {
 	tdble slip;
-	float ax0;
-	float brake;
-	float clutch;
-	float throttle;
-	float leftSteer;
-	float rightSteer;
+	tdble ax0;
+	tdble brake;
+	tdble clutch;
+	tdble throttle;
+	tdble leftSteer;
+	tdble rightSteer;
 	int scrw, scrh, dummy;
 	int idx = index - 1;
 	tControlCmd	*cmd = HCtx[idx]->CmdControl;
+	const int BUFSIZE = 1024;
+	char sstring[BUFSIZE];
+
 
 	static int firstTime = 1;
 
@@ -503,44 +498,73 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 		lastKeyUpdate = s->currentTime;
 	}
 
+
+	// Brake repartition offset, init with former value 
+	car->ctrl.brakeRepartitionCmd = car->priv.brakeRepartitionCmd;
+
+	if (((cmd[CMD_BRAKE_TOFRONT].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_BRAKE_TOFRONT].val]) ||
+		((cmd[CMD_BRAKE_TOFRONT].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_BRAKE_TOFRONT].val].edgeUp) ||
+		((cmd[CMD_BRAKE_TOFRONT].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_BRAKE_TOFRONT].val].edgeUp))
+	{
+		if (car->priv.brakeRepartitionCmd < car->priv.repCmdMaxClicks) {
+			car->ctrl.brakeRepartitionCmd = car->priv.brakeRepartitionCmd + 1;
+		}
+	}
+
+	if (((cmd[CMD_BRAKE_TOREAR].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_BRAKE_TOREAR].val]) ||
+		((cmd[CMD_BRAKE_TOREAR].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_BRAKE_TOREAR].val].edgeUp) ||
+		((cmd[CMD_BRAKE_TOREAR].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_BRAKE_TOREAR].val].edgeUp))
+	{
+		if (car->priv.brakeRepartitionCmd > -car->priv.repCmdMaxClicks) {
+			car->ctrl.brakeRepartitionCmd = car->priv.brakeRepartitionCmd - 1;
+		}
+	}
+
 	if (((cmd[CMD_ABS].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_ABS].val]) ||
-	((cmd[CMD_ABS].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_ABS].val].edgeUp) ||
-	((cmd[CMD_ABS].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_ABS].val].edgeUp))
+		((cmd[CMD_ABS].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_ABS].val].edgeUp) ||
+		((cmd[CMD_ABS].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_ABS].val].edgeUp))
 	{
 		HCtx[idx]->ParamAbs = 1 - HCtx[idx]->ParamAbs;
-		sprintf(sstring, "%s/%s/%d", HM_SECT_PREF, HM_LIST_DRV, index);
+		snprintf(sstring, BUFSIZE, "%s/%s/%d", HM_SECT_PREF, HM_LIST_DRV, index);
 		GfParmSetStr(PrefHdle, sstring, HM_ATT_ABS, Yn[1 - HCtx[idx]->ParamAbs]);
 		GfParmWriteFile(NULL, PrefHdle, "Human");
 	}
 
 	if (((cmd[CMD_ASR].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_ASR].val]) ||
-	((cmd[CMD_ASR].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_ASR].val].edgeUp) ||
-	((cmd[CMD_ASR].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_ASR].val].edgeUp))
+		((cmd[CMD_ASR].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_ASR].val].edgeUp) ||
+		((cmd[CMD_ASR].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_ASR].val].edgeUp))
 	{
 		HCtx[idx]->ParamAsr = 1 - HCtx[idx]->ParamAsr;
-		sprintf(sstring, "%s/%s/%d", HM_SECT_PREF, HM_LIST_DRV, index);
+		snprintf(sstring, BUFSIZE, "%s/%s/%d", HM_SECT_PREF, HM_LIST_DRV, index);
 		GfParmSetStr(PrefHdle, sstring, HM_ATT_ASR, Yn[1 - HCtx[idx]->ParamAsr]);
 		GfParmWriteFile(NULL, PrefHdle, "Human");
 	}
 
-	sprintf(car->_msgCmd[0], "%s %s", (HCtx[idx]->ParamAbs ? "ABS" : ""), (HCtx[idx]->ParamAsr ? "ASR" : ""));
+	const int bufsize = sizeof(car->_msgCmd[0]);
+
+	snprintf(car->_msgCmd[0], bufsize, "BIAS: %+d %s%s%s",
+		car->ctrl.brakeRepartitionCmd,
+		(HCtx[idx]->ParamAbs ? "ABS" : ""),
+		(HCtx[idx]->ParamAbs && HCtx[idx]->ParamAsr ? " " : ""),
+		(HCtx[idx]->ParamAsr ? "ASR" : ""));
+
 	memcpy(car->_msgColorCmd, color, sizeof(car->_msgColorCmd));
 
 	if (((cmd[CMD_SPDLIM].type == GFCTRL_TYPE_JOY_BUT) && (joyInfo->levelup[cmd[CMD_SPDLIM].val] == 1)) ||
-	((cmd[CMD_SPDLIM].type == GFCTRL_TYPE_KEYBOARD) && (keyInfo[cmd[CMD_SPDLIM].val].state == GFUI_KEY_DOWN)) ||
-	((cmd[CMD_SPDLIM].type == GFCTRL_TYPE_SKEYBOARD) && (skeyInfo[cmd[CMD_SPDLIM].val].state == GFUI_KEY_DOWN)))
+		((cmd[CMD_SPDLIM].type == GFCTRL_TYPE_KEYBOARD) && (keyInfo[cmd[CMD_SPDLIM].val].state == GFUI_KEY_DOWN)) ||
+		((cmd[CMD_SPDLIM].type == GFCTRL_TYPE_SKEYBOARD) && (skeyInfo[cmd[CMD_SPDLIM].val].state == GFUI_KEY_DOWN)))
 	{
 		speedLimiter = 1;
-		sprintf(car->_msgCmd[1], "Speed Limiter On");
+		snprintf(car->_msgCmd[1], bufsize, "Speed Limiter On");
 	} else {
 		speedLimiter = 0;
-		sprintf(car->_msgCmd[1], "Speed Limiter Off");
+		snprintf(car->_msgCmd[1], bufsize, "Speed Limiter Off");
 	}
 
 
 	if (((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_JOY_BUT) && joyInfo->edgeup[cmd[CMD_LIGHT1].val]) ||
-	((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_LIGHT1].val].edgeUp) ||
-	((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_LIGHT1].val].edgeUp))
+		((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_KEYBOARD) && keyInfo[cmd[CMD_LIGHT1].val].edgeUp) ||
+		((cmd[CMD_LIGHT1].type == GFCTRL_TYPE_SKEYBOARD) && skeyInfo[cmd[CMD_LIGHT1].val].edgeUp))
 	{
 		if (HCtx[idx]->lightCmd & RM_LIGHT_HEAD1) {
 			HCtx[idx]->lightCmd &= ~(RM_LIGHT_HEAD1 | RM_LIGHT_HEAD2);
@@ -551,23 +575,26 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 
 	switch (cmd[CMD_LEFTSTEER].type) {
 		case GFCTRL_TYPE_JOY_AXIS:
-			ax0 = joyInfo->ax[cmd[CMD_LEFTSTEER].val];
+			ax0 = joyInfo->ax[cmd[CMD_LEFTSTEER].val] + cmd[CMD_LEFTSTEER].deadZone;
 			if (ax0 > cmd[CMD_LEFTSTEER].max) {
 				ax0 = cmd[CMD_LEFTSTEER].max;
 			} else if (ax0 < cmd[CMD_LEFTSTEER].min) {
 				ax0 = cmd[CMD_LEFTSTEER].min;
 			}
-			leftSteer = -SIGN(ax0) * cmd[CMD_LEFTSTEER].pow * pow(fabs(ax0), cmd[CMD_LEFTSTEER].sens) / (1.0 + cmd[CMD_LEFTSTEER].spdSens * car->_speed_x);
+			
+			// normalize ax0 to -1..0
+			ax0 = (ax0 - cmd[CMD_LEFTSTEER].max) / (cmd[CMD_LEFTSTEER].max - cmd[CMD_LEFTSTEER].min);
+			leftSteer = -SIGN(ax0) * cmd[CMD_LEFTSTEER].pow * pow(fabs(ax0), cmd[CMD_LEFTSTEER].sens) / (1.0 + cmd[CMD_LEFTSTEER].spdSens * car->pub.speed);
 			break;
 		case GFCTRL_TYPE_MOUSE_AXIS:
-			ax0 = mouseInfo->ax[cmd[CMD_LEFTSTEER].val] - cmd[CMD_LEFTSTEER].deadZone;
+			ax0 = mouseInfo->ax[cmd[CMD_LEFTSTEER].val] - cmd[CMD_LEFTSTEER].deadZone; //FIXME: correct?
 			if (ax0 > cmd[CMD_LEFTSTEER].max) {
 				ax0 = cmd[CMD_LEFTSTEER].max;
 			} else if (ax0 < cmd[CMD_LEFTSTEER].min) {
 				ax0 = cmd[CMD_LEFTSTEER].min;
 			}
 			ax0 = ax0 * cmd[CMD_LEFTSTEER].pow;
-			leftSteer = pow(fabs(ax0), cmd[CMD_LEFTSTEER].sens) / (1.0 + cmd[CMD_LEFTSTEER].spdSens * car->_speed_x / 10.0);
+			leftSteer = pow(fabs(ax0), cmd[CMD_LEFTSTEER].sens) / (1.0 + cmd[CMD_LEFTSTEER].spdSens * car->pub.speed / 10.0);
 			break;
 		case GFCTRL_TYPE_KEYBOARD:
 		case GFCTRL_TYPE_SKEYBOARD:
@@ -583,7 +610,7 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 				HCtx[idx]->prevLeftSteer = leftSteer = 0;
 			} else {
 				ax0 = 2 * ax0 - 1;
-				leftSteer = HCtx[idx]->prevLeftSteer + ax0 * cmd[CMD_LEFTSTEER].sens * s->deltaTime / (1.0 + cmd[CMD_LEFTSTEER].spdSens * car->_speed_x / 10.0);
+				leftSteer = HCtx[idx]->prevLeftSteer + ax0 * cmd[CMD_LEFTSTEER].sens * s->deltaTime / (1.0 + cmd[CMD_LEFTSTEER].spdSens * car->pub.speed / 10.0);
 				if (leftSteer > 1.0) leftSteer = 1.0;
 				if (leftSteer < 0.0) leftSteer = 0.0;
 				HCtx[idx]->prevLeftSteer = leftSteer;
@@ -596,13 +623,16 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 
 	switch (cmd[CMD_RIGHTSTEER].type) {
 		case GFCTRL_TYPE_JOY_AXIS:
-			ax0 = joyInfo->ax[cmd[CMD_RIGHTSTEER].val];
+			ax0 = joyInfo->ax[cmd[CMD_RIGHTSTEER].val] - cmd[CMD_RIGHTSTEER].deadZone;
 			if (ax0 > cmd[CMD_RIGHTSTEER].max) {
 				ax0 = cmd[CMD_RIGHTSTEER].max;
 			} else if (ax0 < cmd[CMD_RIGHTSTEER].min) {
 				ax0 = cmd[CMD_RIGHTSTEER].min;
 			}
-			rightSteer = -SIGN(ax0) * cmd[CMD_RIGHTSTEER].pow * pow(fabs(ax0), cmd[CMD_RIGHTSTEER].sens) / (1.0 + cmd[CMD_RIGHTSTEER].spdSens * car->_speed_x);
+			
+			// normalize ax to 0..1
+			ax0 = (ax0 - cmd[CMD_RIGHTSTEER].min) / (cmd[CMD_RIGHTSTEER].max - cmd[CMD_RIGHTSTEER].min);
+			rightSteer = -SIGN(ax0) * cmd[CMD_RIGHTSTEER].pow * pow(fabs(ax0), cmd[CMD_RIGHTSTEER].sens) / (1.0 + cmd[CMD_RIGHTSTEER].spdSens * car->pub.speed);
 			break;
 		case GFCTRL_TYPE_MOUSE_AXIS:
 			ax0 = mouseInfo->ax[cmd[CMD_RIGHTSTEER].val] - cmd[CMD_RIGHTSTEER].deadZone;
@@ -612,7 +642,7 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 				ax0 = cmd[CMD_RIGHTSTEER].min;
 			}
 			ax0 = ax0 * cmd[CMD_RIGHTSTEER].pow;
-			rightSteer = - pow(fabs(ax0), cmd[CMD_RIGHTSTEER].sens) / (1.0 + cmd[CMD_RIGHTSTEER].spdSens * car->_speed_x / 10.0);
+			rightSteer = - pow(fabs(ax0), cmd[CMD_RIGHTSTEER].sens) / (1.0 + cmd[CMD_RIGHTSTEER].spdSens * car->pub.speed / 10.0);
 			break;
 		case GFCTRL_TYPE_KEYBOARD:
 		case GFCTRL_TYPE_SKEYBOARD:
@@ -628,7 +658,7 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 				HCtx[idx]->prevRightSteer = rightSteer = 0;
 			} else {
 				ax0 = 2 * ax0 - 1;
-				rightSteer = HCtx[idx]->prevRightSteer - ax0 * cmd[CMD_RIGHTSTEER].sens * s->deltaTime/ (1.0 + cmd[CMD_RIGHTSTEER].spdSens * car->_speed_x / 10.0);
+				rightSteer = HCtx[idx]->prevRightSteer - ax0 * cmd[CMD_RIGHTSTEER].sens * s->deltaTime/ (1.0 + cmd[CMD_RIGHTSTEER].spdSens * car->pub.speed / 10.0);
 				if (rightSteer > 0.0) rightSteer = 0.0;
 				if (rightSteer < -1.0) rightSteer = -1.0;
 				HCtx[idx]->prevRightSteer = rightSteer;
@@ -722,6 +752,10 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 			break;
 	}
 
+	// if player's used the clutch manually then we dispense with autoClutch
+	if (car->_clutchCmd != 0.0f)
+		HCtx[idx]->autoClutch = 0;
+
 	switch (cmd[CMD_THROTTLE].type) {
 		case GFCTRL_TYPE_JOY_AXIS:
 			throttle = joyInfo->ax[cmd[CMD_THROTTLE].val];
@@ -766,6 +800,35 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 			break;
 	}
 
+	if (s->currentTime > 1.0) {
+		// thanks Christos for the following: gradual accel/brake changes for on/off controls.
+		const tdble inc_rate = 0.2f;
+		
+		if (cmd[CMD_BRAKE].type == GFCTRL_TYPE_JOY_BUT ||
+		    cmd[CMD_BRAKE].type == GFCTRL_TYPE_MOUSE_BUT ||
+		    cmd[CMD_BRAKE].type == GFCTRL_TYPE_KEYBOARD ||
+		    cmd[CMD_BRAKE].type == GFCTRL_TYPE_SKEYBOARD)
+		{
+			tdble d_brake = car->_brakeCmd - HCtx[idx]->pbrake;
+			if (fabs(d_brake) > inc_rate && car->_brakeCmd > HCtx[idx]->pbrake) {
+				car->_brakeCmd = MIN(car->_brakeCmd, HCtx[idx]->pbrake + inc_rate*d_brake/fabs(d_brake));
+			}
+			HCtx[idx]->pbrake = car->_brakeCmd;
+		}
+
+		if (cmd[CMD_THROTTLE].type == GFCTRL_TYPE_JOY_BUT ||
+			cmd[CMD_THROTTLE].type == GFCTRL_TYPE_MOUSE_BUT ||
+			cmd[CMD_THROTTLE].type == GFCTRL_TYPE_KEYBOARD ||
+			cmd[CMD_THROTTLE].type == GFCTRL_TYPE_SKEYBOARD)
+		{
+			tdble d_accel = car->_accelCmd - HCtx[idx]->paccel;
+			if (fabs(d_accel) > inc_rate && car->_accelCmd > HCtx[idx]->paccel) {
+				car->_accelCmd = MIN(car->_accelCmd, HCtx[idx]->paccel + inc_rate*d_accel/fabs(d_accel));
+			}
+			HCtx[idx]->paccel = car->_accelCmd;
+		}
+	}
+
 	if (HCtx[idx]->AutoReverseEngaged) {
 		/* swap brake and throttle */
 		brake = car->_brakeCmd;
@@ -773,61 +836,91 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 		car->_accelCmd = brake;
 	}
 
-	if (HCtx[idx]->ParamAbs) {
-		tdble meanSpd = 0;
-		int i;
+	if (HCtx[idx]->ParamAbs) 
+	{
+		if (fabs(car->_speed_x) > 10.0)
+		{
+			int i;
 
-		slip = 0;
-		for (i = 0; i < 4; i++) {
-			meanSpd += car->_wheelSpinVel(i);
-		}
-		meanSpd /= 4.0;
+			tdble skidAng = atan2(car->_speed_Y, car->_speed_X) - car->_yaw;
+			NORM_PI_PI(skidAng);
 
-		if (meanSpd > 1.0) {
+			if (car->_speed_x > 5 && fabs(skidAng) > 0.2)
+				car->_brakeCmd = MIN(car->_brakeCmd, 0.10 + 0.70 * cos(skidAng));
+
+			if (fabs(car->_steerCmd) > 0.1)
+			{
+				tdble decel = ((fabs(car->_steerCmd)-0.1) * (1.0 + fabs(car->_steerCmd)) * 0.6);
+				car->_brakeCmd = MIN(car->_brakeCmd, MAX(0.35, 1.0 - decel));
+			}
+
+			const tdble abs_slip = 2.5;
+			const tdble abs_range = 5.0;
+
+			slip = 0;
 			for (i = 0; i < 4; i++) {
-				if (((meanSpd - car->_wheelSpinVel(i)) / meanSpd) < -0.1) {
-					slip = 1.0;
-				}
+				slip += car->_wheelSpinVel(i) * car->_wheelRadius(i);
 			}
+			slip = car->_speed_x - slip/4.0f;
+
+			if (slip > abs_slip)
+				car->_brakeCmd = car->_brakeCmd - MIN(car->_brakeCmd*0.8, (slip - abs_slip) / abs_range);
 		}
-		if (slip != 0) {
-			HCtx[idx]->ABS *= 0.9;
-			if (HCtx[idx]->ABS < 0.1) {
-				HCtx[idx]->ABS = 0.1;
-			}
-		} else {
-			if (HCtx[idx]->ABS < 0.1) {
-				HCtx[idx]->ABS = 0.1;
-			}
-			HCtx[idx]->ABS *= 1.1;
-			if (HCtx[idx]->ABS > 1.0) {
-				HCtx[idx]->ABS = 1.0;
-			}
-		}
-		car->_brakeCmd = MIN(car->_brakeCmd, HCtx[idx]->ABS);
 	}
 
 
-	if (HCtx[idx]->ParamAsr) {
-		slip = 0;
-		if (car->_speed_x > 0.1) {
-			slip = (car->_wheelRadius(3) * car->_wheelSpinVel(3) - car->_speed_x);
+	if (HCtx[idx]->ParamAsr) 
+	{
+    	tdble trackangle = RtTrackSideTgAngleL(&(car->_trkPos));
+		tdble angle = trackangle - car->_yaw;
+		NORM_PI_PI(angle);
+
+		tdble maxaccel = 0.0;
+		if (car->_trkPos.seg->type == TR_STR)
+			maxaccel = MIN(car->_accelCmd, 0.2);
+		else if (car->_trkPos.seg->type == TR_LFT && angle < 0.0)
+			maxaccel = MIN(car->_accelCmd, MIN(0.6, -angle));
+		else if (car->_trkPos.seg->type == TR_RGT && angle > 0.0)
+			maxaccel = MIN(car->_accelCmd, MIN(0.6, angle));
+
+		tdble origaccel = car->_accelCmd;
+		tdble skidAng = atan2(car->_speed_Y, car->_speed_X) - car->_yaw;
+		NORM_PI_PI(skidAng);
+
+		if (car->_speed_x > 5 && fabs(skidAng) > 0.2)
+		{
+			car->_accelCmd = MIN(car->_accelCmd, 0.15 + 0.70 * cos(skidAng));
+			car->_accelCmd = MAX(car->_accelCmd, maxaccel);
 		}
-		if (slip > 1.0) {
-			HCtx[idx]->AntiSlip *= 0.9;
-			if (HCtx[idx]->AntiSlip < 0.1) {
-				HCtx[idx]->AntiSlip = 0.1;
-			}
-		} else {
-			if (HCtx[idx]->AntiSlip < 0.1) {
-				HCtx[idx]->AntiSlip = 0.1;
-			}
-			HCtx[idx]->AntiSlip *= 1.1;
-			if (HCtx[idx]->AntiSlip > 1.0) {
-				HCtx[idx]->AntiSlip = 1.0;
-			}
+
+		if (fabs(car->_steerCmd) > 0.1)
+		{
+			tdble decel = ((fabs(car->_steerCmd)-0.1) * (1.0 + fabs(car->_steerCmd)) * 0.8);
+			car->_accelCmd = MIN(car->_accelCmd, MAX(0.35, 1.0 - decel));
 		}
-		car->_accelCmd = MIN(car->_accelCmd, HCtx[idx]->AntiSlip);
+
+		tdble drivespeed = 0.0;
+		switch (HCtx[idx]->drivetrain)
+		{
+			case D4WD:
+				drivespeed = ((car->_wheelSpinVel(FRNT_RGT) + car->_wheelSpinVel(FRNT_LFT)) *
+				              car->_wheelRadius(FRNT_LFT) +
+				              (car->_wheelSpinVel(REAR_RGT) + car->_wheelSpinVel(REAR_LFT)) *
+				              car->_wheelRadius(REAR_LFT)) / 4.0; 
+				break;
+			case DFWD:
+				drivespeed = (car->_wheelSpinVel(FRNT_RGT) + car->_wheelSpinVel(FRNT_LFT)) *
+				              car->_wheelRadius(FRNT_LFT) / 2.0;
+				break;
+			default:
+				drivespeed = (car->_wheelSpinVel(REAR_RGT) + car->_wheelSpinVel(REAR_LFT)) *
+				              car->_wheelRadius(REAR_LFT) / 2.0;
+				break;
+		}
+
+		tdble slip = drivespeed - fabs(car->_speed_x);
+		if (slip > 2.0)
+			car->_accelCmd = MIN(car->_accelCmd, origaccel - MIN(origaccel-0.1, ((slip - 2.0)/10.0)));
 	}
 
 	if (speedLimiter) {
@@ -863,6 +956,21 @@ static void common_drive(int index, tCarElt* car, tSituation *s)
 	HCtx[idx]->lap = car->_laps;
 }
 
+
+static tdble getAutoClutch(int idx, int gear, int newgear, tCarElt *car)
+{
+	if (newgear != 0 && newgear < car->_gearNb) {
+		if (newgear != gear) {
+			HCtx[idx]->clutchtime = 0.332f - ((tdble) newgear / 65.0f);
+		}
+
+		if (HCtx[idx]->clutchtime > 0.0f)
+			HCtx[idx]->clutchtime -= RCM_MAX_DT_ROBOTS;
+		return 2.0f * HCtx[idx]->clutchtime;
+	}
+	
+	return 0.0f;
+}
 
 /*
  * Function
@@ -929,6 +1037,9 @@ static void drive_mt(int index, tCarElt* car, tSituation *s)
 			car->_gearCmd = i - CMD_GEAR_N;
 		}
 	}
+
+	if (HCtx[idx]->autoClutch && car->_clutchCmd == 0.0f)
+		car->_clutchCmd = getAutoClutch(idx, car->_gear, car->_gearCmd, car);
 
 }
 /*
@@ -1012,11 +1123,20 @@ static void drive_at(int index, tCarElt* car, tSituation *s)
 
 	/* auto shift */
 	if (!HCtx[idx]->manual && !HCtx[idx]->AutoReverseEngaged) {
-		if (car->_speed_x > HCtx[idx]->shiftThld[gear]) {
-			car->_gearCmd++;
-		} else if ((car->_gearCmd > 1) && (car->_speed_x < (HCtx[idx]->shiftThld[gear-1] - 4.0))) {
-			car->_gearCmd--;
+		tdble omega = car->_enginerpmRedLine * car->_wheelRadius(2) * 0.95;
+		tdble shiftThld = 10000.0f;
+		if (car->_gearRatio[gear] != 0) {
+			shiftThld = omega / car->_gearRatio[gear];			
 		}
+
+		if (car->pub.speed > shiftThld) {
+			car->_gearCmd++;
+		} else if (car->_gearCmd > 1) {
+			if (car->pub.speed < (omega / car->_gearRatio[gear-1] - 4.0)) {
+				car->_gearCmd--;
+			}
+		}
+
 		if (car->_gearCmd <= 0) {
 			car->_gearCmd++;
 		}
@@ -1039,6 +1159,9 @@ static void drive_at(int index, tCarElt* car, tSituation *s)
 			}
 		}
     }
+
+	if (HCtx[idx]->autoClutch && car->_clutchCmd == 0.0f)
+	    car->_clutchCmd = getAutoClutch(idx, car->_gear, car->_gearCmd, car);
 }
 
 static int pitcmd(int index, tCarElt* car, tSituation *s)

@@ -232,8 +232,8 @@
     <attnum name="stiffness" min="5.0" max="30.0" val="30.0"/>
     <attnum name="dynamic friction" unit="%" min="50" max="90" val="80"/>
     <attnum name="ride height" min="100" max="1000" unit="mm" val="100"/>
-    <attnum name="rolling resistance" min="0.005" max="0.02" val="0.0105"/>
     <attnum name="toe" unit="deg" min="-5" max="5" val="0"/>
+	<attnum name="caster" min="0" max="10" unit="deg" val="0"/>
   </section>
 
   <section name="Front Left Wheel">
@@ -246,8 +246,8 @@
     <attnum name="stiffness" min="5.0" max="30.0" val="30.0"/>
     <attnum name="dynamic friction" unit="%" min="50" max="90" val="80"/>
     <attnum name="ride height" min="100" max="1000" unit="mm" val="100"/>
-    <attnum name="rolling resistance" min="0.005" max="0.02" val="0.0105"/>
     <attnum name="toe" unit="deg" min="-5" max="5" val="0"/>
+	<attnum name="caster" min="0" max="10" unit="deg" val="0"/>
   </section>
 
   <section name="Rear Right Wheel">
@@ -260,7 +260,7 @@
     <attnum name="stiffness" min="5.0" max="30.0" val="30.0"/>
     <attnum name="dynamic friction" unit="%" min="50" max="90" val="80"/>
     <attnum name="ride height" min="100" max="1000" unit="mm" val="100"/>
-    <attnum name="rolling resistance" min="0.005" max="0.02" val="0.0105"/>
+	<attnum name="caster" min="0" max="0" unit="deg" val="0"/>
   </section>
 
   <section name="Rear Left Wheel">
@@ -273,7 +273,7 @@
     <attnum name="stiffness" min="5.0" max="30.0" val="30.0"/>
     <attnum name="dynamic friction" unit="%" min="50" max="90" val="80"/>
     <attnum name="ride height" min="100" max="1000" unit="mm" val="100"/>
-    <attnum name="rolling resistance" min="0.005" max="0.02" val="0.0105"/>
+	<attnum name="caster" min="0" max="0" unit="deg" val="0"/>
   </section>
 
   <section name="Front Anti-Roll Bar">
@@ -297,6 +297,8 @@
     <attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="80"/>
     <attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="100"/>
     <attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="100"/>
+    <attnum name="fast bump threshold" unit="cm/s" min="0" max="50" val="50"/>
+    <attnum name="fast rebound threshold" unit="cm/s" min="0" max="50" val="50"/>
   </section>
 
   <section name="Front Left Suspension">
@@ -308,6 +310,8 @@
     <attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="80"/>
     <attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="100"/>
     <attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="100"/>
+    <attnum name="fast bump threshold" unit="cm/s" min="0" max="50" val="50"/>
+    <attnum name="fast rebound threshold" unit="cm/s" min="0" max="50" val="50"/>
   </section>
 
   <section name="Rear Right Suspension">
@@ -319,6 +323,8 @@
     <attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="80"/>
     <attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="100"/>
     <attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="100"/>
+    <attnum name="fast bump threshold" unit="cm/s" min="0" max="50" val="50"/>
+    <attnum name="fast rebound threshold" unit="cm/s" min="0" max="50" val="50"/>
   </section>
 
   <section name="Rear Left Suspension">
@@ -330,6 +336,8 @@
     <attnum name="slow rebound" unit="lbs/in/s" min="0" max="1000" val="80"/>
     <attnum name="fast bump" unit="lbs/in/s" min="0" max="1000" val="100"/>
     <attnum name="fast rebound" unit="lbs/in/s" min="0" max="1000" val="100"/>
+    <attnum name="fast bump threshold" unit="cm/s" min="0" max="50" val="50"/>
+    <attnum name="fast rebound threshold" unit="cm/s" min="0" max="50" val="50"/>
   </section>
 
   <section name="Front Right Wheel Brake">

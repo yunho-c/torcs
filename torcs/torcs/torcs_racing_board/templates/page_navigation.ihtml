@@ -18,12 +18,24 @@
 	</tr>
 	<tr>
 		<td colspan="2">
+			<a href="{ROOTPATH}halloffame/halloffame.php">Hall of Fame</a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
 			<a href="{ROOTPATH}index.php?page=faq">FAQ</a>
 		</td>
 	</tr>
 	<tr>
 		<td colspan="2">
 			<a href="{ROOTPATH}forum/threadlist.php">Forum and Polls</a>
+		</td>
+	</tr>
+	<tr>
+		<td style="width:15px;">
+		</td>
+		<td>
+			<a href="{ROOTPATH}forum/search.php">Search</a>
 		</td>
 	</tr>
 	<tr>
@@ -126,6 +138,11 @@
 	</tr>
 	<tr>
 		<td colspan="2">
+			<a href="{ROOTPATH}halloffame/halloffame.php">Hall of Fame</a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
 			<a href="{ROOTPATH}index.php?page=faq">FAQ</a>
 		</td>
 	</tr>
@@ -139,6 +156,13 @@
 		</td>
 		<td>
 			<a href="{ROOTPATH}forum/write.php">New Topic</a>
+		</td>
+	</tr>
+	<tr>
+		<td style="width:15px;">
+		</td>
+		<td>
+			<a href="{ROOTPATH}forum/search.php">Search</a>
 		</td>
 	</tr>
 	<tr>
@@ -240,6 +264,11 @@
 	</tr>
 	<tr>
 		<td colspan="2">
+			<a href="{ROOTPATH}halloffame/halloffame.php">Hall of Fame</a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
 			<a href="{ROOTPATH}index.php?page=faq">FAQ</a>
 		</td>
 	</tr>
@@ -253,6 +282,13 @@
 		</td>
 		<td>
 			<a href="{ROOTPATH}forum/write.php">New Topic</a>
+		</td>
+	</tr>
+	<tr>
+		<td style="width:15px;">
+		</td>
+		<td>
+			<a href="{ROOTPATH}forum/search.php">Search</a>
 		</td>
 	</tr>
 	<tr>
@@ -355,11 +391,14 @@
 			<a href="{ROOTPATH}index.php">Home</a>
 		</td>
 	</tr>
-
-
 	<tr>
 		<td colspan="2">
 			<a href="{ROOTPATH}news/news.php">News</a>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="2">
+			<a href="{ROOTPATH}halloffame/halloffame.php">Hall of Fame</a>
 		</td>
 	</tr>
 	<tr>
@@ -380,6 +419,13 @@
 		</td>
 		<td>
 			<a href="{ROOTPATH}forum/write.php">New Topic</a>
+		</td>
+	</tr>
+	<tr>
+		<td style="width:15px;">
+		</td>
+		<td>
+			<a href="{ROOTPATH}forum/search.php">Search</a>
 		</td>
 	</tr>
 	<tr>
@@ -480,6 +526,13 @@
 		</td>
 	</tr>
 	<tr>
+		<td style="width:15px;">
+		</td>
+		<td>
+			<a href="{ROOTPATH}admin/version_create.php">Register Version</a>
+		</td>
+	</tr>
+	<tr>
 		<td colspan="2">
 			<a href="{ROOTPATH}users/userlist.php">Members</a>
 		</td>
@@ -499,13 +552,14 @@
 			Admin Functions
 		</td>
 	</tr>
+	<tr>
 		<td style="width:15px;">
 		</td>
 		<td>
 			<a href="{ROOTPATH}admin/loginlog_list.php">Login Log</a>
 		</td>
 	</tr>
-	</tr>
+	<tr>
 		<td style="width:15px;">
 		</td>
 		<td>

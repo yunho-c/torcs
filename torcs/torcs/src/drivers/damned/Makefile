@@ -1,10 +1,10 @@
 ##############################################################################
 #
 #    file                 : Makefile
-#    created              : Sat Mar 18 23:08:42 CET 2000
-#    copyright            : (C) 2000 by Eric Espie                         
-#    email                : torcs@free.fr   
-#    version              : $Id$                                  
+#    created              : Wed Jan 8 18:31:16 CET 2003
+#    copyright            : (C) 2002-2004 Bernhard Wymann
+#    email                : berniw@bluewin.ch
+#    version              : $Id$
 #
 ##############################################################################
 #
@@ -15,26 +15,17 @@
 #
 ##############################################################################
 
-ROBOT = damned
+ROBOT       = damned
+MODULE      = ${ROBOT}.so
+MODULEDIR   = drivers/${ROBOT}
+SOURCES     = ${ROBOT}.cpp driver.cpp opponent.cpp spline.cpp pit.cpp learn.cpp strategy.cpp cardata.cpp
 
-MODULE    = ${ROBOT}.so
+SHIPDIR     = drivers/${ROBOT}
+SHIP        = ${ROBOT}.xml logo.rgb
+SHIPSUBDIRS = 0 1 2 3 4 5 6 7 8 9
 
-MODULEDIR = drivers/${ROBOT}
-
-SOURCES   = ${ROBOT}.cpp
-
-SHIPDIR   = drivers/${ROBOT}
-
-SHIP      = ${ROBOT}.xml car1.xml
-
-SHIPSUBDIRS = 1 2 3 4 5 6 7 8 9 10
-
-PKGSUBDIRS	= $(SHIPSUBDIRS)
-
-src-robots-base_PKGFILES	= $(shell find * -maxdepth 0 -type f -print)
-
-src-robots-base_PKGDIR		= ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
+PKGSUBDIRS  = ${SHIPSUBDIRS}
+src-robots-base_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
+src-robots-base_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
 
 include ${MAKE_DEFAULT}
-
-

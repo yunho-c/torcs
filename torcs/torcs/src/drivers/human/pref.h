@@ -2,9 +2,8 @@
 
     file                 : pref.h
     created              : Sat Apr 29 16:52:41 CEST 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -24,22 +23,22 @@
 
 
 typedef struct {
-    char	*name;		/* Name of the control */
-    int		type;		/* Type of control (analog, joy button, keyboard) */
+    const char	*name;		/* Name of the control */
+    GfCtrlType type;		/* Type of control (analog, joy button, keyboard) */
     int		val;		/* control index */
-    char	*minName;	/* Name of the min attribute */
-    float	min;		/* min value for analog control */
-    float	minVal;		/* another min value for analog control*/
-    char	*maxName;	/* Name of the max attribute */
-    float	max;		/* max value for analog control */
-    char	*sensName;	/* Name of the sens attribute */
-    float	sens;		/* sensitivity of control */
-    char	*powName;	/* Name of the pow attribute */
-    float	pow;		/* power of curve command = pow(control, power) */
-    char	*spdSensName;	/* Name of the speed sensitivity attribute */
-    float	spdSens;	/* speed sensitivity */
-    char	*deadZoneName;	/* Name of the dead zone attribute */
-    float	deadZone;	/* dead zone (% of the available zone) */
+    const char	*minName;	/* Name of the min attribute */
+    tdble	min;		/* min value for analog control */
+    tdble	minVal;		/* another min value for analog control*/
+    const char	*maxName;	/* Name of the max attribute */
+    tdble	max;		/* max value for analog control */
+    const char	*sensName;	/* Name of the sens attribute */
+    tdble	sens;		/* sensitivity of control */
+    const char	*powName;	/* Name of the pow attribute */
+    tdble	pow;		/* power of curve command = pow(control, power) */
+    const char	*spdSensName;	/* Name of the speed sensitivity attribute */
+    tdble	spdSens;	/* speed sensitivity */
+    const char	*deadZoneName;	/* Name of the dead zone attribute */
+    tdble	deadZone;	/* dead zone (% of the available zone) */
 } tControlCmd;
 
 extern void	*PrefHdle;
@@ -48,7 +47,7 @@ extern void	*PrefHdle;
 extern const int nbCmdControl;
 
 
-extern char *Yn[];
+extern const char *Yn[];
 
 #define	CMD_UP_SHFT	0
 #define	CMD_DN_SHFT	1
@@ -69,7 +68,8 @@ extern char *Yn[];
 #define CMD_LIGHT1	16
 #define CMD_CLUTCH	17
 #define CMD_SPDLIM	18
-
+#define CMD_BRAKE_TOFRONT 19
+#define CMD_BRAKE_TOREAR 20
 
 extern void HmReadPrefs(int index);
 

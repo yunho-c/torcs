@@ -36,6 +36,7 @@
 #include <car.h>
 #include <graphic.h>
 #include <robottools.h>
+#include <portability.h>
 
 #include "grmain.h"
 #include "grshadow.h"
@@ -55,12 +56,6 @@ int grWrldZ;
 int grWrldMaxSize;
 tTrack 	 *grTrack;
 
-int    BackgroundType = 0;
-GLuint BackgroundList = 0;
-GLuint BackgroundTex = 0;
-GLuint BackgroundList2;
-GLuint BackgroundTex2;
-
 ssgStateSelector	*grEnvSelector;
 grMultiTexState	*grEnvState=NULL;
 grMultiTexState	*grEnvShadowState=NULL;
@@ -69,6 +64,7 @@ grMultiTexState	*grEnvShadowStateOnCars=NULL;
 #define BG_DIST		1.0
 
 ssgRoot *TheScene = 0;
+static ssgRoot *TheBackground = 0;
 
 /* TheScene kid order */
 ssgBranch *SunAnchor = 0;
@@ -81,13 +77,11 @@ ssgBranch *SkidAnchor = 0;
 ssgBranch *CarlightAnchor = 0;
 
 ssgBranch *ThePits = 0;
-ssgTransform *sun = NULL ;
+ssgTransform *sun_grscene = NULL ;
 
 static void initBackground(void);
 
 extern ssgEntity *grssgLoadAC3D ( const char *fname, const ssgLoaderOptions* options );
-
-static char buf[1024];
 
 int preScene(ssgEntity *e)
 {
@@ -98,65 +92,60 @@ int preScene(ssgEntity *e)
 int
 grInitScene(void)
 {
-    void		*hndl = grTrackHandle;
-    ssgLight *          light = ssgGetLight(0);
+	void *hndl = grTrackHandle;
+	ssgLight *light = ssgGetLight(0);
 
-    GLfloat mat_specular[]   = {0.3, 0.3, 0.3, 1.0};
-    GLfloat mat_shininess[]  = {50.0};
-    GLfloat light_position[] = {0, 0, 200, 0.0};
-    GLfloat lmodel_ambient[] = {0.2, 0.2, 0.2, 1.0};
-    GLfloat lmodel_diffuse[] = {0.8, 0.8, 0.8, 1.0};
-    GLfloat fog_clr[]        = {1.0, 1.0, 1.0, 0.5};
+	GLfloat mat_specular[]   = {0.3, 0.3, 0.3, 1.0};
+	GLfloat mat_shininess[]  = {50.0};
+	GLfloat light_position[] = {0, 0, 200, 0.0};
+	GLfloat lmodel_ambient[] = {0.2, 0.2, 0.2, 1.0};
+	GLfloat lmodel_diffuse[] = {0.8, 0.8, 0.8, 1.0};
+	GLfloat fog_clr[]        = {1.0, 1.0, 1.0, 0.5};
 
-    if (grHandle==NULL) {
-	sprintf(buf, "%s%s", GetLocalDir(), GR_PARAM_FILE);
-	grHandle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
-    }
+	mat_specular[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SPEC_R, NULL, mat_specular[0]);
+	mat_specular[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SPEC_G, NULL, mat_specular[1]);
+	mat_specular[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SPEC_B, NULL, mat_specular[2]);
 
-    mat_specular[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SPEC_R, NULL, mat_specular[0]);
-    mat_specular[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SPEC_G, NULL, mat_specular[1]);
-    mat_specular[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SPEC_B, NULL, mat_specular[2]);
+	lmodel_ambient[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_AMBIENT_R, NULL, lmodel_ambient[0]);
+	lmodel_ambient[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_AMBIENT_G, NULL, lmodel_ambient[1]);
+	lmodel_ambient[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_AMBIENT_B, NULL, lmodel_ambient[2]);
 
-    lmodel_ambient[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_AMBIENT_R, NULL, lmodel_ambient[0]);
-    lmodel_ambient[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_AMBIENT_G, NULL, lmodel_ambient[1]);
-    lmodel_ambient[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_AMBIENT_B, NULL, lmodel_ambient[2]);
+	lmodel_diffuse[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_DIFFUSE_R, NULL, lmodel_diffuse[0]);
+	lmodel_diffuse[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_DIFFUSE_G, NULL, lmodel_diffuse[1]);
+	lmodel_diffuse[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_DIFFUSE_B, NULL, lmodel_diffuse[2]);
 
-    lmodel_diffuse[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_DIFFUSE_R, NULL, lmodel_diffuse[0]);
-    lmodel_diffuse[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_DIFFUSE_G, NULL, lmodel_diffuse[1]);
-    lmodel_diffuse[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_DIFFUSE_B, NULL, lmodel_diffuse[2]);
+	mat_shininess[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SHIN, NULL, mat_shininess[0]);
 
-    mat_shininess[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_SHIN, NULL, mat_shininess[0]);
+	light_position[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_LIPOS_X, NULL, light_position[0]);
+	light_position[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_LIPOS_Y, NULL, light_position[1]);
+	light_position[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_LIPOS_Z, NULL, light_position[2]);
 
-    light_position[0] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_LIPOS_X, NULL, light_position[0]);
-    light_position[1] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_LIPOS_Y, NULL, light_position[1]);
-    light_position[2] = GfParmGetNum(hndl, TRK_SECT_GRAPH, TRK_ATT_LIPOS_Z, NULL, light_position[2]);
+	glShadeModel(GL_SMOOTH);
 
-    glShadeModel(GL_SMOOTH);
+	light->setPosition(light_position[0],light_position[1],light_position[2]);
+	light->setColour(GL_AMBIENT,lmodel_ambient);
+	light->setColour(GL_DIFFUSE,lmodel_diffuse);
+	light->setColour(GL_SPECULAR,mat_specular);
+	light->setSpotAttenuation(0.0, 0.0, 0.0);
 
-    light->setPosition(light_position[0],light_position[1],light_position[2]);
-    light->setColour(GL_AMBIENT,lmodel_ambient);
-    light->setColour(GL_DIFFUSE,lmodel_diffuse);
-    light->setColour(GL_SPECULAR,mat_specular);
-    light->setSpotAttenuation(0.0, 0.0, 0.0);
+	sgCopyVec3 (fog_clr,  grTrack->graphic.bgColor);
+	sgScaleVec3 (fog_clr, 0.8);
+	glFogi(GL_FOG_MODE, GL_LINEAR);
+	glFogfv(GL_FOG_COLOR, fog_clr);
+	glFogf(GL_FOG_DENSITY, 0.05);
+	glHint(GL_FOG_HINT, GL_DONT_CARE);
 
-    sgCopyVec3 (fog_clr,  grTrack->graphic.bgColor);
-    sgScaleVec3 (fog_clr, 0.8);
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    glFogfv(GL_FOG_COLOR, fog_clr);
-    glFogf(GL_FOG_DENSITY, 0.05);
-    glHint(GL_FOG_HINT, GL_DONT_CARE);
-    
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_DEPTH_TEST);
-
-    if (!sun) {
-	ssgaLensFlare      *sun_obj      = NULL ;
-	sun_obj  = new ssgaLensFlare () ;
-	sun      = new ssgTransform ;
-	sun      -> setTransform    ( light_position ) ;
-	sun      -> addKid          ( sun_obj  ) ;
-	SunAnchor-> addKid(sun) ;
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_DEPTH_TEST);
+ 
+	if (!sun_grscene) {
+		ssgaLensFlare *sun_obj = NULL ;
+		sun_obj = new ssgaLensFlare () ;
+		sun_grscene = new ssgTransform ;
+		sun_grscene->setTransform( light_position );
+		sun_grscene-> addKid(sun_obj);
+		SunAnchor-> addKid(sun_grscene);
     }
 
     /* GUIONS GL_TRUE */
@@ -178,77 +167,77 @@ static ssgLoaderOptionsEx	options;
 int
 grLoadScene(tTrack *track)
 {
-    void		*hndl = grTrackHandle;
-    char		*acname;
-    ssgEntity		*desc;
-    char		buf[256];
+	void *hndl = grTrackHandle;
+	const char *acname;
+	ssgEntity *desc;
+	const int BUFSIZE = 256;
+	char buf[BUFSIZE];
 
-    if (maxTextureUnits==0)
-      {
-	InitMultiTex();   
-      }
+	if (maxTextureUnits==0) {
+		InitMultiTex();   
+	}
 
-    ssgSetCurrentOptions(&options);
-    ssgAddTextureFormat(".png", grLoadPngTexture);
+	ssgSetCurrentOptions(&options);
+	ssgAddTextureFormat(".png", grLoadPngTexture);
 	grRegisterCustomSGILoader();
-	
-    grTrack = track;
-    TheScene = new ssgRoot;
 
-    /* Landscape */
-    LandAnchor = new ssgBranch;
-    TheScene->addKid(LandAnchor);
+	grTrack = track;
+	TheScene = new ssgRoot;
 
-    /* Pit stops walls */
-    PitsAnchor = new ssgBranch;
-    TheScene->addKid(PitsAnchor);
+	/* Landscape */
+	LandAnchor = new ssgBranch;
+	TheScene->addKid(LandAnchor);
 
-    /* Skid Marks */
-    SkidAnchor = new ssgBranch;
-    TheScene->addKid(SkidAnchor);
+	/* Pit stops walls */
+	PitsAnchor = new ssgBranch;
+	TheScene->addKid(PitsAnchor);
 
-    /* Car shadows */
-    ShadowAnchor = new ssgBranch;
-    TheScene->addKid(ShadowAnchor);
+	/* Skid Marks */
+	SkidAnchor = new ssgBranch;
+	TheScene->addKid(SkidAnchor);
+
+	/* Car shadows */
+	ShadowAnchor = new ssgBranch;
+	TheScene->addKid(ShadowAnchor);
 
 	/* Car lights */
-    CarlightAnchor = new ssgBranch;
-    TheScene->addKid(CarlightAnchor);
+	CarlightAnchor = new ssgBranch;
+	TheScene->addKid(CarlightAnchor);
 
-    /* Cars */
-    CarsAnchor = new ssgBranch;
-    TheScene->addKid(CarsAnchor);
+	/* Cars */
+	CarsAnchor = new ssgBranch;
+	TheScene->addKid(CarsAnchor);
 
-    /* Smoke */
-    SmokeAnchor = new ssgBranch;
-    TheScene->addKid(SmokeAnchor);
+	/* Smoke */
+	SmokeAnchor = new ssgBranch;
+	TheScene->addKid(SmokeAnchor);
 
-    /* Lens Flares */
-    SunAnchor = new ssgBranch;
-    TheScene->addKid(SunAnchor);
+	/* Lens Flares */
+	SunAnchor = new ssgBranch;
+	TheScene->addKid(SunAnchor);
 
 
-    initBackground();
-    
-    grWrldX = (int)(track->max.x - track->min.x + 1);
-    grWrldY = (int)(track->max.y - track->min.y + 1);
-    grWrldZ = (int)(track->max.z - track->min.z + 1);
-    grWrldMaxSize = (int)(MAX(MAX(grWrldX, grWrldY), grWrldZ));
+	initBackground();
 
-    acname = GfParmGetStr(hndl, TRK_SECT_GRAPH, TRK_ATT_3DDESC, "track.ac");
-    if (strlen(acname) == 0) {
-	return -1;
-    }
+	grWrldX = (int)(track->max.x - track->min.x + 1);
+	grWrldY = (int)(track->max.y - track->min.y + 1);
+	grWrldZ = (int)(track->max.z - track->min.z + 1);
+	grWrldMaxSize = (int)(MAX(MAX(grWrldX, grWrldY), grWrldZ));
 
-    sprintf(buf, "tracks/%s/%s;data/textures;data/img;.", grTrack->category, grTrack->internalname);
-    ssgTexturePath(buf);
-    sprintf(buf, "tracks/%s/%s", grTrack->category, grTrack->internalname);
-    ssgModelPath(buf);
+	acname = GfParmGetStr(hndl, TRK_SECT_GRAPH, TRK_ATT_3DDESC, "track.ac");
+	if (strlen(acname) == 0) {
+		return -1;
+	}
 
-    desc = grssgLoadAC3D(acname, NULL);
-    LandAnchor->addKid(desc);
+	snprintf(buf, BUFSIZE, "tracks/%s/%s;data/textures;data/img;.", grTrack->category, grTrack->internalname);
+	ssgTexturePath(buf);
+	snprintf(buf, BUFSIZE, "tracks/%s/%s", grTrack->category, grTrack->internalname);
+	ssgModelPath(buf);
 
-    return 0;
+	desc = grssgLoadAC3D(acname, NULL);
+	LandAnchor->addKid(desc);
+
+	return 0;
 }
 
 
@@ -267,19 +256,9 @@ void grShutdownScene(void)
 		TheScene = 0;
 	}
 
-	if (BackgroundTex) {
-		glDeleteTextures(1, &BackgroundTex);
-		BackgroundTex = 0;
-	}
-
-	if (BackgroundList) {
-		glDeleteLists(BackgroundList, 1);
-		BackgroundList = 0;
-	}
-
-	if (BackgroundType > 2) {
-		glDeleteTextures(1, &BackgroundTex2);
-		glDeleteLists(BackgroundList2, 1);
+	if (TheBackground) {
+		delete TheBackground;
+		TheBackground = 0;
 	}
 
 	if (grEnvState != NULL) {
@@ -303,9 +282,6 @@ void grShutdownScene(void)
 }
 
 
-static ssgRoot *TheBackground;
-
-
 static void
 initBackground(void)
 {
@@ -319,7 +295,8 @@ initBackground(void)
     sgVec4		clr;
     sgVec3		nrm;
     sgVec2		tex;
-    static char		buf[1024];
+    const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
     ssgVtxTable 	*bg;
     ssgVertexArray	*bg_vtx;
     ssgTexCoordArray	*bg_tex;
@@ -327,14 +304,13 @@ initBackground(void)
     ssgNormalArray	*bg_nrm;
     ssgSimpleState	*bg_st;
     
-    sprintf(buf, "tracks/%s/%s;data/img;data/textures;.", grTrack->category, grTrack->internalname);
+    snprintf(buf, BUFSIZE, "tracks/%s/%s;data/img;data/textures;.", grTrack->category, grTrack->internalname);
     grFilePath = buf;
     grGammaValue = 1.8;
     grMipMap = 0;
 
     graphic = &grTrack->graphic;
     glClearColor(graphic->bgColor[0], graphic->bgColor[1], graphic->bgColor[2], 1.0);
-    BackgroundTex = BackgroundTex2 = 0;
 
     TheBackground = new ssgRoot();
     clr[0] = clr[1] = clr[2] = 1.0;
@@ -344,8 +320,7 @@ initBackground(void)
 
     z1 = -0.5;
     z2 = 1.0;
-    BackgroundType = graphic->bgtype;
-    switch (BackgroundType) {
+    switch (graphic->bgtype) {
     case 0:
 	bg_vtx = new ssgVertexArray(NB_BG_FACES + 1);
 	bg_tex = new ssgTexCoordArray(NB_BG_FACES + 1);
@@ -596,27 +571,34 @@ initBackground(void)
       envst = (ssgSimpleState*)grSsgLoadTexState(graphic->env[i]);
       envst->enable(GL_BLEND);
       grEnvSelector->setStep(i, envst);
-	  envst->deRef();
     }
     grEnvSelector->selectStep(0); /* mandatory !!! */
     grEnvState=(grMultiTexState*)grSsgEnvTexState(graphic->env[0]);
     grEnvShadowState=(grMultiTexState*)grSsgEnvTexState("envshadow.png");
     grEnvShadowStateOnCars=(grMultiTexState*)grSsgEnvTexState("shadow2.rgb");
-    if (grEnvShadowState==NULL)
-      {
-	ulSetError ( UL_WARNING, "grscene:initBackground Failed to open envshadow.png for reading") ;
-	ulSetError ( UL_WARNING, "        mandatory for top env mapping ") ;
-	ulSetError ( UL_WARNING, "        should be in the .xml !! ") ;
-	ulSetError ( UL_WARNING, "        copy the envshadow.png from g-track-2 to the track you selected ") ;
-	ulSetError ( UL_WARNING, "        c'est pas classe comme sortie, mais ca evite un crash ") ;
-	GfScrShutdown();
-	exit(-1);
-      }
-    if (grEnvShadowStateOnCars==NULL)
-      {
-	ulSetError ( UL_WARNING, "grscene:initBackground Failed to open shadow2.rgb for reading") ;
-	ulSetError ( UL_WARNING, "        no shadow mapping on cars for this track ") ;
-      }
+
+	if (grEnvState != NULL) {
+		grEnvState->ref();
+	}
+
+	if (grEnvShadowState == NULL) {
+		ulSetError ( UL_WARNING, "grscene:initBackground Failed to open envshadow.png for reading") ;
+		ulSetError ( UL_WARNING, "        mandatory for top env mapping ") ;
+		ulSetError ( UL_WARNING, "        should be in the .xml !! ") ;
+		ulSetError ( UL_WARNING, "        copy the envshadow.png from g-track-2 to the track you selected ") ;
+		ulSetError ( UL_WARNING, "        c'est pas classe comme sortie, mais ca evite un crash ") ;
+		GfScrShutdown();
+		exit(-1);
+	} else {
+		grEnvShadowState->ref();
+	}
+
+	if (grEnvShadowStateOnCars == NULL) {
+		ulSetError ( UL_WARNING, "grscene:initBackground Failed to open shadow2.rgb for reading") ;
+		ulSetError ( UL_WARNING, "        no shadow mapping on cars for this track ") ;
+	} else {
+		grEnvShadowStateOnCars->ref();
+	}
 }
 
 
@@ -649,7 +631,8 @@ grCustomizePits(void)
 	switch (pits->type) {
 	case TR_PIT_ON_TRACK_SIDE:
 		for (i = 0; i < pits->nMaxPits; i++) {
-			char buf[256];
+			const int BUFSIZE=256;
+			char buf[BUFSIZE];
 			t3Dd normalvector;
 			sgVec3 vtx;
 			sgVec4 clr = {0,0,0,1};
@@ -667,15 +650,15 @@ grCustomizePits(void)
 				// If we have more than one car in the pit use the team pit logo of driver 0. 
 				if (pits->driversPits[i].freeCarIndex == 1) { 
 					// One car assigned to the pit.
-					sprintf(buf, "drivers/%s/%d;drivers/%s;data/textures;data/img;.",
+					snprintf(buf, BUFSIZE, "drivers/%s/%d;drivers/%s;data/textures;data/img;.",
 						pits->driversPits[i].car[0]->_modName, pits->driversPits[i].car[0]->_driverIndex,
 						pits->driversPits[i].car[0]->_modName);
 				} else {
 					// Multiple cars assigned to the pit.
-					sprintf(buf, "drivers/%s;data/textures;data/img;.", pits->driversPits[i].car[0]->_modName);
+					snprintf(buf, BUFSIZE, "drivers/%s;data/textures;data/img;.", pits->driversPits[i].car[0]->_modName);
 				}
 			} else {
-				sprintf(buf, "data/textures;data/img;.");
+				snprintf(buf, BUFSIZE, "data/textures;data/img;.");
 			}
 			
 			

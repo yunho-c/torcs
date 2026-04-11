@@ -22,7 +22,7 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
+#include <cstring>
 #ifdef WIN32
 #include <float.h>
 #define isnan _isnan
@@ -39,7 +39,7 @@
 extern void SimConfig(tCarElt *carElt, tRmInfo* ReInfo);
 extern void SimReConfig(tCarElt *carElt);
 extern void SimUpdate(tSituation*, double deltaTime, int telemetry);
-extern void SimInit(int nbcars, tTrack* track);
+extern void SimInit(int nbcars, tTrack* track, tdble fuelFactor, tdble damageFactor);
 extern void SimShutdown(void);
 
 extern void SimAxleConfig(tCar *car, int index);
@@ -48,14 +48,10 @@ extern void SimAxleUpdate(tCar *car, int index);
 extern void SimCarConfig(tCar *car);
 extern void SimCarUpdate(tCar *car, tSituation*);
 extern void SimCarUpdate2(tCar *car, tSituation*);
-extern tdble SimCarDynamicEnergy(tCar* car);
-extern tdble SimCarEnergy(tCar* car);
-extern void SimCarLimitDynamicEnergy(tCar* car, tdble E_limit);
-extern void SimCarLimitEnergy(tCar* car, tdble E_limit);
 
 extern void SimSuspCheckIn(tSuspension *susp);
 extern void SimSuspUpdate(tSuspension *susp);
-extern void SimSuspConfig(void *hdle, char *section, tSuspension *susp, tdble F0, tdble X0);
+extern void SimSuspConfig(void *hdle, const char *section, tSuspension *susp, tdble F0, tdble X0);
 extern void SimSuspDamage(tSuspension* susp, tdble dmg);
 
 extern void SimWheelConfig(tCar *car, int index);
@@ -67,7 +63,7 @@ extern void SimUpdateFreeWheels(tCar *car, int axlenb);
 extern void SimSteerConfig(tCar *car);
 extern void SimSteerUpdate(tCar *car);
 
-extern void SimBrakeConfig(void *hdle, char *section, tBrake *brake);
+extern void SimBrakeConfig(void *hdle, const char *section, tBrake *brake);
 extern void SimBrakeUpdate(tCar *car, tWheel *wheel, tBrake *brake);
 extern void SimBrakeSystemConfig(tCar *car);
 extern void SimBrakeSystemUpdate(tCar *car);
@@ -79,14 +75,12 @@ extern void SimWingConfig(tCar *car, int index);
 extern void SimWingUpdate(tCar *car, int index, tSituation *s);
 
 extern void SimCarUpdateWheelPos(tCar *car);
-extern void SimCarUpdateCornerPos(tCar *car);
-
 
 extern void SimTransmissionConfig(tCar *car);
 extern void SimTransmissionUpdate(tCar *car);
 extern void SimGearboxUpdate(tCar *car);
 
-extern void SimDifferentialConfig(void *hdle, char *section, tDifferential *differential);
+extern void SimDifferentialConfig(void *hdle, const char *section, tDifferential *differential);
 extern void SimDifferentialUpdate(tCar *car, tDifferential *differential, int first);
 
 extern void SimEngineConfig(tCar *car);
@@ -101,7 +95,6 @@ extern void SimCarCollideConfig(tCar *car);
 extern void SimCarCollideShutdown(int nbcars);
 extern void SimCarCollideInit(void);
 extern void SimCarCollideAddDeformation(tCar* car, sgVec3 pos, sgVec3 force);
-
 extern void NaiveRotate (t3Dd v, t3Dd u, t3Dd* v0);
 extern void NaiveInverseRotate (t3Dd v, t3Dd u, t3Dd* v0);
 extern void QuatToEuler (sgVec3 hpr, const sgQuat quat);
@@ -152,28 +145,6 @@ inline void sg2t3 (sgVec3& v, t3Dd& p)
 	p.y = v[SG_Y];
 	p.z = v[SG_Z];
 }
-
-/// If a src vector is in local coordinates,
-/// transform it via q to global coordinates
-inline void QuatRotate(t3Dd& src, sgQuat& q, t3Dd& dst)
-{
-    sgVec3 V;
-    t2sg3(src, V);
-    sgRotateCoordQuat(V, q);
-    sg2t3(V, dst);
-}
-
-/// If a src vector is in global coordinates,
-/// transform it via q to local coordinates
-inline void QuatInverseRotate(t3Dd& src, sgQuat& q, t3Dd& dst)
-{
-    sgVec3 V;
-    t2sg3(src, V);
-    sgRotateVecQuat(V, q);
-    sg2t3(V, dst);
-}
-
-
 
 #define SIM_VECT_COLL	12
 #define SIM_VECT_SPD	13

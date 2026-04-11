@@ -24,28 +24,31 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <tgfclient.h>
 #include <raceinit.h>
 #include <graphic.h>
 #include <glfeatures.h>
+#include <portability.h>
 #include "openglconfig.h"
 
 static float LabelColor[] = {1.0, 0.0, 1.0, 1.0};
 
 // Texture compression.
-static char *textureCompressOptionList[] = {GR_ATT_TEXTURECOMPRESSION_DISABLED, GR_ATT_TEXTURECOMPRESSION_ENABLED};
+static const char *textureCompressOptionList[] = {
+	GR_ATT_TEXTURECOMPRESSION_DISABLED,
+	GR_ATT_TEXTURECOMPRESSION_ENABLED
+};
+
 static const int nbOptionsTextComp = sizeof(textureCompressOptionList) / sizeof(textureCompressOptionList[0]);
 static int curOptionTextComp = 0;
 static int TextureCompressOptionId;
 
 // Texture sizing, order of list is important, do not change.
-static int textureSizeOptionList[] = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8092, 16384};
+static int textureSizeOptionList[] = {8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384};
 static int nbOptionsTextSize = sizeof(textureSizeOptionList) / sizeof(textureSizeOptionList[0]);
 static int curOptionTextSize = 0;
 static int TextureSizeOptionId;
 static const int defaultTextSize = 64; // In case everything goes wrong.
-static char valuebuf[10];
 
 // gui screen handles.
 static void	*scrHandle = NULL;
@@ -55,14 +58,15 @@ static void	*prevHandle = NULL;
 // Read OpenGL configuration.
 static void readOpenGLCfg(void)
 {
-	int	i;
-	char buf[1024];
+	int i;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
 
-	sprintf(buf, "%s%s", GetLocalDir(), GR_PARAM_FILE);
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GR_PARAM_FILE);
 	void *paramHandle = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 
 	// Read texture compression parameters.
-	char *optionName = GfParmGetStr(paramHandle, GR_SCT_GLFEATURES, GR_ATT_TEXTURECOMPRESSION, textureCompressOptionList[0]);
+	const char *optionName = GfParmGetStr(paramHandle, GR_SCT_GLFEATURES, GR_ATT_TEXTURECOMPRESSION, textureCompressOptionList[0]);
 	for (i = 0; i < nbOptionsTextComp; i++) {
 		if (strcmp(optionName, textureCompressOptionList[i]) == 0) {
 			curOptionTextComp = i;
@@ -108,8 +112,8 @@ static void readOpenGLCfg(void)
 			}
 		}
 	}
-	sprintf(valuebuf, "%d", textureSizeOptionList[curOptionTextSize]);
-	GfuiLabelSetText(scrHandle, TextureSizeOptionId, valuebuf);
+	snprintf(buf, BUFSIZE, "%d", textureSizeOptionList[curOptionTextSize]);
+	GfuiLabelSetText(scrHandle, TextureSizeOptionId, buf);
 
 	GfParmReleaseHandle(paramHandle);
 }
@@ -118,8 +122,9 @@ static void readOpenGLCfg(void)
 // Save the choosen values in the corresponding parameter file.
 static void saveOpenGLOption(void *)
 {
-	char buf[1024];
-	sprintf(buf, "%s%s", GetLocalDir(), GR_PARAM_FILE);
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GR_PARAM_FILE);
 	void *paramHandle = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 
 	// Texture compression.
@@ -159,6 +164,9 @@ static void changeTextureCompressState(void *vp)
 // Scroll through texture sizes smaller or equal the system limit.
 static void changeTextureSizeState(void *vp)
 {
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+
 	long delta = (long)vp;
 	curOptionTextSize += delta;
 	if (curOptionTextSize < 0) {
@@ -167,8 +175,8 @@ static void changeTextureSizeState(void *vp)
 		curOptionTextSize= 0;
 	}
 
-	sprintf(valuebuf, "%d", textureSizeOptionList[curOptionTextSize]);
-	GfuiLabelSetText(scrHandle, TextureSizeOptionId, valuebuf);
+	snprintf(buf, BUFSIZE, "%d", textureSizeOptionList[curOptionTextSize]);
+	GfuiLabelSetText(scrHandle, TextureSizeOptionId, buf);
 }
 
 

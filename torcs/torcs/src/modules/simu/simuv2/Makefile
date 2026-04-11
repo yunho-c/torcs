@@ -33,11 +33,15 @@ SOURCES		= simu.cpp \
 	  	  transmission.cpp \
 	  	  differential.cpp \
 	  	  collide.cpp \
-		  categories.cpp
+		  categories.cpp \
+		  atmosphere.cpp
 
 LIBS		=  -lplibsg -lplibul -L${EXPORTBASE}/lib -lsolid
 
 SUBDIRS		= SOLID-2.0
+
+# Because libsolid is a static library it must be built before simuv2, therefore the explicit dependency on subdirs
+$(MODULE): subdirs
 
 EXPINCDIRS	= SOLID-2.0
 

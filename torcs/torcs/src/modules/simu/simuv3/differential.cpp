@@ -20,20 +20,20 @@
 #include "sim.h"
 
 void 
-SimDifferentialConfig(void *hdle, char *section, tDifferential *differential)
+SimDifferentialConfig(void *hdle, const char *section, tDifferential *differential)
 {
-    char *type;
+    const char *type;
 
-    differential->I		= GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.1f);
-    differential->efficiency	= GfParmGetNum(hdle, section, PRM_EFFICIENCY, (char*)NULL, 1.0f);
-    differential->ratio		= GfParmGetNum(hdle, section, PRM_RATIO, (char*)NULL, 1.0f);
-    differential->bias		= GfParmGetNum(hdle, section, PRM_BIAS, (char*)NULL, 0.1f);
-    differential->dTqMin	= GfParmGetNum(hdle, section, PRM_MIN_TQ_BIAS, (char*)NULL, 0.05f);
-    differential->dTqMax	= GfParmGetNum(hdle, section, PRM_MAX_TQ_BIAS, (char*)NULL, 0.80f) - differential->dTqMin;
-    differential->dSlipMax	= GfParmGetNum(hdle, section, PRM_MAX_SLIP_BIAS, (char*)NULL, 0.75f);
-    differential->lockInputTq	= GfParmGetNum(hdle, section, PRM_LOCKING_TQ, (char*)NULL, 300.0f);
-    differential->viscosity	= GfParmGetNum(hdle, section, PRM_VISCOSITY_FACTOR, (char*)NULL, 2.0f);
-    differential->viscomax	=  exp(differential->viscosity);
+    differential->I		= GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.1);
+    differential->efficiency	= GfParmGetNum(hdle, section, PRM_EFFICIENCY, (char*)NULL, 1.0);
+    differential->ratio		= GfParmGetNum(hdle, section, PRM_RATIO, (char*)NULL, 1.0);
+    differential->bias		= GfParmGetNum(hdle, section, PRM_BIAS, (char*)NULL, 0.1);
+    differential->dTqMin	= GfParmGetNum(hdle, section, PRM_MIN_TQ_BIAS, (char*)NULL, 0.05);
+    differential->dTqMax	= GfParmGetNum(hdle, section, PRM_MAX_TQ_BIAS, (char*)NULL, 0.80) - differential->dTqMin;
+    differential->dSlipMax	= GfParmGetNum(hdle, section, PRM_MAX_SLIP_BIAS, (char*)NULL, 0.75);
+    differential->lockInputTq	= GfParmGetNum(hdle, section, PRM_LOCKING_TQ, (char*)NULL, 300.0);
+    differential->viscosity	= GfParmGetNum(hdle, section, PRM_VISCOSITY_FACTOR, (char*)NULL, 2.0);
+    differential->viscomax	= 1 - exp(-differential->viscosity);
 
     type = GfParmGetStr(hdle, section, PRM_TYPE, VAL_DIFF_NONE);
     if (strcmp(type, VAL_DIFF_LIMITED_SLIP) == 0) {
@@ -226,40 +226,26 @@ SimDifferentialUpdate(tCar *car, tDifferential *differential, int first)
                 if (propTq > 0.0f) {
                     rate = 1.0f - exp(-propTq*propTq);
                 }
-                float delta_spin = spinVel1-spinVel0;
-                //float pressure =  tanh(rate*delta_spin);
-                float pressure =  rate;
-                float t_spin = tanh(delta_spin/differential->dSlipMax);
-                float bias = differential->dTqMax * 0.5f* t_spin;
-                if (fabs(2.0*bias) < differential->dTqMin) {
-                    bias = SIGN(bias) * 0.5 * differential->dTqMin;
-                }
-                float open = 1.0f - fabs(pressure);
-                //DrTq0 = DrTq*(0.5f + bias) + spiderTq;
-                //DrTq1 = DrTq*(0.5f - bias) - spiderTq;
-                float DriveTorque2 = 0.5f * DrTq;
-                float CouplingTorque = open*spiderTq + (1-open)*bias*DrTq;
-                DrTq0 = DriveTorque2 + CouplingTorque;
-                DrTq1 = DriveTorque2 - CouplingTorque;
-                //printf ("%f %f %f %f #LSD\n",
-                //open, bias, delta_spin, DrTq1 - DrTq0);
+
+                float pressure = tanh(rate*(spinVel1-spinVel0));
+                float bias = differential->dSlipMax * 0.5f* pressure;
+                float open = 1.0f;// - rate;
+                DrTq0 = DrTq*(0.5f+bias) + spiderTq*open;
+                DrTq1 = DrTq*(0.5f-bias) - spiderTq*open;
             }
             break;
-            
-        case DIFF_VISCOUS_COUPLER:
-            // TODO FIX ME
-            {
-                float p = (1.0 - exp(-fabs((spinVel0 - spinVel1))));
-                //float B = (1.0 - p)*differential->dTqMin + p*differential->dTqMax;
-                float bias = 0.5*(1.0 + p*SIGN(spinVel1 - spinVel0));
-                bias = MIN(bias, differential->dTqMax);
-                bias = MAX(bias, differential->dTqMin);
-                float spiderTq = inTq1 - inTq0;
-                deltaTq = -p*differential->viscosity*(spinVel0 - spinVel1);
-                DrTq0 = (DrTq*bias + spiderTq) +  deltaTq;
-                DrTq1 = (DrTq*(1-bias)- spiderTq)  - deltaTq;
 
+        case DIFF_VISCOUS_COUPLER:
+            if (spinVel0 >= spinVel1) {
+                DrTq0 = DrTq * differential->dTqMin;
+                DrTq1 = DrTq * (1 - differential->dTqMin);
+            } else {
+                deltaTq = differential->dTqMin + (1.0 - exp(-fabs(differential->viscosity * spinVel0 - spinVel1))) /
+                    differential->viscomax * differential->dTqMax;
+                DrTq0 = DrTq * deltaTq;
+                DrTq1 = DrTq * (1 - deltaTq);
             }
+	
             break;
         default: /* NONE ? */
             DrTq0 = DrTq1 = 0;

@@ -40,13 +40,12 @@ typedef struct
     tdble	ratio;
     tdble	I;
     tdble	efficiency;
-    tdble	bias;
     tdble	dTqMin;
     tdble	dTqMax;
     tdble	dSlipMax;
     tdble	lockInputTq;
+	tdble   lockBrakeInputTq;
     tdble	viscosity;
-    tdble	viscomax;
 
     /* dynamic data */
     tDynAxis	in;

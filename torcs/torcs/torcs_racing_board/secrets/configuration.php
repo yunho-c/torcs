@@ -18,7 +18,7 @@
 	$db_prefix = 'test_';		// <-- CHANGE!
 
 	// Version
-	define('TRB_VERSION', '0.0.1');
+	define('TRB_VERSION', '0.7.1');
 
 	// Table with user data.
 	define('TBL_USERS', 'users');
@@ -79,11 +79,13 @@
 
 	define('TBL_SCREENSHOT', 'screenshot');
 	define('TBL_NEWS', 'news');
+	define('TBL_VERSION', 'version');
 
 	// System settings/limits
 	define('TEAMS_PER_USER', 5);
 	define('TEAMS_PER_EVENT', 40);
-	define('ROBOT_MODULE_SIZE', 500000);
+	define('RACES_PER_EVENT', 20);
+	define('ROBOT_MODULE_SIZE', 4194302);
 	define('ROBOT_RESULT_SIZE', 80000);
 
 	// Cookie settings.
@@ -104,6 +106,7 @@
 	define('SERVER_NAME', 'www.?????.????');				// <-- CHANGE
 
 	// Account activation.
+	// define('ACTIVATION_EXPIRE', 180); // 3 minutes, just for Testing!
 	define('ACTIVATION_EXPIRE', 86400); // 24 hours.
 
 	// Colors

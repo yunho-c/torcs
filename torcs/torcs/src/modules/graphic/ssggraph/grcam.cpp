@@ -29,6 +29,7 @@
 #include <plib/ssg.h>
 
 #include <robottools.h>
+#include <portability.h>
 #include <graphic.h>
 #include "grcam.h"
 #include "grscreen.h"
@@ -40,9 +41,6 @@
 #include "grmain.h"
 #include "grutil.h"
 #include <tgfclient.h>
-
-static char path[1024];
-
 
 float
 cGrCamera::getDist2 (tCarElt *car)
@@ -133,10 +131,12 @@ void cGrPerspCamera::setModelView(void)
 
 void cGrPerspCamera::loadDefaults(char *attr)
 {
-    sprintf(path, "%s/%d", GR_SCT_DISPMODE, screen->getId());
-    fovy = (float)GfParmGetNum(grHandle, path,
-			       attr, (char*)NULL, fovydflt);
-    limitFov();
+	const int BUFSIZE=1024;
+	char path[BUFSIZE];
+	
+	snprintf(path, BUFSIZE, "%s/%d", GR_SCT_DISPMODE, screen->getId());
+	fovy = (float)GfParmGetNum(grHandle, path, attr, (char*)NULL, fovydflt);
+	limitFov();
 }
 
 
@@ -165,46 +165,50 @@ float cGrPerspCamera::getLODFactor(float x, float y, float z) {
 
 void cGrPerspCamera::setZoom(int cmd)
 {
-    char	buf[256];
+	const int BUFSIZE=256;
+	char buf[BUFSIZE];
+	const int PATHSIZE=1024;
+	char path[PATHSIZE];
 
-    switch(cmd) {
-    case GR_ZOOM_IN:
-	if (fovy > 2) {
-	    fovy--;
-	} else {
-	    fovy /= 2.0;
+
+	switch(cmd) {
+		case GR_ZOOM_IN:
+			if (fovy > 2) {
+				fovy--;
+			} else {
+				fovy /= 2.0;
+			}
+			if (fovy < fovymin) {
+				fovy = fovymin;
+			}
+			break;
+
+		case GR_ZOOM_OUT:
+			fovy++;
+			if (fovy > fovymax) {
+				fovy = fovymax;
+			}
+			break;
+
+		case GR_ZOOM_MAX:
+			fovy = fovymax;
+			break;
+
+		case GR_ZOOM_MIN:
+			fovy = fovymin;
+			break;
+
+		case GR_ZOOM_DFLT:
+			fovy = fovydflt;
+			break;
 	}
-	if (fovy < fovymin) {
-	    fovy = fovymin;
-	}
-	break;
-	
-    case GR_ZOOM_OUT:
-	fovy++;
-	if (fovy > fovymax) {
-	    fovy = fovymax;
-	}
-	break;
 
-    case GR_ZOOM_MAX:
-	fovy = fovymax;
-	break;
+	limitFov();
 
-    case GR_ZOOM_MIN:
-	fovy = fovymin;
-	break;
-
-    case GR_ZOOM_DFLT:
-	fovy = fovydflt;
-	break;
-    }
-
-    limitFov();
-
-    sprintf(buf, "%s-%d-%d", GR_ATT_FOVY, screen->getCurCamHead(), getId());
-    sprintf(path, "%s/%d", GR_SCT_DISPMODE, screen->getId());
-    GfParmSetNum(grHandle, path, buf, (char*)NULL, (tdble)fovy);
-    GfParmWriteFile(NULL, grHandle, "Graph");
+	snprintf(buf, BUFSIZE, "%s-%d-%d", GR_ATT_FOVY, screen->getCurCamHead(), getId());
+	snprintf(path, PATHSIZE, "%s/%d", GR_SCT_DISPMODE, screen->getId());
+	GfParmSetNum(grHandle, path, buf, (char*)NULL, (tdble)fovy);
+	GfParmWriteFile(NULL, grHandle, "Graph");
 }
 
 void cGrOrthoCamera::setProjection(void)
@@ -741,11 +745,13 @@ class cGrCarCamCenter : public cGrPerspCamera
 	up[1] = 0;
 	up[2] = 1;
     }
-
+    
     void loadDefaults(char *attr) {
-	sprintf(path, "%s/%d", GR_SCT_DISPMODE, screen->getId());
-	locfovy = (float)GfParmGetNum(grHandle, path,
-				   attr, (char*)NULL, fovydflt);
+		const int PATHSIZE=1024;
+		char path[PATHSIZE];
+
+		snprintf(path, PATHSIZE, "%s/%d", GR_SCT_DISPMODE, screen->getId());
+		locfovy = (float)GfParmGetNum(grHandle, path, attr, (char*)NULL, fovydflt);
     }
 
     void setZoom(int cmd) {
@@ -897,7 +903,7 @@ class cGrCarCamRoadFly : public cGrPerspCamera
 {
  protected:
     int current;
-    int timer;
+    float timer;
     float zOffset;
     float gain;
     float damp;
@@ -913,7 +919,7 @@ class cGrCarCamRoadFly : public cGrPerspCamera
 	up[0] = 0;
 	up[1] = 0;
 	up[2] = 1;
-	timer = 0;
+	timer = 0.0;
 	offset[0]=0.0;
 	offset[1]=0.0;
 	offset[2]=60.0;
@@ -925,11 +931,11 @@ class cGrCarCamRoadFly : public cGrPerspCamera
     }
     
     void update(tCarElt *car, tSituation *s) {
-	tRoadCam *curCam;
+	//tRoadCam *curCam;
 	float height;
 	float dt;
 
-	curCam = car->_trkPos.seg->cam;
+	//curCam = car->_trkPos.seg->cam;
 
 	if (currenttime == 0.0) {
 	    currenttime = s->currentTime;
@@ -947,10 +953,12 @@ class cGrCarCamRoadFly : public cGrPerspCamera
             reset_camera = true;
         }
 
-        timer--;
-        if (timer<0) {
+        //timer--;
+        if (timer<0.0) {
             reset_camera = true;
-        }
+        } else {
+			timer -= dt;
+		}
 
         if (current != car->index) {
             /* the target car changed */
@@ -961,21 +969,21 @@ class cGrCarCamRoadFly : public cGrPerspCamera
             zOffset = 0.0;
         }
 
-        if ((timer <= 0) || (zOffset > 0.0)) {
-            timer = 500 + (int)(500.0*rand()/(RAND_MAX+1.0));
+        if ((timer <= 0.0) || (zOffset > 0.0)) {
+            timer = 10.0 + (int)(5.0*rand()/(RAND_MAX+1.0));
             offset[0] = -0.5 + (rand()/(RAND_MAX+1.0));
             offset[1] = -0.5 + (rand()/(RAND_MAX+1.0));
             offset[2] = 10.0f + (50.0*rand()/(RAND_MAX+1.0)) + zOffset;
             offset[0] = offset[0]*(offset[2]+1.0);
             offset[1] = offset[1]*(offset[2]+1.0);
             // follow the car more closely when low
-            gain = 300.0/(10.0f+offset[2]); 
+            gain = 200.0/(10.0f+offset[2]); 
             damp = 5.0f;
         }
 
 
         if (reset_camera) {
-            eye[0] = car->_pos_X + 50.0 + (50.0*rand()/(RAND_MAX+1.0));
+			eye[0] = car->_pos_X + 50.0 + (50.0*rand()/(RAND_MAX+1.0));
             eye[1] = car->_pos_Y + 50.0 + (50.0*rand()/(RAND_MAX+1.0));
             eye[2] = car->_pos_Z + 50.0 + (50.0*rand()/(RAND_MAX+1.0));
             speed[0] = speed[1] = speed[2] = 0.0f;
@@ -996,7 +1004,7 @@ class cGrCarCamRoadFly : public cGrPerspCamera
         // avoid going under the scene
         height = grGetHOT(eye[0], eye[1]) + 1.0;
         if (eye[2] < height) {
-            timer = 500 + (int)(500.0*rand()/(RAND_MAX+1.0));
+            timer = 10.0 + (int)(10.0*rand()/(RAND_MAX+1.0));
             offset[2] = height - car->_pos_Z + 1.0;
             eye[2] = height;
         }
@@ -1005,12 +1013,11 @@ class cGrCarCamRoadFly : public cGrPerspCamera
 
 
 
-    void onSelect(tCarElt *car, tSituation *s)
-    {
-        printf ("%f select\n", s->currentTime);
-	timer = 0;
-	current = -1;
-    }
+	void onSelect(tCarElt *car, tSituation *s)
+	{
+		timer = 0;
+		current = -1;
+	}
 
 };
 
@@ -1036,7 +1043,11 @@ class cGrCarCamRoadZoom : public cGrPerspCamera
     }
 
     void loadDefaults(char *attr) {
-	sprintf(path, "%s/%d", GR_SCT_DISPMODE, screen->getId());
+	
+   	const int PATHSIZE=1024;
+	char path[PATHSIZE];
+
+	snprintf(path, PATHSIZE, "%s/%d", GR_SCT_DISPMODE, screen->getId());
 	locfovy = (float)GfParmGetNum(grHandle, path,
 				   attr, (char*)NULL, fovydflt);
     }

@@ -15,12 +15,12 @@
 
 ROBOT       = bt
 SHIPDIR     = drivers/${ROBOT}/2
-SHIP        = default.xml
+SHIP        = car1-trb1.rgb default.xml
 SHIPSUBDIRS = 
 
 PKGSUBDIRS  = ${SHIPSUBDIRS}
-src-robots-bt_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
-src-robots-bt_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
+src-robots-base_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
+src-robots-base_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
 include ${MAKE_DEFAULT}
 
 

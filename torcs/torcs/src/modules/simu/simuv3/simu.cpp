@@ -73,33 +73,31 @@ ctrlCheck(tCar *car)
     if (isnan(car->ctrl->brakeCmd) || isinf(car->ctrl->brakeCmd)) car->ctrl->brakeCmd = 0;
     if (isnan(car->ctrl->clutchCmd) || isinf(car->ctrl->clutchCmd)) car->ctrl->clutchCmd = 0;
     if (isnan(car->ctrl->steer) || isinf(car->ctrl->steer)) car->ctrl->steer = 0;
-    if (isnan(car->ctrl->gear) || isinf(car->ctrl->gear)) car->ctrl->gear = 0;
 #else
     if (isnan(car->ctrl->accelCmd)) car->ctrl->accelCmd = 0;
     if (isnan(car->ctrl->brakeCmd)) car->ctrl->brakeCmd = 0;
     if (isnan(car->ctrl->clutchCmd)) car->ctrl->clutchCmd = 0;
     if (isnan(car->ctrl->steer)) car->ctrl->steer = 0;
-    if (isnan(car->ctrl->gear)) car->ctrl->gear = 0;
 #endif
 
     /* When the car is broken try to send it on the track side */
     if (car->carElt->_state & RM_CAR_STATE_BROKEN) {
 		car->ctrl->accelCmd = 0.0;
-		car->ctrl->brakeCmd = 0.1f;
+		car->ctrl->brakeCmd = 0.1;
 		car->ctrl->gear = 0;
 		if (car->trkPos.toRight >  car->trkPos.seg->width / 2.0) {
-			car->ctrl->steer = 0.1f;
+			car->ctrl->steer = 0.1;
 		} else {
-			car->ctrl->steer = -0.1f;
+			car->ctrl->steer = -0.1;
 		}
     } else if (car->carElt->_state & RM_CAR_STATE_ELIMINATED) {
 		car->ctrl->accelCmd = 0.0;
-		car->ctrl->brakeCmd = 0.1f;
+		car->ctrl->brakeCmd = 0.1;
 		car->ctrl->gear = 0;
 		if (car->trkPos.toRight >  car->trkPos.seg->width / 2.0) {
-			car->ctrl->steer = 0.1f;
+			car->ctrl->steer = 0.1;
 		} else {
-			car->ctrl->steer = -0.1f;
+			car->ctrl->steer = -0.1;
 		}
     } else if (car->carElt->_state & RM_CAR_STATE_FINISH) {
 		/* when the finish line is passed, continue at "slow" pace */
@@ -152,14 +150,8 @@ SimConfig(tCarElt *carElt, tRmInfo* ReInfo)
     SimCarConfig(car);
 
     SimCarCollideConfig(car);
-
-    //    carElt->_yaw = 0.0;
-    //    carElt->_roll = 0.0;
-    //    carElt->_pitch = 0.0;
-
     sgMakeCoordMat4(carElt->pub.posMat, carElt->_pos_X, carElt->_pos_Y, carElt->_pos_Z - carElt->_statGC_z,
 					RAD2DEG(carElt->_yaw), RAD2DEG(carElt->_roll), RAD2DEG(carElt->_pitch));
-
 
 	sgEulerToQuat (car->posQuat, -RAD2DEG(carElt->_yaw), RAD2DEG(carElt->_pitch), RAD2DEG(carElt->_roll));
 	sgQuatToMatrix (car->posMat, car->posQuat);
@@ -181,7 +173,7 @@ SimReConfig(tCarElt *carElt)
     }
     if (carElt->pitcmd.repair > 0) {
 		for (int i=0; i<4; i++) {
-			carElt->_tyreCondition(i) = 1.01f;
+			carElt->_tyreCondition(i) = 1.01;
 			carElt->_tyreT_in(i) = 50.0;
 			carElt->_tyreT_mid(i) = 50.0;
 			carElt->_tyreT_out(i) = 50.0;
@@ -304,7 +296,7 @@ RemoveCar(tCar *car, tSituation *s)
 
     trkPos.type = TR_LPOS_SEGMENT;
     RtTrackLocal2Global(&trkPos, &(car->restPos.pos.x), &(car->restPos.pos.y), trkFlag);
-    car->restPos.pos.z = RtTrackHeightL(&trkPos) + 0.1 + carElt->_statGC_z;
+    car->restPos.pos.z = RtTrackHeightL(&trkPos) + carElt->_statGC_z;
     car->restPos.pos.az = RtTrackSideTgAngleL(&trkPos);
     car->restPos.pos.ax = 0;
     car->restPos.pos.ay = 0;
@@ -380,9 +372,9 @@ SimUpdate(tSituation *s, double deltaTime, int telemetry)
 
 		if (!(s->_raceState & RM_RACE_PRESTART)) {
 
-            SimCarUpdateWheelPos(car);
+				SimCarUpdateWheelPos(car);
 			CHECK(car);
-            SimBrakeSystemUpdate(car);
+				SimBrakeSystemUpdate(car);
 			CHECK(car);
 				SimAeroUpdate(car, s);
 			CHECK(car);
@@ -402,21 +394,7 @@ SimUpdate(tSituation *s, double deltaTime, int telemetry)
 				SimWheelUpdateForce(car, i);
 			}
 			CHECK(car);
-            /* } else {
-            
-            SimCarUpdateWheelPos(car);
-            CHECK(car);
-            for (i = 0; i < 4; i++){
-                SimWheelUpdateRide(car, i);
-            }
-            CHECK(car);
-            for (i = 0; i < 4; i++){
-                SimWheelUpdateForce(car, i);
-            }
-            CHECK(car);
-            SimCarUpdate(car, s);
-            CHECK(car);*/
-        }
+		}
 		SimTransmissionUpdate(car);
 		CHECK(car);
 
@@ -425,9 +403,7 @@ SimUpdate(tSituation *s, double deltaTime, int telemetry)
 			CHECK(car);
 				SimCarUpdate(car, s);
 			CHECK(car);
-		} else {
-            SimReConfig(carElt); // damages to 0
-        }
+		}
     }
 
     SimCarCollideCars(s);
@@ -462,20 +438,13 @@ SimUpdate(tSituation *s, double deltaTime, int telemetry)
 		carElt->pub.posMat[1][3] =  SG_ZERO ;
 		carElt->pub.posMat[2][3] =  SG_ZERO ;
 		carElt->pub.posMat[3][3] =  SG_ONE ;
-
-        carElt->_yaw = car->DynGC.pos.az;
-        carElt->_roll = car->DynGC.pos.ax;
-        carElt->_pitch = car->DynGC.pos.ay;
-
 #endif
 		carElt->_trkPos = car->trkPos;
 		for (i = 0; i < 4; i++) {
 			carElt->priv.wheel[i].relPos = car->wheel[i].relPos;
-            //carElt->priv.wheel[i].visible_z = RtTrackHeightL_smooth(&car->wheel[i].trkPos); //- car->DynGCg.pos.z;
 			carElt->_wheelSeg(i) = car->wheel[i].trkPos.seg;
 			carElt->_brakeTemp(i) = car->wheel[i].brake.temp;
 			carElt->pub.corner[i] = car->corner[i].pos;
-
 		}
 		carElt->_gear = car->transmission.gearbox.gear;
 		carElt->_enginerpm = car->engine.rads;
@@ -496,7 +465,7 @@ SimUpdate(tSituation *s, double deltaTime, int telemetry)
 
 
 void
-SimInit(int nbcars, tTrack* track)
+SimInit(int nbcars, tTrack* track, tdble fuelFactor, tdble damageFactor)
 {
     SimNbCars = nbcars;
     SimCarTable = (tCar*)calloc(nbcars, sizeof(tCar));

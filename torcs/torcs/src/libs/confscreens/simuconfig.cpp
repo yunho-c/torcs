@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <tgfclient.h>
 #include <raceinit.h>
 
@@ -34,7 +33,7 @@
 static float LabelColor[] = {1.0, 0.0, 1.0, 1.0};
 
 /* list of available simulation engine */
-static char *simuVersionList[] = {"simuv2", "simuv3"};
+static const char *simuVersionList[] = {"simuv2", "simuv3"};
 static const int nbVersions = sizeof(simuVersionList) / sizeof(simuVersionList[0]);
 static int curVersion = 0;
 
@@ -48,11 +47,12 @@ static void	*prevHandle = NULL;
 
 static void ReadSimuCfg(void)
 {
-	char *versionName;
+	const char *versionName;
 	int i;
 
-	char buf[1024];
-	snprintf(buf, 1024, "%s%s", GetLocalDir(), RACE_ENG_CFG);
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), RACE_ENG_CFG);
 
 	void *paramHandle = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 	versionName = GfParmGetStr(paramHandle, "Modules", "simu", simuVersionList[0]);
@@ -73,8 +73,9 @@ static void ReadSimuCfg(void)
 /* Save the choosen values in the corresponding parameter file */
 static void SaveSimuVersion(void * /* dummy */)
 {
-	char buf[1024];
-	snprintf(buf, 1024, "%s%s", GetLocalDir(), RACE_ENG_CFG);
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), RACE_ENG_CFG);
 
 	void *paramHandle = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
 	GfParmSetStr(paramHandle, "Modules", "simu", simuVersionList[curVersion]);

@@ -1,48 +1,58 @@
-Licenses
---------
-Be aware of that not the whole TORCS distribution content has the same
-license. Especially the cars in the cars/kc-*, cars/pw-* and cars/vm-*
-directories have special licenses, have a look at them. The rest of the
-distribution is licensed according the GPL and the Free Art License.
+Welcome to TORCS
+----------------
+First a big welcome, I hope you will enjoy your ride:-) Do not forget to look
+into the TORCS program menu, it contains very interesting things (e.g. a link
+to the online track generator, track editor, documentation, etc.).
 
-TORCS Requirements
-------------------
+Kind regards
+
+Bernhard
+
+1. Licenses
+2. TORCS Requirements
+3. Running TORCS
+4. Getting Help
+5. Car Setups
+6. Creating Tracks
+
+1. Licenses
+-----------
+Not the whole TORCS distribution content has the same license. Non free in the
+GPL or Free Art License sense are:
+- The cars in cars/kc-* and cars/pw-* directories, have a look at the specific
+  readme.txt files in those directories (rally and classic cars).
+- The stripe utility. It is free for noncommercial use and is included with
+  permission form Steven Skiena. See http://www.cs.sunysb.edu/~stripe for
+  details. It is used by the accc tool. The accc tool is used for creating
+  cars and advanced tracks.
+
+2. TORCS Requirements
+---------------------
 You need at least a 600MHz CPU (800MHz recommended), 128 MB RAM (256MB
 recommended) and an OpenGL 1.3 capable graphics card with 32MB RAM (64MB
 recommended). Make sure that you have installed the latest sound and
 graphics drivers.
 
-Running TORCS
--------------
-- Read the "How-To Drive" on www.torcs.org
-  (http://torcs.sourceforge.net/sections.php?op=viewarticle&artid=10).
-- Press F1 anytime to get help (do it as well during the ride to learn about
-  the options).
-- Read the FAQ to learn about split screen multiplayer and more.
+3. Running TORCS
+----------------
+Press F1 anytime to get help (do it as well during the ride to learn about the options).
 
-Getting Help
-------------
-First have a look at the available documentation on www.torcs.org and
-www.berniw.org. If you find no solution for the problem learn in the
-FAQ how and where to report a problem.
-
-Car Setups
-----------
-For the player driver, the car parameters are located in the files
-"drivers/human/car*.xml" depending on the car used. You can
-change them with a text editor, for more information look into the
-robot tutorial chapter 5
-(http://www.berniw.org/torcs/robot/ch5/properties.html).
-
-Creating Tracks
+4. Getting Help
 ---------------
-There is a track editor in development, have a look at
-http://katergo.rege.org/projects/trackeditor.
+First have a look at the available documentation on www.torcs.org. If you
+find no solution for the problem learn in the FAQ how and where to report
+a problem. The best place to get help is the torcs-users mailing list,
+you find the link on www.torcs.org.
 
-Robot programming
------------------
-You find a robot programming tutorial on www.berniw.org in the TORCS section.
+5. Car Setups
+-------------
+There is a car setup screen integrated in TORCS, if you run
+a practice or qualifying session as human player you can hit the "esc"
+(escape) key, then choose in the menu "setup car, restart", or if the
+track has a pit, make a pit stop and hit there the "setup" button. Your
+setups are stored then in "drivers/human/*.xml".
 
-Robot racing
-------------
-Visit www.berniw.org/trb for more information.
+6. Creating Tracks
+------------------
+You can download a track editor from http://sourceforge.net/projects/trackeditor.
+The sources are included in the jars.

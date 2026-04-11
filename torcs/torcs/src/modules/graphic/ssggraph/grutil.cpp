@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <ctype.h>
-#include <string.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -30,6 +29,7 @@
 #include <plib/ssg.h>
 
 #include <tgfclient.h>
+#include <portability.h>
 
 #include "grutil.h"
 #include "grmultitexstate.h"
@@ -43,11 +43,12 @@ char *grFilePath;			// Multiple path (';' separated) used to search for files.
 char *grTexturePath = NULL;	// Default ssg path.
 
 
-int grGetFilename(char *filename, char *filepath, char *buf)
+int grGetFilename(const char *filename, char *filepath, char *buf, const int BUFSIZE)
 {
 	char *c1, *c2;
 	int found = 0;
 	int lg;
+	int flen = strlen(filename);
 
 	if (filepath) {
 		c1 = filepath;
@@ -55,12 +56,16 @@ int grGetFilename(char *filename, char *filepath, char *buf)
 		while ((!found) && (c2 != NULL)) {
 			c2 = strchr(c1, ';');
 			if (c2 == NULL) {
-				sprintf(buf, "%s/%s", c1, filename);
+				snprintf(buf, BUFSIZE, "%s/%s", c1, filename);
 			} else {
 				lg = c2 - c1;
-				strncpy(buf, c1, lg);
-				buf[lg] = '/';
-				strcpy(buf + lg + 1, filename);
+				if (lg + flen + 2 < BUFSIZE) {
+					strncpy(buf, c1, lg);
+					buf[lg] = '/';
+					strcpy(buf + lg + 1, filename);
+				} else {
+					buf[0] = '\0';
+				}
 			}
 			if (ulFileExists(buf)) {
 				found = 1;
@@ -68,7 +73,7 @@ int grGetFilename(char *filename, char *filepath, char *buf)
 			c1 = c2 + 1;
 		}
 	} else {
-		strcpy(buf, filename);
+		strncpy(buf, filename, BUFSIZE);
 		if (ulFileExists(buf)) {
 			found = 1;
 		}
@@ -111,12 +116,10 @@ bool grLoadPngTexture (const char *fname, ssgTextureInfo* info)
 
 	mipmap = doMipMap(fname, mipmap);
 
-#ifdef WIN32
 	GLubyte* tex2 = new GLubyte[w*h*4];
 	memcpy(tex2, tex, w*h*4);
 	free(tex);
 	tex = tex2;
-#endif // WIN32
 	
 	return grMakeMipMaps(tex, w, h, 4, mipmap);
 }
@@ -126,8 +129,9 @@ bool grLoadPngTexture (const char *fname, ssgTextureInfo* info)
 typedef struct stlist
 {
     struct stlist	*next;
+	struct stlist   *prev;
     grManagedState *state;
-    char		*name;
+    char		*name;	
 } stlist;
 
 
@@ -138,7 +142,7 @@ static grManagedState * grGetState(char *img)
 {
     stlist	*curr;
 
-    curr = stateList;
+	curr = stateList;
     while (curr != NULL) {
 	if (strcmp(curr->name, img) == 0) {
 	    return curr->state;
@@ -146,6 +150,32 @@ static grManagedState * grGetState(char *img)
 	curr = curr->next;
     }
     return NULL;
+}
+
+
+void grRemoveState(char* img)
+{
+	stlist	*curr;
+
+	curr = stateList;
+	while (curr != NULL) {
+		if (strcmp(curr->name, img) == 0) {
+			if (curr->prev != 0) {
+				curr->prev->next = curr->next;
+			}
+			if (curr->next != 0) {
+				curr->next->prev = curr->prev;
+			}
+			if (curr == stateList) {
+				stateList = curr->next;
+			}
+
+			free(curr->name);
+			free(curr);
+			break;
+		}
+		curr = curr->next;
+	}	
 }
 
 
@@ -157,9 +187,8 @@ void grShutdownState(void)
 	curr = stateList;
 	while (curr != NULL) {
 		next = curr->next;
-		//printf("Still in list : %s\n", curr->name);
+		printf("Still in list : %s\n", curr->name);
 		free(curr->name);
-		//ssgDeRefDelete(curr->state);
 		free(curr);
 		curr = next;
 	}
@@ -169,7 +198,6 @@ void grShutdownState(void)
 
 static void grSetupState(grManagedState *st, char *buf)
 {
-	st->ref();			// cannot be removed
 	st->enable(GL_LIGHTING);
 	st->enable(GL_TEXTURE_2D);
 	st->enable(GL_BLEND);
@@ -177,6 +205,9 @@ static void grSetupState(grManagedState *st, char *buf)
 
 	stlist *curr = (stlist*)calloc(sizeof(stlist), 1);
 	curr->next = stateList;
+	if (stateList != NULL) {
+		stateList->prev = curr;
+	}
 	stateList = curr;
 	curr->state = st;
 	curr->name = strdup(buf);
@@ -185,10 +216,11 @@ static void grSetupState(grManagedState *st, char *buf)
 }
 
 
-ssgState * grSsgLoadTexState(char *img)
+ssgState * grSsgLoadTexState(const char *img)
 {
-	char buf[256];
-	char *s;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	const char *s;
 	grManagedState *st; 
 
 	// remove the directory
@@ -199,7 +231,7 @@ ssgState * grSsgLoadTexState(char *img)
 		s++;
 	}
 
-	if (!grGetFilename(s, grFilePath, buf)) {
+	if (!grGetFilename(s, grFilePath, buf, BUFSIZE)) {
 		GfOut("grSsgLoadTexState: File %s not found\n", s);
 		return NULL;
 	}
@@ -216,11 +248,12 @@ ssgState * grSsgLoadTexState(char *img)
 	return (ssgState*)st;
 }
 
-ssgState * grSsgEnvTexState(char *img)
+ssgState * grSsgEnvTexState(const char *img)
 {
-	char buf[256];
-	char *s;
-	grMultiTexState *st;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	const char *s;
+	grManagedState *st;
 
 	// remove the directory
 	s = strrchr(img, '/');
@@ -230,12 +263,17 @@ ssgState * grSsgEnvTexState(char *img)
 		s++;
     }
 
-	if (!grGetFilename(s, grFilePath, buf)) {
+	if (!grGetFilename(s, grFilePath, buf, BUFSIZE)) {
 		GfOut("grSsgLoadTexState: File %s not found\n", s);
 		return NULL;
     }
 
-	st = new grMultiTexState;
+	/*st = grGetState(buf);
+	if (st != NULL) {
+		return (ssgState*)st;
+	}*/
+
+	st = new grMultiTexState();
 	grSetupState(st, buf);
 	st->setTexture(buf);
 
@@ -243,10 +281,11 @@ ssgState * grSsgEnvTexState(char *img)
 }
 
 ssgState *
-grSsgLoadTexStateEx(char *img, char *filepath, int wrap, int mipmap)
+grSsgLoadTexStateEx(const char *img, char *filepath, int wrap, int mipmap)
 {
-	char buf[256];
-	char *s;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	const char *s;
 	grManagedState *st; 
 
 	// remove the directory
@@ -257,7 +296,7 @@ grSsgLoadTexStateEx(char *img, char *filepath, int wrap, int mipmap)
 		s++;
 	}
 
-	if (!grGetFilename(s, filepath, buf)) {
+	if (!grGetFilename(s, filepath, buf, BUFSIZE)) {
 		GfOut("File %s not found\n", s);
 		return NULL;
 	}
@@ -277,8 +316,9 @@ grSsgLoadTexStateEx(char *img, char *filepath, int wrap, int mipmap)
 
 void  grWriteTime(float *color, int font, int x, int y, tdble sec, int sgn)
 {
-	char  buf[256];
-	char* sign;
+	const int BUFSIZE = 256;
+	char  buf[BUFSIZE];
+	const char* sign;
 
 	if (sec < 0.0) {
 		sec = -sec;
@@ -299,11 +339,11 @@ void  grWriteTime(float *color, int font, int x, int y, tdble sec, int sgn)
     sec -= s;
     int c = (int)floor((sec) * 100.0);
     if (h) {
-		(void)sprintf(buf, "%s%2.2d:%2.2d:%2.2d:%2.2d", sign,h,m,s,c);
+		(void)snprintf(buf, BUFSIZE, "%s%2.2d:%2.2d:%2.2d:%2.2d", sign,h,m,s,c);
     } else if (m) {
-		(void)sprintf(buf, "   %s%2.2d:%2.2d:%2.2d", sign,m,s,c);
+		(void)snprintf(buf, BUFSIZE, "   %s%2.2d:%2.2d:%2.2d", sign,m,s,c);
     } else {
-		(void)sprintf(buf, "      %s%2.2d:%2.2d", sign,s,c);
+		(void)snprintf(buf, BUFSIZE, "      %s%2.2d:%2.2d", sign,s,c);
     }
 
     GfuiPrintString(buf, color, font, x, y, GFUI_ALIGN_HR_VB);

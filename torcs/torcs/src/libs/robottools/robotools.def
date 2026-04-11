@@ -19,3 +19,13 @@ EXPORTS
 	RtGetDistFromStart2
 	RtDistToPit
 	RtTrackGetSeg
+	RtInitCarPitSetup
+	RtSaveCarPitSetup
+	RtGetCarPitSetupFilename
+	RtCarPitSetupExists
+	RtLoadCarPitSetup
+	RtLoadCarPitSetupFilename
+	RtLoadOriginalCarSettings
+	RtInitCarPitSetupFromDefault
+	RtParmReadSetup
+	RtTrackGetSideNeighbourSeg

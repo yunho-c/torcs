@@ -2,7 +2,7 @@
 
     file                 : axle.h
     created              : Sun Mar 19 00:05:17 CET 2000
-    copyright            : (C) 2000 by Eric Espie
+    copyright            : (C) 2000-2013 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
 
@@ -28,7 +28,8 @@ typedef struct
 {
     tdble xpos;
 
-    tSuspension arbSusp;	/* anti-roll bar */
+	tdble arbSuspSpringK;
+	tSuspension thirdSusp;	// Third element
     tdble	wheight0;
 
     /* dynamic */

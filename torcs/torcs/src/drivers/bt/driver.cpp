@@ -151,7 +151,7 @@ void Driver::newRace(tCarElt* car, tSituation *s)
 	opponent = opponents->getOpponentPtr();
 
 	// Set team mate.
-	char *teammate = GfParmGetStr(car->_carHandle, BT_SECT_PRIV, BT_ATT_TEAMMATE, NULL);
+	const char *teammate = GfParmGetStr(car->_carHandle, BT_SECT_PRIV, BT_ATT_TEAMMATE, NULL);
 	if (teammate != NULL) {
 		opponents->setTeamMate(teammate);
 	}
@@ -272,6 +272,8 @@ float Driver::getAllowedSpeed(tTrackSeg *segment)
 	) {
 		r += dr;
 	}*/
+	r = MAX(1.0, r);
+
 	return sqrt((mu*G*r)/(1.0f - MIN(1.0f, r*CA*mu/mass)));
 }
 
@@ -688,7 +690,7 @@ bool Driver::isStuck()
 // Compute aerodynamic downforce coefficient CA.
 void Driver::initCa()
 {
-	char *WheelSect[4] = {SECT_FRNTRGTWHEEL, SECT_FRNTLFTWHEEL, SECT_REARRGTWHEEL, SECT_REARLFTWHEEL};
+	const char *WheelSect[4] = {SECT_FRNTRGTWHEEL, SECT_FRNTLFTWHEEL, SECT_REARRGTWHEEL, SECT_REARLFTWHEEL};
 	float rearwingarea = GfParmGetNum(car->_carHandle, SECT_REARWING, PRM_WINGAREA, (char*) NULL, 0.0f);
 	float rearwingangle = GfParmGetNum(car->_carHandle, SECT_REARWING, PRM_WINGANGLE, (char*) NULL, 0.0f);
 	float wingca = 1.23f*rearwingarea*sin(rearwingangle);
@@ -716,7 +718,7 @@ void Driver::initCw()
 // Init the friction coefficient of the the tires.
 void Driver::initTireMu()
 {
-	char *WheelSect[4] = {SECT_FRNTRGTWHEEL, SECT_FRNTLFTWHEEL, SECT_REARRGTWHEEL, SECT_REARLFTWHEEL};
+	const char *WheelSect[4] = {SECT_FRNTRGTWHEEL, SECT_FRNTLFTWHEEL, SECT_REARRGTWHEEL, SECT_REARLFTWHEEL};
 	float tm = FLT_MAX;
 	int i;
 
@@ -924,7 +926,7 @@ float Driver::filterTCL(float accel)
 // Traction Control (TCL) setup.
 void Driver::initTCLfilter()
 {
-	char *traintype = GfParmGetStr(car->_carHandle, SECT_DRIVETRAIN, PRM_TYPE, VAL_TRANS_RWD);
+	const char *traintype = GfParmGetStr(car->_carHandle, SECT_DRIVETRAIN, PRM_TYPE, VAL_TRANS_RWD);
 	if (strcmp(traintype, VAL_TRANS_RWD) == 0) {
 		GET_DRIVEN_WHEEL_SPEED = &Driver::filterTCL_RWD;
 	} else if (strcmp(traintype, VAL_TRANS_FWD) == 0) {

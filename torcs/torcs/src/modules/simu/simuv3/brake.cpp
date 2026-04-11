@@ -20,16 +20,16 @@
 #include "sim.h"
 
 void 
-SimBrakeConfig(void *hdle, char *section, tBrake *brake)
+SimBrakeConfig(void *hdle, const char *section, tBrake *brake)
 {
     tdble diam, area, mu;
     
-    diam     = GfParmGetNum(hdle, section, PRM_BRKDIAM, (char*)NULL, 0.2f);
-    area     = GfParmGetNum(hdle, section, PRM_BRKAREA, (char*)NULL, 0.002f);
-    mu       = GfParmGetNum(hdle, section, PRM_MU, (char*)NULL, 0.30f);
+    diam     = GfParmGetNum(hdle, section, PRM_BRKDIAM, (char*)NULL, 0.2);
+    area     = GfParmGetNum(hdle, section, PRM_BRKAREA, (char*)NULL, 0.002);
+    mu       = GfParmGetNum(hdle, section, PRM_MU, (char*)NULL, 0.30);
     brake->coeff = diam * 0.5 * area * mu;
 
-    brake->I = GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.13f);
+    brake->I = GfParmGetNum(hdle, section, PRM_INERTIA, (char*)NULL, 0.13);
     brake->radius = diam/2.0;
 }
 

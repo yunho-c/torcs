@@ -15,12 +15,12 @@
 
 ROBOT       = olethros
 SHIPDIR     = drivers/${ROBOT}/6
-SHIP        = default.xml clkdtm.rgb
+SHIP        = car5-trb1.rgb default.xml
 SHIPSUBDIRS = 
 
 PKGSUBDIRS  = ${SHIPSUBDIRS}
-src-robots-olethros_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
-src-robots-olethros_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
+src-robots-base_PKGFILES = $(shell find * -maxdepth 0 -type f -print)
+src-robots-base_PKGDIR   = ${PACKAGE}-${VERSION}/$(subst ${TORCS_BASE},,$(shell pwd))
 include ${MAKE_DEFAULT}
 
 

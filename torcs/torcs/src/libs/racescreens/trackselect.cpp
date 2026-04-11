@@ -2,7 +2,7 @@
                   trackselect.cpp -- interactive track selection
                              -------------------
     created              : Mon Aug 16 21:43:00 CEST 1999
-    copyright            : (C) 1999 by Eric Espie
+    copyright            : (C) 1999-2014 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
  ***************************************************************************/
@@ -17,15 +17,13 @@
  ***************************************************************************/
 
 /** @file
-    @ingroup	racemantools
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
+    @author Bernhard Wymann, Eric Espie
+    @version $Id$
 */
 
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -34,6 +32,7 @@
 #include <osspec.h>
 #include <raceman.h>
 #include <racescreens.h>
+#include <portability.h>
 
 
 /* Tracks Categories */
@@ -48,8 +47,6 @@ static int WidthId;
 static int DescId;
 static int PitsId;
 static tRmTrackSelect *ts;
-static char buf[1024];
-static char path[1024];
 
 
 static void rmtsActivate(void * /* dummy */)
@@ -61,13 +58,13 @@ static void rmtsActivate(void * /* dummy */)
 
 static void rmtsFreeLists(void *vl)
 {
-	GfDirFreeList((tFList*)(((tFList*)vl)->userData), NULL, true, true);
+	GfDirFreeList((tFList*)vl, NULL, true, true);
 }
 
 
-static char * rmGetMapName(void)
+static char * rmGetMapName(char* buf, const int BUFSIZE)
 {
-	sprintf(buf, "tracks/%s/%s/%s.png", CategoryList->name,
+	snprintf(buf, BUFSIZE, "tracks/%s/%s/%s.png", CategoryList->name,
 		((tFList*)CategoryList->userData)->name, ((tFList*)CategoryList->userData)->name);
 	return buf;
 }
@@ -89,8 +86,10 @@ static void rmUpdateTrackInfo(void)
 	void *trackHandle;
 	float tmp;
 	tTrack *trk;
-
-	sprintf(buf, "tracks/%s/%s/%s.%s", CategoryList->name, ((tFList*)CategoryList->userData)->name,
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	
+	snprintf(buf, BUFSIZE, "tracks/%s/%s/%s.%s", CategoryList->name, ((tFList*)CategoryList->userData)->name,
 		((tFList*)CategoryList->userData)->name, TRKEXT);
 	trackHandle = GfParmReadFile(buf, GFPARM_RMODE_STD); /* COMMENT VALID? don't release, the name is used later */
 
@@ -104,14 +103,14 @@ static void rmUpdateTrackInfo(void)
 	GfuiLabelSetText(scrHandle, AuthorId, GfParmGetStr(trackHandle, TRK_SECT_HDR, TRK_ATT_AUTHOR, ""));
 
 	tmp = GfParmGetNum(trackHandle, TRK_SECT_MAIN, TRK_ATT_WIDTH, NULL, 0);
-	sprintf(buf, "%.2f m", tmp);
+	snprintf(buf, BUFSIZE, "%.2f m", tmp);
 	GfuiLabelSetText(scrHandle, WidthId, buf);
 	tmp = trk->length;
-	sprintf(buf, "%.2f m", tmp);
+	snprintf(buf, BUFSIZE, "%.2f m", tmp);
 	GfuiLabelSetText(scrHandle, LengthId, buf);
 
 	if (trk->pits.nMaxPits != 0) {
-		sprintf(buf, "%d", trk->pits.nMaxPits);
+		snprintf(buf, BUFSIZE, "%d", trk->pits.nMaxPits);
 		GfuiLabelSetText(scrHandle, PitsId, buf);
 	} else {
 		GfuiLabelSetText(scrHandle, PitsId, "none");
@@ -124,6 +123,9 @@ static void rmUpdateTrackInfo(void)
 
 static void rmtsPrevNext(void *vsel)
 {
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	
 	if (vsel == 0) {
 		CategoryList->userData = (void*)(((tFList*)CategoryList->userData)->prev);
 	} else {
@@ -131,13 +133,16 @@ static void rmtsPrevNext(void *vsel)
 	}
 
 	GfuiLabelSetText(scrHandle, TrackLabelId, ((tFList*)CategoryList->userData)->dispName);
-	GfuiStaticImageSet(scrHandle, MapId, rmGetMapName());
+	GfuiStaticImageSet(scrHandle, MapId, rmGetMapName(buf, BUFSIZE));
 	rmUpdateTrackInfo();
 }
 
 
 static void rmCatPrevNext(void *vsel)
 {
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+
 	if (vsel == 0) {
 		CategoryList = CategoryList->prev;
 	} else {
@@ -146,7 +151,7 @@ static void rmCatPrevNext(void *vsel)
 
 	GfuiLabelSetText(scrHandle, CatLabelId, CategoryList->dispName);
 	GfuiLabelSetText(scrHandle, TrackLabelId, ((tFList*)CategoryList->userData)->dispName);
-	GfuiStaticImageSet(scrHandle, MapId, rmGetMapName());
+	GfuiStaticImageSet(scrHandle, MapId, rmGetMapName(buf, BUFSIZE));
 	rmUpdateTrackInfo();
 }
 
@@ -154,9 +159,11 @@ static void rmCatPrevNext(void *vsel)
 void rmtsSelect(void * /* dummy */)
 {
 	int curTrkIdx;
+	const int BUFSIZE = 1024;
+	char path[BUFSIZE];
 
 	curTrkIdx = (int)GfParmGetNum(ts->param, RM_SECT_TRACKS, RE_ATTR_CUR_TRACK, NULL, 1);
-	sprintf(path, "%s/%d", RM_SECT_TRACKS, curTrkIdx);
+	snprintf(path, BUFSIZE, "%s/%d", RM_SECT_TRACKS, curTrkIdx);
 	GfParmSetStr(ts->param, path, RM_ATTR_CATEGORY, CategoryList->name);
 	GfParmSetStr(ts->param, path, RM_ATTR_NAME, ((tFList*)CategoryList->userData)->name);
 
@@ -176,26 +183,29 @@ static void rmtsAddKeys(void)
 }
 
 
-/** Get the track name
-    @param	category	track category directory
-    @param	trackName	track name for file
-    @return	Long track name
-    @ingroup	racemantools
+/** @brief Get the track name defined in the parameters
+ *  @ingroup racemantools
+ *  @param[in] category Track category directory
+ *  @param[in] trackName Track file name
+ *  @return Long track name on success
+ *  <br>Empty string on failure
+ *  @note The returned string is allocated on the heap and must be released by the caller at some point
  */
-char *
-RmGetTrackName(char *category, char *trackName)
+char* RmGetTrackName(char *category, char *trackName)
 {
 	void *trackHandle;
 	char *name;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
 
-	sprintf(buf, "tracks/%s/%s/%s.%s", category, trackName, trackName, TRKEXT);
+	snprintf(buf, BUFSIZE, "tracks/%s/%s/%s.%s", category, trackName, trackName, TRKEXT);
 	trackHandle = GfParmReadFile(buf, GFPARM_RMODE_STD); /* don't release, the name is used later */
 
 	if (trackHandle) {
 		name = strdup(GfParmGetStr(trackHandle, TRK_SECT_HDR, TRK_ATT_NAME, trackName));
 	} else {
 		GfTrace("File %s has pb\n", buf);
-		return "";
+		return strdup("");
 	}
 
 	GfParmReleaseHandle(trackHandle);
@@ -203,25 +213,28 @@ RmGetTrackName(char *category, char *trackName)
 }
 
 
-/** Get the track category name from the directory name
-    @param	category	track category directory
-    @return	category display name
-    @ingroup	racemantools
-*/
-char *
-RmGetCategoryName(char *category)
+/** @brief Get the track category name from the track category file
+ *  @ingroup racemantools
+ *  @param[in] category Track category file
+ *  @return Category display name on success
+ *  <br>Empty string on failure
+ *  @note The returned string is allocated on the heap and must be released by the caller at some point   
+ */
+char* RmGetCategoryName(char *category)
 {
 	void *categoryHandle;
 	char *name;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
 
-	sprintf(buf, "data/tracks/%s.%s", category, TRKEXT);
+	snprintf(buf, BUFSIZE, "data/tracks/%s.%s", category, TRKEXT);
 	categoryHandle = GfParmReadFile(buf, GFPARM_RMODE_STD); /* don't release, the name is used later */
 
 	if (categoryHandle) {
 		name = strdup(GfParmGetStr(categoryHandle, TRK_SECT_HDR, TRK_ATT_NAME, category));
 	} else {
 		GfTrace("File %s has pb\n", buf);
-		return "";
+		return strdup("");
 	}
 
 	GfParmReleaseHandle(categoryHandle);
@@ -229,21 +242,22 @@ RmGetCategoryName(char *category)
 }
 
 
-
-/** Interactive track selection
-    @param	vs	Pointer on a tRmTrackSelect structure (cast to void *)
-    @warning	The race manager's parameters are updated but not saved.
-    @ingroup	racemantools
+/** @brief Track selection, the race manager parameter set is handed over in vs, tRmTrackSelect.param
+ *  @ingroup racemantools
+ *  @param[in,out] vs Pointer on a tRmTrackSelect structure (cast to void *)
+ *  @note The race manager parameter set is modified in memory but not persisted.
  */
-void
-RmTrackSelect(void *vs)
+void RmTrackSelect(void *vs)
 {
-	char *defaultTrack;
-	char *defaultCategory;
+	const char *defaultTrack;
+	const char *defaultCategory;
 	tFList *CatCur;
 	tFList *TrList, *TrCur;
 	int Xpos, Ypos, DX, DY;
 	int curTrkIdx;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	char path[BUFSIZE];
 
 	ts = (tRmTrackSelect*)vs;
 
@@ -263,7 +277,7 @@ RmTrackSelect(void *vs)
 		}
 
 		/* get the tracks in the category directory */
-		sprintf(buf, "tracks/%s", CatCur->name);
+		snprintf(buf, BUFSIZE, "tracks/%s", CatCur->name);
 		TrList = GfDirGetList(buf);
 		if (TrList == NULL) {
 			GfTrace("RmTrackSelect: No track for category %s available\n", CatCur->name);
@@ -285,7 +299,7 @@ RmTrackSelect(void *vs)
 	} while (CatCur != CategoryList);
 
 	curTrkIdx = (int)GfParmGetNum(ts->param, RM_SECT_TRACKS, RE_ATTR_CUR_TRACK, NULL, 1);
-	sprintf(path, "%s/%d", RM_SECT_TRACKS, curTrkIdx);
+	snprintf(path, BUFSIZE, "%s/%d", RM_SECT_TRACKS, curTrkIdx);
 	defaultCategory = GfParmGetStr(ts->param, path, RM_ATTR_CATEGORY, CategoryList->name);
 	/* XXX coherency check */
 	defaultTrack = GfParmGetStr(ts->param, path, RM_ATTR_NAME, ((tFList*)CategoryList->userData)->name);
@@ -364,9 +378,11 @@ RmTrackSelect(void *vs)
 			(void*)1, rmtsPrevNext,
 			NULL, (tfuiCallback)NULL, (tfuiCallback)NULL);
 
+	int scrw, scrh, vw, vh;
+	GfScrGetSize(&scrw, &scrh, &vw, &vh);
 	MapId = GfuiStaticImageCreate(scrHandle,
-				320, 100, 260, 195,
-				rmGetMapName());
+				320, 100, (int) (vh*260.0f/vw), 195,
+				rmGetMapName(buf, BUFSIZE));
 
 	GfuiButtonCreate(scrHandle, "Accept", GFUI_FONT_LARGE, 210, 40, 150, GFUI_ALIGN_HC_VB, GFUI_MOUSE_UP,
 			NULL, rmtsSelect, NULL, (tfuiCallback)NULL, (tfuiCallback)NULL);

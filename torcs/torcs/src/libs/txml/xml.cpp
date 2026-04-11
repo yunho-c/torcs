@@ -24,10 +24,11 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
+#include <cstring>
 #include <sys/stat.h>
 #include "xmlparse.h"
 #include <xml.h>
+#include <portability.h>
 
 #define BUFMAX	256
 
@@ -235,46 +236,48 @@ CharacterData(void *userData, const char *s, int len)
 txmlElement *
 xmlReadFile(const char *file)
 {
-    FILE		*in;
-    char		buf[BUFSIZ];
-    XML_Parser		parser;
-    int			done;
-    txmlElement		*retElt;
-	
-    if ((in = fopen(file, "r")) == NULL) {
-        fprintf(stderr, "xmlReadFile: file %s has pb (access rights ?)\n", file);
-	return (txmlElement*)NULL;
-    }
-    
-    parser = XML_ParserCreate((XML_Char*)NULL);
-    XML_SetUserData(parser, &retElt);
-    XML_SetElementHandler(parser, startElement, endElement);
-    XML_SetCharacterDataHandler(parser, CharacterData);
-    do {
-	size_t len = fread(buf, 1, sizeof(buf), in);
-	done = len < sizeof(buf);
-	if (!XML_Parse(parser, buf, len, done)) {
-	    fprintf(stderr, "file: %s -> %s at line %d\n",
-		   file,
-		   XML_ErrorString(XML_GetErrorCode(parser)),
-		   XML_GetCurrentLineNumber(parser));
-	    return (txmlElement*)NULL;
-	}
-    } while (!done);
-    XML_ParserFree(parser);
+	FILE *in;
+	char buf[BUFSIZ];
+	XML_Parser parser;
+	int done;
+	txmlElement *retElt;
 
-    return retElt;
+	if ((in = fopen(file, "r")) == NULL) {
+		fprintf(stderr, "xmlReadFile: file %s has pb (access rights ?)\n", file);
+		return (txmlElement*)NULL;
+	}
+
+	parser = XML_ParserCreate((XML_Char*)NULL);
+	XML_SetUserData(parser, &retElt);
+	XML_SetElementHandler(parser, startElement, endElement);
+	XML_SetCharacterDataHandler(parser, CharacterData);
+	do {
+		size_t len = fread(buf, 1, sizeof(buf), in);
+		done = len < sizeof(buf);
+		if (!XML_Parse(parser, buf, len, done)) {
+			fprintf(stderr, "file: %s -> %s at line %d\n", file, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
+
+			XML_ParserFree(parser);
+			fclose(in);			
+			return (txmlElement*)NULL;
+		}
+	} while (!done);
+
+	XML_ParserFree(parser);
+	fclose(in);
+
+	return retElt;
 }
 
 static void
-wr(int indent, char *buf, FILE *out)
+wr(int indent, const char *buf, FILE *out)
 {
-    char		blank[BUFMAX];
-    int			i;
-    
-    for(i = 0; i < indent*2; i++) blank[i] = ' ';
-    blank[i] = 0;
-    fprintf(out, "%s%s", blank, buf);
+	char blank[BUFMAX];
+	int i;
+	
+	for(i = 0; i < indent*2; i++) blank[i] = ' ';
+	blank[i] = 0;
+	fprintf(out, "%s%s", blank, buf);
 }
 
 static void
@@ -282,7 +285,7 @@ wrrec(txmlElement *startElt, FILE *out)
 {
     txmlElement		*curElt;
     txmlAttribute	*curAttr;
-    char		buf[BUFMAX];
+    char buf[BUFMAX];
     
     curElt = startElt;
     
@@ -290,25 +293,25 @@ wrrec(txmlElement *startElt, FILE *out)
 	wr(0, "\n", out);
 	do {
 	    curElt = curElt->next;
-	    sprintf(buf, "<%s", curElt->name);
+	    snprintf(buf, BUFMAX, "<%s", curElt->name);
 	    wr(curElt->level, buf, out);
 	    curAttr = curElt->attr;
 	    if (curAttr) {
 		do {
 		    curAttr = curAttr->next;
-		    sprintf(buf, " %s=\"%s\"", curAttr->name, curAttr->value);
+		    snprintf(buf, BUFMAX, " %s=\"%s\"", curAttr->name, curAttr->value);
 		    wr(0, buf, out);
 		} while (curAttr != curElt->attr);
 	    }
-	    sprintf(buf, ">");
+	    snprintf(buf, BUFMAX, ">");
 	    wr(0, buf, out);
 	    if (curElt->pcdata) {
-		sprintf(buf, "%s", curElt->pcdata);
+		snprintf(buf, BUFMAX, "%s", curElt->pcdata);
 		wr(0, buf, out);
 	    }
 	    /* recurse the nested elements */
 	    wrrec(curElt->sub, out);
-	    sprintf(buf, "</%s>\n", curElt->name);
+	    snprintf(buf, BUFMAX, "</%s>\n", curElt->name);
 	    wr(0, buf, out);
 	} while (curElt != startElt);
 	wr(curElt->level-1, "", out);
@@ -344,9 +347,9 @@ xmlWriteFile(const char *file, txmlElement *startElt, char *dtd)
 	return -1;
     }
 
-    sprintf(buf, "<?xml version=\"1.0\" ?>\n");
+    snprintf(buf, BUFMAX, "<?xml version=\"1.0\" ?>\n");
     wr(0, buf, out);
-    sprintf(buf, "\n<!DOCTYPE params SYSTEM \"%s\">\n\n", dtd);
+    snprintf(buf, BUFMAX, "\n<!DOCTYPE params SYSTEM \"%s\">\n\n", dtd);
     wr(0, buf, out);
 
     wrrec(startElt, out);		

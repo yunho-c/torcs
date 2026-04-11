@@ -2,9 +2,8 @@
                     tgf.h -- Interface file for The Gaming Framework                                    
                              -------------------                                         
     created              : Fri Aug 13 22:32:14 CEST 1999
-    copyright            : (C) 1999 by Eric Espie                         
-    email                : torcs@free.fr   
-    version              : $Id$                                  
+    copyright            : (C) 1999-2026 by Eric Espie, Bernhard Wymann                         
+    email                : berniw#bluewin.ch   
  ***************************************************************************/
 
 /***************************************************************************
@@ -17,9 +16,9 @@
  ***************************************************************************/
 
 /** @file   
-    	The Gaming Framework API.
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
+    The Gaming Framework API.
+    @author	Bernhard Wymann, Eric Espie
+    @version $Id$
 */
 
 
@@ -37,7 +36,7 @@
 #include <windows.h>
 #endif
 #include <stdarg.h>
-#include <string.h>
+#include <cstring>
 #include <math.h>
 #include <osspec.h>
 
@@ -76,20 +75,20 @@ const tdble G = 9.80665f; /**< m/s/s */
 #define RAD2DEG(x)  ((x)*(180.0/PI))		/**< Radian to degree conversion */
 #define DEG2RAD(x)  ((x)*(PI/180.0))		/**< Degree to radian conversion */
 #define FEET2M(x)   ((x)*0.304801)		/**< Feet to meter conversion */
-#define SIGN(x)     ((x) < 0 ? -1.0 : 1.0)	/**< Sign of the expression */
+#define SIGN(x)     ((x) < 0.0f ? -1.0f : 1.0f)	/**< Sign of the expression */
 
 /** Angle normalization between 0 and 2 * PI */
 #define NORM0_2PI(x) 				\
 do {						\
-	while ((x) > 2*PI) { (x) -= 2*PI; }	\
-	while ((x) < 0) { (x) += 2*PI; } 	\
+	while ((x) > 2.0*PI) { (x) -= (tdble) (2.0*PI); }	\
+	while ((x) < 0.0) { (x) += (tdble) (2.0*PI); } 	\
 } while (0)
 
 /** Angle normalization between -PI and PI */
 #define NORM_PI_PI(x) 				\
 do {						\
-	while ((x) > PI) { (x) -= 2*PI; }	\
-	while ((x) < -PI) { (x) += 2*PI; } 	\
+	while ((x) > PI) { (x) -= (tdble) (2.0*PI); }	\
+	while ((x) < -PI) { (x) += (tdble) (2.0*PI); } 	\
 } while (0)
 
 
@@ -194,14 +193,11 @@ typedef struct ModInfo {
     int			index;		/**< index if multiple interface in one dll */
     int			prio;		/**< priority if needed */
     int			magic;		/**< magic number for integrity check */
+	enum		{ INVALID_INDEX = -9999 };
 } tModInfo;
 
 /* module init function interface */
 typedef int (*tfModInfo)(tModInfo *);	/* first function called in the module */
-
-/* module shutdown function interface */
-typedef int (*tfModShut)(void);	/* last function called in the module */
-
 
 /** list of module interfaces */
 typedef struct ModList {
@@ -232,15 +228,15 @@ extern int GfModFreeInfoList(tModList **modlist);
 */
 typedef struct FList 
 {
-    struct FList	*next;		/**< Next entry */
-    struct FList	*prev;		/**< Previous entry */
-    char		*name;		/**< File name */
-    char		*dispName;	/**< Name to display on screen */
-    void		*userData;	/**< User data */
+	struct FList *next;		/**< Next entry */
+	struct FList *prev;		/**< Previous entry */
+	char *name;				/**< File name */
+	char *dispName;			/**< Name to display on screen */
+	void *userData;			/**< User data */
 } tFList;
 
-extern tFList *GfDirGetList(char *dir);
-extern tFList *GfDirGetListFiltered(char *dir, char *suffix);
+extern tFList *GfDirGetList(const char *dir);
+extern tFList *GfDirGetListFiltered(const char *dir, const char *suffix);
 typedef void (*tfDirfreeUserData)(void*);	/**< Function to call for releasing the user data associated with file entry */
 extern void GfDirFreeList(tFList *list, tfDirfreeUserData freeUserDatabool, bool freename = false, bool freedispname = false);
 
@@ -273,7 +269,8 @@ extern void GfDirFreeList(tFList *list, tfDirfreeUserData freeUserDatabool, bool
 
 extern void *GfParmReadFile(const char *file, int mode);
 /* parameter file write */
-extern int GfParmWriteFile(const char *file, void* handle, char *name);
+extern int GfParmWriteFile(const char *file, void* handle, const char *name);
+extern int GfParmCreateDirectory(const char *file, void *parmHandle);
 
 extern char *GfParmGetName(void *handle);
 extern char *GfParmGetFileName(void *handle);
@@ -282,22 +279,23 @@ extern char *GfParmGetFileName(void *handle);
 extern void GfParmSetDTD (void *parmHandle, char *dtd, char*header);
 
 /* get string parameter value */
-extern char *GfParmGetStr(void *handle, char *path, char *key, char *deflt);
+extern const char *GfParmGetStr(void *handle, const char *path, const char *key, const char *deflt);
 /* get string parameter value */
-extern char *GfParmGetCurStr(void *handle, char *path, char *key, char *deflt);
+extern const char *GfParmGetCurStr(void *handle, const char *path, const char *key, const char *deflt);
 /* set string parameter value */
-extern int GfParmSetStr(void *handle, char *path, char *key, char *val);
+extern int GfParmSetStr(void *handle, const char *path, const char *key, const char *val);
 /* set string parameter value */
-extern int GfParmSetCurStr(void *handle, char *path, char *key, char *val);
+extern int GfParmSetCurStr(void *handle, const char *path, const char *key, const char *val);
 
 /* get num parameter value */
-extern tdble GfParmGetNum(void *handle, char *path, char *key, char *unit, tdble deflt);
+extern tdble GfParmGetNum(void *handle, const char *path, const char *key, const char *unit, tdble deflt);
 /* get num parameter value */
-extern tdble GfParmGetCurNum(void *handle, char *path, char *key, char *unit, tdble deflt);
+extern tdble GfParmGetCurNum(void *handle, const char *path, const char *key, const char *unit, tdble deflt);
 /* set num parameter value */
-extern int GfParmSetNum(void *handle, char *path, char *key, char *unit, tdble val);
+extern int GfParmSetNum(void *handle, const char *path, const char *key, const char *unit, tdble val);
+extern int GfParmSetNumEx(void *handle, const char *path, const char *key, const char *unit, tdble val, tdble min, tdble max);
 /* set num parameter value */
-extern int GfParmSetCurNum(void *handle, char *path, char *key, char *unit, tdble val);
+extern int GfParmSetCurNum(void *handle, const char *path, const char *key, const char *unit, tdble val);
 
 
 /* clean all the parameters of a set */
@@ -306,9 +304,9 @@ extern void GfParmClean(void *handle);
 extern void GfParmReleaseHandle(void *handle);
 
 /* Convert a value in "units" into SI */
-extern tdble GfParmUnit2SI(char *unit, tdble val);
+extern tdble GfParmUnit2SI(const char *unit, tdble val);
 /* convert a value in SI to "units" */
-extern tdble GfParmSI2Unit(char *unit, tdble val);
+extern tdble GfParmSI2Unit(const char *unit, tdble val);
 
 /* compare and merge different handles */
 extern int GfParmCheckHandle(void *ref, void *tgt);
@@ -317,14 +315,14 @@ extern int GfParmCheckHandle(void *ref, void *tgt);
 #define GFPARM_MMODE_RELSRC	4 /**< release ref after the merge */
 #define GFPARM_MMODE_RELDST	8 /**< release tgt after the merge */
 extern void *GfParmMergeHandles(void *ref, void *tgt, int mode);
-extern int GfParmGetNumBoundaries(void *handle, char *path, char *key, tdble *min, tdble *max);
+extern int GfParmGetNumBoundaries(void *handle, const char *path, const char *key, tdble *min, tdble *max);
 
 
-extern int GfParmGetEltNb(void *handle, char *path);
-extern int GfParmListSeekFirst(void *handle, char *path);
-extern int GfParmListSeekNext(void *handle, char *path);
-extern char *GfParmListGetCurEltName(void *handle, char *path);
-extern int GfParmListClean(void *handle, char *path);
+extern int GfParmGetEltNb(void *handle, const char *path);
+extern int GfParmListSeekFirst(void *handle, const char *path);
+extern int GfParmListSeekNext(void *handle, const char *path);
+extern char *GfParmListGetCurEltName(void *handle, const char *path);
+extern int GfParmListClean(void *handle, const char *path);
 
 /******************* 
  * Trace Interface *
@@ -338,7 +336,7 @@ extern int GfParmListClean(void *handle, char *path);
 #define GfTrace printf
 
 static inline void
-GfFatal(char *fmt, ...)
+GfFatal(const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -353,9 +351,9 @@ GfFatal(char *fmt, ...)
 #define GfError printf
 
 #if !(_DEBUG || DEBUG)
-#ifdef WIN32
-#define GfOut printf
-#else
+//#ifdef WIN32
+//#define GfOut printf
+//#else
 
 
 /** Console output
@@ -364,11 +362,11 @@ GfFatal(char *fmt, ...)
     @fn	 GfOut(s, args...)
  */
 static inline void
-GfOut(char *fmt, ...)
+GfOut(const char *fmt, ...)
 {
 }
 
-#endif /* WIN32 */
+//#endif /* WIN32 */
 
 #else /* _DEBUG || DEBUG */
 
@@ -380,7 +378,6 @@ GfOut(char *fmt, ...)
  * Time  Interface *
  *******************/
 extern double GfTimeClock(void);
-extern char *GfGetTimeStr(void);
 
 /* Mean values */
 #define GF_MEAN_MAX_VAL	5
@@ -405,6 +402,8 @@ extern int GetSingleTextureMode (void);
 extern void SetSingleTextureMode (void);
 extern int GfNearestPow2 (int x);
 extern int GfCreateDir(char *path);
+extern int GfCreateDirForFile(const char *filenameandpath);
+
 
 /*
  * Copyright (c) 1991, 1993
@@ -607,18 +606,18 @@ class Profiler {
 #define GF_HASH_TYPE_STR	0	/**< String key based hash table */
 #define GF_HASH_TYPE_BUF	1	/**< Memory buffer key based hash table */
 
-typedef void (*tfHashFree)(void*);	/**< Function to call for releasing the user data associated with hash table */
+typedef void (*tfHashFree)(const void*);	/**< Function to call for releasing the user data associated with hash table */
 
 void *GfHashCreate(int type);
-int GfHashAddStr(void *hash, char *key, void *data);
-void *GfHashRemStr(void *hash, char *key);
-void *GfHashGetStr(void *hash, char *key);
+int GfHashAddStr(void *hash, const char *key, const void *data);
+const void *GfHashRemStr(void *hash, char *key);
+const void *GfHashGetStr(void *hash, const char *key);
 void GfHashAddBuf(void *hash, char *key, size_t sz, void *data);
-void *GfHashRemBuf(void *hash, char *key, size_t sz);
-void *GfHashGetBuf(void *hash, char *key, size_t sz);
+const void *GfHashRemBuf(void *hash, char *key, size_t sz);
+const void *GfHashGetBuf(void *hash, char *key, size_t sz);
 void GfHashRelease(void *hash, tfHashFree hashFree);
-void *GfHashGetFirst(void *hash);
-void *GfHashGetNext(void *hash);
+const void *GfHashGetFirst(void *hash);
+const void *GfHashGetNext(void *hash);
 
 #define GF_DIR_CREATION_FAILED 0
 #define GF_DIR_CREATED 1

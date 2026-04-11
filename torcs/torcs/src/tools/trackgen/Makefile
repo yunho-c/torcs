@@ -27,9 +27,9 @@ DATADIR      	= tools/trackgen
 
 DATA         	= trackgen.xml
 
-SOURCES      	= maintrackgen.cpp track.cpp easymesh.cpp ../../linux/linuxspec.cpp relief.cpp elevation.cpp objects.cpp ac3d.cpp util.cpp
+SOURCES      	= maintrackgen.cpp track.cpp easymesh.cpp ../../linux/linuxspec.cpp relief.cpp elevation.cpp objects.cpp ac3d.cpp util.cpp raceline.cpp
 
-SOLIBS       	= -ltgf -ltgfclient -lplibssg -lplibsg -lplibul -lrobottools -ltxml
+SOLIBS       	= -ltgf -ltgfclient -lmusicplayer -lplibssg -lplibsg -lplibul -lrobottools -ltxml
 
 src_PKGFILES	= $(shell find * -maxdepth 0 -type f -print)
 

@@ -2,7 +2,7 @@
 
     file                 : ssggraph.cpp
     created              : Thu Aug 17 23:19:19 CEST 2000
-    copyright            : (C) 2000 by Eric Espie
+    copyright            : (C) 2000-2013 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
 
@@ -41,6 +41,7 @@ graphInit(int /* idx */, void *pt)
     itf->refresh       = refresh;
     itf->shutdowncars  = shutdownCars;
     itf->shutdowntrack = shutdownTrack;
+	itf->muteformenu   = muteForMenu; 
     //itf->bendcar       = bendCar;
     return 0;
 }
@@ -61,8 +62,8 @@ graphInit(int /* idx */, void *pt)
 extern "C" int
 ssggraph(tModInfo *modInfo)
 {
-    modInfo->name = "ssggraph";		        		/* name of the module (short) */
-    modInfo->desc = "The Graphic Library using PLIB ssg";	/* description of the module (can be long) */
+    modInfo->name = strdup("ssggraph");		        		/* name of the module (short) */
+    modInfo->desc = strdup("The Graphic Library using PLIB ssg");	/* description of the module (can be long) */
     modInfo->fctInit = graphInit;				/* init function */
     modInfo->gfId = 1;						/* v 1  */
 

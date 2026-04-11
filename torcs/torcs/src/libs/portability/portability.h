@@ -21,7 +21,7 @@
 #define _TORCS_PORTABILITY_H_
 
 #include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 #ifdef WIN32
 #define HAVE_CONFIG_H
@@ -58,11 +58,27 @@ static char *strndup(const char *str, int len)
 
 
 #ifdef WIN32
-#define snprintf _snprintf
+// Only redefine for MSVC versions older than 1900 (Visual Studio 2015)
+// VS 2022 has _MSC_VER = 193x, so snprintf/vsnprintf exist there.
+#if _MSC_VER < 1900
+#define snprintf  _snprintf
+#endif
+
+#if _MSC_VER < 1500 
 #define vsnprintf _vsnprintf
 #endif
 
+#endif
 
+#ifdef WIN32
+#include <math.h>
+#if _MSC_VER < 1800 // VS2013 (_MSC_VER=1800) and later have round()
+static float round(float x)
+{
+	return floor(x+0.5f);
+}
+#endif
+#endif
 
 #endif // _TORCS_PORTABILITY_H_
 

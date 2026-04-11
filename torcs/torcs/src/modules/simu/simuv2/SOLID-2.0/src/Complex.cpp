@@ -40,7 +40,10 @@ Complex::~Complex() {
   if (count >= 2) delete [] root;
   for (int i = 0; i < count; ++i) delete leaves[i].poly;
   delete [] leaves;
-  /* if (free_base) delete [] (void *)base.getPointer(); */  /* warning: deleting `void*' is undefined */
+#if (defined(_MSC_VER) && _MSC_VER < 1500)
+#else
+  if (free_base) delete [] base.getPointer();
+#endif
 }
 
 BBox Complex::bbox(const Transform& t) const {
@@ -53,7 +56,7 @@ BBox Complex::bbox(const Transform& t) const {
   return bb;
 }
 
-void Complex::changeBase(const void *ptr) {
+void Complex::changeBase(const Point *ptr) {
   base = ptr;
   for (int i = 0; i < count; ++i) leaves[i].fitBBox();
   for (int j = count-1; j;) ((BBoxInternal *)root)[--j].refitBBox(); 

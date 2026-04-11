@@ -2,9 +2,8 @@
                            screen.cpp -- screen init
                              -------------------
     created              : Fri Aug 13 22:29:56 CEST 1999
-    copyright            : (C) 1999, 2004 by Eric Espie, Bernhard Wymann
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 1999-2024 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 ***************************************************************************/
 
 /***************************************************************************
@@ -18,13 +17,10 @@
 
 /** @file
     Screen management.
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
-    @ingroup	screen
+    @author bernhard Wymann, Eric Espie
 */
 
 #include <stdio.h>
-#include <string.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -38,6 +34,9 @@
 
 #include <tgfclient.h>
 #include <portability.h>
+#include <musicplayer/musicplayer.h>
+#include <portability.h>
+
 #include "gui.h"
 #include "fg_gm.h"
 #include "glfeatures.h"
@@ -62,7 +61,6 @@ static int GfScrCenX;
 static int GfScrCenY;
 
 static void	*scrHandle = NULL;
-static char 	buf[1024];
 
 static int usedGM = 0;
 #if !defined(FREEGLUT) && !defined(WIN32)
@@ -73,13 +71,38 @@ static int usedFG = 0;
 static char	**Res = NULL;
 static int nbRes = 0;
 #else // USE_RANDR_EXT
-static char	*Res[] = {"640x480", "800x600", "1024x768", "1152x768", "1152x864", "1200x854", "1200x960", "1280x1024", "1400x900", "1600x1200", "1680x1050", "1920x1200", "320x200"};
+static char	*Res[] = {
+	"640x480",
+	"800x600",
+	"1024x768",
+	"1152x768",
+	"1152x864",
+	"1200x854",
+	"1200x960",
+	"1280x720",
+	"1280x1024",
+	"1400x900",
+	"1600x900",
+	"1600x1200",
+	"1680x1050",
+	"1920x1080",
+	"2560x1080",
+	"3840x1080",
+	"1920x1200",
+	"2560x1440",
+	"3440x1440",
+	"5120x1440",
+	"4096x2160",
+	"5040x2160",
+	"8192x2160",
+	"320x200"
+};
 static const int nbRes = sizeof(Res) / sizeof(Res[0]);
 #endif // USE_RANDR_EXT
 
-static char	*Mode[] = {"Full-screen mode", "Window mode"};
-static char *VInit[] = {GFSCR_VAL_VINIT_COMPATIBLE, GFSCR_VAL_VINIT_BEST};
-static char	*Depthlist[] = {"24", "32", "16"};
+static const char *Mode[] = {"Full-screen mode", "Window mode"};
+static const char *VInit[] = {GFSCR_VAL_VINIT_COMPATIBLE, GFSCR_VAL_VINIT_BEST};
+static const char *Depthlist[] = {"24", "32", "16"};
 
 //static const int nbRes = sizeof(Res) / sizeof(Res[0]);
 static const int nbMode = sizeof(Mode) / sizeof(Mode[0]);
@@ -101,8 +124,6 @@ static int	DepthLabelId;
 static int	ModeLabelId;
 static int VInitLabelId;
 
-static void	*paramHdle;
-
 static float LabelColor[] = {1.0, 0.0, 1.0, 1.0};
 
 
@@ -111,9 +132,9 @@ gfScreenInit(void)
 {
 #ifdef USE_RANDR_EXT
 	// Get display, screen and root window handles.
-	char *displayname = getenv("DISPLAY");
+	const char *displayname = getenv("DISPLAY");
 	if (displayname == NULL) {
-		displayname = ":0.0";
+		displayname = strdup(":0.0");
 	}
 
 	Display *display = XOpenDisplay(displayname);
@@ -239,37 +260,37 @@ static void Reshape(int width, int height)
 
 void GfScrInit(int argc, char *argv[])
 {
-    int		Window;
-    int		xw, yw;
-    int		winX, winY;
-    void	*handle;
-    char	*fscr;
-	char	*vinit;
-    int		fullscreen;
-    int		maxfreq;
-    int		i, depth;
-
-    sprintf(buf, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
-    handle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
-    xw = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_X, (char*)NULL, 640);
-    yw = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_Y, (char*)NULL, 480);
-    winX = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_WIN_X, (char*)NULL, xw);
-    winY = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_WIN_Y, (char*)NULL, yw);
-    depth = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_BPP, (char*)NULL, 32);
-    maxfreq = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_MAXREFRESH, (char*)NULL, 160);
-    GfViewWidth = xw;
-    GfViewHeight = yw;
-    GfScrCenX = xw / 2;
-    GfScrCenY = yw / 2;
+	int Window;
+	int xw, yw;
+	int winX, winY;
+	void *handle;
+	int fullscreen;
+	int maxfreq;
+	int i, depth;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
+	handle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
+	xw = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_X, (char*)NULL, 640);
+	yw = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_Y, (char*)NULL, 480);
+	winX = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_WIN_X, (char*)NULL, xw);
+	winY = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_WIN_Y, (char*)NULL, yw);
+	depth = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_BPP, (char*)NULL, 32);
+	maxfreq = (int)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_MAXREFRESH, (char*)NULL, 160);
+	GfViewWidth = xw;
+	GfViewHeight = yw;
+	GfScrCenX = xw / 2;
+	GfScrCenY = yw / 2;
 
 	// The fullscreen hack must be run before glutInit, such that glut gets the right screen size, etc.
-	fscr = GfParmGetStr(handle, GFSCR_SECT_PROP, GFSCR_ATT_FSCR, GFSCR_VAL_NO);
+	const char* fscr = GfParmGetStr(handle, GFSCR_SECT_PROP, GFSCR_ATT_FSCR, GFSCR_VAL_NO);
 	fullscreen = 0;
 #if !defined(FREEGLUT) && !defined(WIN32)
 	if (strcmp(fscr, GFSCR_VAL_YES) == 0) {	// Resize the screen
 		GfOut ("Freeglut not detected...\n");
 		for (i = maxfreq; i > 59; i--) {
-			sprintf(buf, "%dx%d:%d@%d", winX, winY, depth, i);
+			snprintf(buf, BUFSIZE, "%dx%d:%d@%d", winX, winY, depth, i);
 			GfOut("Trying %s mode\n", buf);
 			fglutGameModeString(buf);
 			if (fglutEnterGameMode()) {
@@ -281,7 +302,7 @@ void GfScrInit(int argc, char *argv[])
 	}
 #endif
 
-	vinit = GfParmGetStr(handle, GFSCR_SECT_PROP, GFSCR_ATT_VINIT, GFSCR_VAL_VINIT_COMPATIBLE);
+	const char* vinit = GfParmGetStr(handle, GFSCR_SECT_PROP, GFSCR_ATT_VINIT, GFSCR_VAL_VINIT_COMPATIBLE);
 
     glutInit(&argc, argv);
 
@@ -372,7 +393,7 @@ void GfScrInit(int argc, char *argv[])
 
 	if (strcmp(fscr, GFSCR_VAL_YES) == 0) {
 		for (i = maxfreq; i > 59; i--) {
-			sprintf(buf, "%dx%d:%d@%d", winX, winY, depth, i);
+			snprintf(buf, BUFSIZE, "%dx%d:%d@%d", winX, winY, depth, i);
 			glutGameModeString(buf);
 			GfOut("2 - Trying %s mode\n", buf);
 			if (glutGameModeGet(GLUT_GAME_MODE_POSSIBLE)) {
@@ -459,9 +480,14 @@ static void
 saveParams(void)
 {
 	int x, y, bpp;
-
+	
 	sscanf(Res[curRes], "%dx%d", &x, &y);
 	sscanf(Depthlist[curDepth], "%d", &bpp);
+
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
+	void *paramHdle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
 
 	GfParmSetNum(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_X, (char*)NULL, x);
 	GfParmSetNum(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_Y, (char*)NULL, y);
@@ -478,6 +504,7 @@ saveParams(void)
 		GfParmSetStr(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_FSCR, "no");
 	}
 	GfParmWriteFile(NULL, paramHdle, "Screen");
+	GfParmReleaseHandle(paramHdle);
 }
 
 
@@ -488,15 +515,17 @@ GfScrReinit(void * /* dummy */)
 	static const int CMDSIZE = 1024;
 	char cmd[CMDSIZE];
 
+	stopMenuMusic();
+	
 #ifndef WIN32
-    char	*arg[8];
+    const char *arg[8];
     int		curArg;
 #endif
 
     saveParams();
 
 #ifdef WIN32
-	snprintf(cmd, CMDSIZE, "%swtorcs.exe", GetLocalDir());
+	snprintf(cmd, CMDSIZE, "%swtorcs.exe", GetLibDir());
     int i;
 	for (i = 0; i < CMDSIZE && cmd[i] != NULL; i++) {
 		if (cmd[i] == '/') {
@@ -505,7 +534,7 @@ GfScrReinit(void * /* dummy */)
 	}
 	
 	char cmdarg[CMDSIZE];
-	snprintf(cmdarg, CMDSIZE, "\"%swtorcs.exe\"", GetLocalDir());
+	snprintf(cmdarg, CMDSIZE, "\"%swtorcs.exe\"", GetLibDir());
 	for (i = 0; i < CMDSIZE && cmdarg[i] != NULL; i++) {
 		if (cmdarg[i] == '/') {
 			cmdarg[i] = '\\';
@@ -514,59 +543,59 @@ GfScrReinit(void * /* dummy */)
 
 	retcode = execlp(cmd, cmdarg, (const char *)NULL);
 #else
-    GfScrShutdown();
-
-    sprintf (cmd, "%storcs-bin", GetLibDir ());
-    memset (arg, 0, sizeof (arg));
-    curArg = 0;
-    if (GfuiMouseHW) {
-	arg[curArg++] = "-m";
-    }
-    
-    if (strlen(GetLocalDir ())) {
-	arg[curArg++] = "-l";
-	arg[curArg++] = GetLocalDir ();
-    }
-
-    if (strlen(GetLibDir ())) {
-	arg[curArg++] = "-L";
-	arg[curArg++] = GetLibDir ();
-    }
-
-    if (strlen(GetDataDir ())) {
-	arg[curArg++] = "-D";
-	arg[curArg++] = GetDataDir ();
-    }
-
-    switch (curArg) {
-    case 0:
-	retcode = execlp (cmd, cmd, (const char *)NULL);
-	break;
-    case 1:
-	retcode = execlp (cmd, cmd, arg[0], (const char *)NULL);
-	break;
-    case 2:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], (const char *)NULL);
-	break;
-    case 3:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], (const char *)NULL);
-	break;
-    case 4:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], (const char *)NULL);
-	break;
-    case 5:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], (const char *)NULL);
-	break;
-    case 6:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], (const char *)NULL);
-	break;
-    case 7:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], (const char *)NULL);
-	break;
-    case 8:
-	retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], (const char *)NULL);
-	break;
-    }
+	GfScrShutdown();
+	
+	snprintf (cmd, CMDSIZE, "%storcs-bin", GetLibDir ());
+	memset (arg, 0, sizeof (arg));
+	curArg = 0;
+	if (GfuiMouseHW) {
+		arg[curArg++] = "-m";
+	}
+	
+	if (strlen(GetLocalDir ())) {
+		arg[curArg++] = "-l";
+		arg[curArg++] = GetLocalDir();
+	}
+	
+	if (strlen(GetLibDir ())) {
+		arg[curArg++] = "-L";
+		arg[curArg++] = GetLibDir ();
+	}
+	
+	if (strlen(GetDataDir ())) {
+		arg[curArg++] = "-D";
+		arg[curArg++] = GetDataDir ();
+	}
+	
+	switch (curArg) {
+		case 0:
+			retcode = execlp (cmd, cmd, (const char *)NULL);
+			break;
+		case 1:
+			retcode = execlp (cmd, cmd, arg[0], (const char *)NULL);
+			break;
+		case 2:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], (const char *)NULL);
+			break;
+		case 3:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], (const char *)NULL);
+			break;
+		case 4:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], (const char *)NULL);
+			break;
+		case 5:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], (const char *)NULL);
+			break;
+		case 6:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], (const char *)NULL);
+			break;
+		case 7:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], (const char *)NULL);
+			break;
+		case 8:
+			retcode = execlp (cmd, cmd, arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], (const char *)NULL);
+			break;
+	}
 
 
 #endif
@@ -583,7 +612,10 @@ updateLabelText(void)
     GfuiLabelSetText (scrHandle, DepthLabelId, Depthlist[curDepth]);
     GfuiLabelSetText (scrHandle, ModeLabelId, Mode[curMode]);
 #ifdef WIN32
-    sprintf(buf, "%d", curMaxFreq);
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+
+	snprintf(buf, BUFSIZE, "%d", curMaxFreq);
     GfuiEditboxSetString(scrHandle, MaxFreqId, buf);
 #endif
 	GfuiLabelSetText (scrHandle, VInitLabelId, VInit[curVInit]);
@@ -659,11 +691,16 @@ initFromConf(void)
 {
 	int x, y, bpp;
 	int i;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
+
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
+	void *paramHdle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
 
 	x = (int)GfParmGetNum(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_X, NULL, 640);
 	y = (int)GfParmGetNum(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_Y, NULL, 480);
 
-	sprintf(buf, "%dx%d", x, y);
+	snprintf(buf, BUFSIZE, "%dx%d", x, y);
 	for (i = 0; i < nbRes; i++) {
 		if (!strcmp(buf, Res[i])) {
 			curRes = i;
@@ -678,7 +715,7 @@ initFromConf(void)
 	}
 
 	curVInit = 0;
-	char *tmp = GfParmGetStr(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_VINIT, GFSCR_VAL_VINIT_COMPATIBLE);
+	const char *tmp = GfParmGetStr(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_VINIT, GFSCR_VAL_VINIT_COMPATIBLE);
 	for (i = 0; i < nbVInit; i++) {
 		if (strcmp(VInit[i], tmp) == 0) {
 			curVInit = i;
@@ -687,7 +724,7 @@ initFromConf(void)
 	}
 
 	bpp = (int)GfParmGetNum(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_BPP, NULL, 24);
-	sprintf(buf, "%d", bpp);
+	snprintf(buf, BUFSIZE, "%d", bpp);
 	for (i = 0; i < nbDepth; i++) {
 		if (!strcmp(buf, Depthlist[i])) {
 			curDepth = i;
@@ -696,6 +733,7 @@ initFromConf(void)
 	}
 
 	curMaxFreq = (int)GfParmGetNum(paramHdle, GFSCR_SECT_PROP, GFSCR_ATT_MAXREFRESH, NULL, curMaxFreq);
+	GfParmReleaseHandle(paramHdle);
 }
 
 #ifdef WIN32
@@ -703,10 +741,12 @@ static void
 ChangeMaxFreq(void * /* dummy */)
 {
     char	*val;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
     
     val = GfuiEditboxGetString(scrHandle, MaxFreqId);
     curMaxFreq = (int)strtol(val, (char **)NULL, 0);
-    sprintf(buf, "%d", curMaxFreq);
+    snprintf(buf, BUFSIZE, "%d", curMaxFreq);
     GfuiEditboxSetString(scrHandle, MaxFreqId, buf);
 }
 #endif
@@ -727,13 +767,12 @@ void *
 GfScrMenuInit(void *precMenu)
 {
     int		y, x1, x2;
+	
 #ifndef WIN32
 	const int yoffset1 = 30, yoffset2 = 60;
 #else // WIN32
 	const int yoffset1 = 30, yoffset2 = 40;
 #endif // WIN32
-    sprintf(buf, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
-    paramHdle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
 
     if (scrHandle) return scrHandle;
 
@@ -902,7 +941,7 @@ GfScrMenuInit(void *precMenu)
 
 
 
-int GfuiGlutExtensionSupported(char *str)
+int GfuiGlutExtensionSupported(const char *str)
 {
     return glutExtensionSupported(str);
 }

@@ -2,7 +2,7 @@
                           img.cpp -- Images manipulation
                              -------------------
     created              : Tue Aug 17 20:13:08 CEST 1999
-    copyright            : (C) 1999 by Eric Espie
+    copyright            : (C) 1999-2014 by Eric Espie, Bernhard Wymann
     email                : torcs@free.fr
     version              : $Id$
  ***************************************************************************/
@@ -17,11 +17,11 @@
  ***************************************************************************/
 
 /** @file   
-    		Images manipulation tools.
-		Load and store png images with easy interface.
-    @author	<a href=mailto:torcs@free.fr>Eric Espie</a>
-    @version	$Id$
-    @ingroup	img		
+    Image management API.
+
+    Load and store png images.
+    @author Bernhard Wymann, Eric Espie
+    @version $Id$
 */
 
 #ifdef WIN32
@@ -37,7 +37,7 @@
 #include <direct.h>
 #endif
 
-static char buf[1024];
+#include <portability.h>
 
 #define PNG_BYTES_TO_CHECK 4
 
@@ -98,7 +98,7 @@ GfImgReadPng(const char *filename, int *widthp, int *heightp, float screen_gamma
 		return (unsigned char *)NULL;
 	}
 	
-	if (setjmp(png_ptr->jmpbuf))
+	if (setjmp(png_jmpbuf(png_ptr)))
 	{
 		/* Free all of the memory associated with the png_ptr and info_ptr */
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -155,7 +155,7 @@ GfImgReadPng(const char *filename, int *widthp, int *heightp, float screen_gamma
 	
 	// RGBA expected.
 	if (rowbytes != (4 * width)) {
-		GfTrace("%s bad byte count... %u instead of %u\n", filename, rowbytes, 4 * width);
+		GfTrace("%s bad byte count... %lu instead of %lu\n", filename, (unsigned long) rowbytes, (unsigned long) (4 * width));
 		fclose(fp);
 		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
 		return (unsigned char *)NULL;
@@ -229,7 +229,7 @@ GfImgWritePng(unsigned char *img, const char *filename, int width, int height)
 		return -1;
 	}
 	
-	if (setjmp(png_ptr->jmpbuf)) {    
+	if (setjmp(png_jmpbuf(png_ptr))) {    
 		png_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(fp);
 		return -1;
@@ -297,8 +297,10 @@ GfImgReadTex(char *filename)
 	GLbyte *tex;
 	int w, h;
 	GLuint retTex;
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
 
-	sprintf(buf, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GFSCR_CONF_FILE);
 	handle = GfParmReadFile(buf, GFPARM_RMODE_STD | GFPARM_RMODE_CREAT);
 	screen_gamma = (float)GfParmGetNum(handle, GFSCR_SECT_PROP, GFSCR_ATT_GAMMA, (char*)NULL, 2.0);
 	tex = (GLbyte*)GfImgReadPng(filename, &w, &h, screen_gamma);

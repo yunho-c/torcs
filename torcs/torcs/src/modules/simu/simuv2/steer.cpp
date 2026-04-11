@@ -2,9 +2,8 @@
 
     file                 : steer.cpp
     created              : Sun Mar 19 00:08:20 CET 2000
-    copyright            : (C) 2000 by Eric Espie
-    email                : torcs@free.fr
-    version              : $Id$
+    copyright            : (C) 2000-2026 by Eric Espie, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
  ***************************************************************************/
 
@@ -19,8 +18,7 @@
 
 #include "sim.h"
 
-void 
-SimSteerConfig(tCar *car)
+void SimSteerConfig(tCar *car)
 {
 	void *hdle = car->params;
 
@@ -29,6 +27,15 @@ SimSteerConfig(tCar *car)
 	car->carElt->_steerLock = car->steer.steerLock;
 }
 
+
+void SimSteerReConfig(tCar *car)
+{
+	tCarPitSetupValue* steerLock = &car->carElt->pitcmd.setup.steerLock;
+	if (SimAdjustPitCarSetupParam(steerLock)) {
+		car->steer.steerLock = steerLock->value;
+		car->carElt->_steerLock = steerLock->value;
+	}
+}
 
 void
 SimSteerUpdate(tCar *car)
@@ -42,13 +49,13 @@ SimSteerUpdate(tCar *car)
 	steer *= car->steer.steerLock;
 	stdelta = steer - car->steer.steer;
 
-	if ((fabs(stdelta) / SimDeltaTime) > car->steer.maxSpeed) {
+	if (((tdble) fabs(stdelta) / SimDeltaTime) > car->steer.maxSpeed) {
 		steer = SIGN(stdelta) * car->steer.maxSpeed * SimDeltaTime + car->steer.steer;
 	}
 
 	car->steer.steer = steer;
-	tanSteer = fabs(tan(steer));
-	steer2 = atan2((car->wheelbase * tanSteer) , (car->wheelbase - tanSteer * car->wheeltrack));
+	tanSteer = (tdble) fabs(tan(steer));
+	steer2 = (tdble) atan2((car->wheelbase * tanSteer) , (car->wheelbase - tanSteer * car->wheeltrack));
 
 	if (steer > 0) {
 		car->wheel[FRNT_RGT].steer = steer2;
@@ -58,5 +65,3 @@ SimSteerUpdate(tCar *car)
 		car->wheel[FRNT_LFT].steer = -steer2;
 	}
 }
-
-

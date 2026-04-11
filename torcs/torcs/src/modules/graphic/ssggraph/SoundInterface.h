@@ -2,9 +2,8 @@
 /***************************************************************************
     file                 : SoundInterface.h
     created              : Tue Apr 5 19:57:35 CEST 2005
-    copyright            : (C) 2005 Christos Dimitrakakis, Bernhard Wymann
-    email                : dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2005-2024 Christos Dimitrakakis, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
 ***************************************************************************/
 
@@ -29,7 +28,7 @@
 #define logmsg printf ("# "); printf
 #else
 #define logmsg empty_log
-static void empty_log(char* s, ...)
+static void empty_log(const char* s, ...)
 {
 }
 #endif
@@ -89,6 +88,7 @@ class SoundInterface {
 	TorcsSound* skid_sound[4]; ///< set of skid sounds, one per tyre
 	TorcsSound* road_ride_sound; ///< rolling on normal road
 	TorcsSound* grass_ride_sound; ///< rolling on dirt/grass
+	TorcsSound* curb_ride_sound; ///< rolling on curb
 	TorcsSound* grass_skid_sound; ///< skidding on dirt/grass
 	TorcsSound* metal_skid_sound; ///< metal skidding on metal 
 	TorcsSound* axle_sound; ///< axle/gear spinning sound
@@ -107,6 +107,7 @@ class SoundInterface {
 	QueueSoundMap road; 
 	QueueSoundMap grass; 
 	QueueSoundMap grass_skid;
+	QueueSoundMap curb;
 	QueueSoundMap metal_skid;
 	QueueSoundMap backfire_loop;
 	QueueSoundMap turbo;
@@ -158,6 +159,11 @@ class SoundInterface {
 	{
 		TorcsSound* sound = addSample (sound_name, ACTIVE_VOLUME|ACTIVE_PITCH, true);
 		grass_ride_sound = sound;
+	}
+	void setCurbRideSound (const char* sound_name)
+	{
+		TorcsSound* sound = addSample (sound_name, ACTIVE_VOLUME|ACTIVE_PITCH, true);
+		curb_ride_sound = sound;
 	}
 	void setGrassSkidSound (const char* sound_name)
 	{
@@ -221,6 +227,8 @@ class SoundInterface {
 	{
 		// do nothing
 	}
+
+	virtual void muteForMenu() {}
 	virtual float getGlobalGain() {return 1.0f;}
 	virtual void setGlobalGain(float g) 
 	{
@@ -297,6 +305,7 @@ class OpenalSoundInterface : public SoundInterface {
 				       int flags = (ACTIVE_VOLUME|ACTIVE_PITCH),
 				       bool loop = false, bool static_pool = true);
 	virtual void update(CarSoundData** car_sound_data, int n_cars, sgVec3 p_obs, sgVec3 u_obs, sgVec3 c_obs, sgVec3 a_obs);
+	virtual void muteForMenu();
 	virtual float getGlobalGain() { return global_gain; }
 	virtual void initSharedSourcePool();
 	virtual void setGlobalGain(float g)

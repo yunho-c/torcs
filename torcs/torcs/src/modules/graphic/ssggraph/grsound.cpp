@@ -2,9 +2,8 @@
 
     file                 : grsound.cpp
     created              : Thu Aug 17 23:57:10 CEST 2000
-    copyright            : (C) 2000-2003 by Eric Espie, Christos Dimitrakakis
-    email                : torcs@free.fr, dimitrak@idiap.ch
-    version              : $Id$
+    copyright            : (C) 2000-2024 by Eric Espie, Christos Dimitrakakis, Bernhard Wymann
+    email                : berniw@bluewin.ch
 
 ***************************************************************************/
 
@@ -23,6 +22,7 @@
 #include <tgfclient.h>
 #include <graphic.h>
 #include <car.h>
+#include <portability.h>
 
 #include "grsound.h"
 #include "grmain.h"
@@ -44,18 +44,18 @@ static enum SoundMode sound_mode = OPENAL_MODE;
 
 void grInitSound(tSituation* s, int ncars)
 {
-	char	buf[256];
+	const int BUFSIZE = 1024;
+	char buf[BUFSIZE];
 
 	GfOut("-- grInitSound\n");
 
 	// Check if we want sound (sound.xml).
-	char *soundDisabledStr = GR_ATT_SOUND_STATE_DISABLED;
-	char *soundOpenALStr = GR_ATT_SOUND_STATE_OPENAL;
-	char *soundPlibStr = GR_ATT_SOUND_STATE_PLIB;
-	char fnbuf[1024];
-	sprintf(fnbuf, "%s%s", GetLocalDir(), GR_SOUND_PARM_CFG);
-	void *paramHandle = GfParmReadFile(fnbuf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
-	char *optionName = GfParmGetStr(paramHandle, GR_SCT_SOUND, GR_ATT_SOUND_STATE, soundOpenALStr);
+	const char *soundDisabledStr = GR_ATT_SOUND_STATE_DISABLED;
+	const char *soundOpenALStr = GR_ATT_SOUND_STATE_OPENAL;
+	const char *soundPlibStr = GR_ATT_SOUND_STATE_PLIB;
+	snprintf(buf, BUFSIZE, "%s%s", GetLocalDir(), GR_SOUND_PARM_CFG);
+	void *paramHandle = GfParmReadFile(buf, GFPARM_RMODE_REREAD | GFPARM_RMODE_CREAT);
+	const char *optionName = GfParmGetStr(paramHandle, GR_SCT_SOUND, GR_ATT_SOUND_STATE, soundOpenALStr);
 	float global_volume = GfParmGetNum(paramHandle, GR_SCT_SOUND, GR_ATT_SOUND_VOLUME, "%", 100.0f);
 	if (!strcmp(optionName, soundDisabledStr)) {
 		sound_mode = DISABLED;
@@ -72,12 +72,19 @@ void grInitSound(tSituation* s, int ncars)
 	
 	switch (sound_mode) {
 	case OPENAL_MODE:
-		sound_interface = new OpenalSoundInterface (44100, 32);
+		try {
+			sound_interface = new OpenalSoundInterface (44100, 32);
+		} catch (const char* err) {
+			GfError("Disabling Sound: OpenAL initialisation failed: %s\n", err ? err : "");
+			sound_mode = DISABLED;
+			return;
+		}
 		break;
 	case PLIB_MODE:
 		sound_interface = new PlibSoundInterface(44100, 32);
 		break;
 	case DISABLED:
+		sound_interface = 0;
 		return;
 	default:
 		GfOut (" -- Unknown sound mode %d\n", sound_mode);
@@ -92,19 +99,18 @@ void grInitSound(tSituation* s, int ncars)
 	for (i = 0; i<ncars; i++) {
 		void* handle = s->cars[i]->_carHandle;
 		tCarElt	*car = s->cars[i];
-		char* param;
-		char filename[512];
+		const char* param;
         FILE *file = NULL;
 
 		// ENGINE PARAMS
 		tdble rpm_scale;
 		param = GfParmGetStr(handle, "Sound", "engine sample", "engine-1.wav");
 		rpm_scale = GfParmGetNum(handle, "Sound", "rpm scale", NULL, 1.0);
-        sprintf (filename, "cars/%s/%s", car->_carName, param);
-        file = fopen(filename, "r");
+        snprintf (buf, BUFSIZE, "cars/%s/%s", car->_carName, param);
+        file = fopen(buf, "r");
         if (!file)
         {
- 		    sprintf (filename, "data/sound/%s", param);
+ 		    snprintf (buf, BUFSIZE, "data/sound/%s", param);
         }
         else
         {
@@ -112,7 +118,7 @@ void grInitSound(tSituation* s, int ncars)
         }
 
 		car_sound_data[car->index] = new CarSoundData (car->index, sound_interface);
-		TorcsSound* engine_sound = sound_interface->addSample(filename, ACTIVE_VOLUME | ACTIVE_PITCH | ACTIVE_LP_FILTER, true, false);
+		TorcsSound* engine_sound = sound_interface->addSample(buf, ACTIVE_VOLUME | ACTIVE_PITCH | ACTIVE_LP_FILTER, true, false);
 		car_sound_data[i]->setEngineSound (engine_sound, rpm_scale);
 
 		// TURBO PARAMS
@@ -138,6 +144,7 @@ void grInitSound(tSituation* s, int ncars)
 	sound_interface->setSkidSound("data/sound/skid_tyres.wav");
 	sound_interface->setRoadRideSound("data/sound/road-ride.wav");
 	sound_interface->setGrassRideSound("data/sound/out_of_road.wav");
+	sound_interface->setCurbRideSound("data/sound/curb_ride.wav");
 	sound_interface->setGrassSkidSound("data/sound/out_of_road-3.wav");
 	sound_interface->setMetalSkidSound("data/sound/skid_metal.wav");
 	sound_interface->setAxleSound("data/sound/axle.wav");
@@ -145,7 +152,7 @@ void grInitSound(tSituation* s, int ncars)
 	sound_interface->setBackfireLoopSound("data/sound/backfire_loop.wav");
 
     for (i = 0; i < NB_CRASH_SOUND; i++) {
-		sprintf(buf, "data/sound/crash%d.wav", i+1);
+		snprintf(buf, BUFSIZE, "data/sound/crash%d.wav", i+1);
 		sound_interface->setCrashSound(buf, i);
     }
 
@@ -170,12 +177,20 @@ grShutdownSound(int ncars)
 		return;
 	}
 
+	int i;
+	for (i = 0; i < ncars; i++) {
+		delete car_sound_data[i];
+	}
+	
+	delete [] car_sound_data;
+	
     if (!soundInitialized) {
 		return;
     }
     soundInitialized = 0;
 
 	delete sound_interface;
+	sound_interface = 0;
 
     if (__slPendingError) {
 		GfOut("!!! error ignored: %s\n", __slPendingError);
@@ -192,8 +207,8 @@ grRefreshSound(tSituation *s, cGrCamera	*camera)
 		return 0.0f;
 	}
 
-	// Update sound at most 50 times a second.
-	const double UPDATE_DT = 0.02;
+	// Update sound at most 100 times a second.
+	const double UPDATE_DT = 0.01;
 	if (s->currentTime - lastUpdated < UPDATE_DT) {
 		return 0.0f;
 	}
@@ -229,4 +244,13 @@ grRefreshSound(tSituation *s, cGrCamera	*camera)
 
 	}
 	return 0.0f;
+}
+
+
+void grMuteForMenu(void)
+{
+	if (sound_interface != 0 && sound_mode != DISABLED) {
+		sound_interface->muteForMenu();
+	}
+
 }

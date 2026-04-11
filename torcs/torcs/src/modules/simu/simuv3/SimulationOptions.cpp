@@ -28,20 +28,12 @@ void SimulationOptions::SetFromSkill (int skill)
 {
     switch (skill) {
     case 0:
-        option_list.Set(PRM_DAMAGE_TYRES, 0.0f);
-        option_list.Set(PRM_DAMAGE_SUSPENSION, false);
-        option_list.Set(PRM_DAMAGE_ALIGNMENT, true);
-        option_list.Set(PRM_DAMAGE_AERO, false);
-        option_list.Set(PRM_MODEL_TYRE_TEMPERATURE, false);
-        option_list.Set(PRM_MODEL_AERO_FACTOR, 4.0f);
-        break;
     case 1:
         option_list.Set(PRM_DAMAGE_TYRES, 0.0f);
         option_list.Set(PRM_DAMAGE_SUSPENSION, false);
         option_list.Set(PRM_DAMAGE_ALIGNMENT, true);
         option_list.Set(PRM_DAMAGE_AERO, false);
         option_list.Set(PRM_MODEL_TYRE_TEMPERATURE, false);
-        option_list.Set(PRM_MODEL_AERO_FACTOR, 3.0f);
         break;
     case 2:
         option_list.Set(PRM_DAMAGE_TYRES, 0.0f);
@@ -49,7 +41,6 @@ void SimulationOptions::SetFromSkill (int skill)
         option_list.Set(PRM_DAMAGE_ALIGNMENT, true);
         option_list.Set(PRM_DAMAGE_AERO, false);
         option_list.Set(PRM_MODEL_TYRE_TEMPERATURE, false);
-        option_list.Set(PRM_MODEL_AERO_FACTOR, 2.0f);
         break;
     case 3:
         option_list.Set(PRM_DAMAGE_TYRES, 0.0f);
@@ -58,7 +49,7 @@ void SimulationOptions::SetFromSkill (int skill)
         option_list.Set(PRM_DAMAGE_AERO, true);
         option_list.Set(PRM_MODEL_TYRE_TEMPERATURE, false);
         option_list.Set(PRM_MODEL_AERO_FACTOR, 1.0f);
-        option_list.Set(PRM_MODEL_AEROFLOW, OPTIMAL);
+        option_list.Set(PRM_MODEL_AEROFLOW, SIMPLE);
         break;
     }
 }
@@ -78,22 +69,22 @@ void SimulationOptions::LoadFromFile(void* handle) {
     SetFloatFromGfParm (handle, PRM_MODEL_AERO_FACTOR);
 }
 
-void SimulationOptions::SetFloatFromGfParm(void* handle, char* name) {
-    float v = 0.0;
+void SimulationOptions::SetFloatFromGfParm(void* handle, const char* name) {
+    float v;
     option_list.Get(name, v);
     v = GfParmGetNum (handle, SECT_SIMU_SETTINGS, name, (char*) NULL, v);
     option_list.Set(name, v);
 }
 
-void SimulationOptions::SetBoolFromGfParm(void* handle, char* name) {
-    bool v = false;
+void SimulationOptions::SetBoolFromGfParm(void* handle, const char* name) {
+    bool v;
     option_list.Get(name, v);
-    char* s = GfParmGetStr (handle, SECT_SIMU_SETTINGS, name, "none");
+    const char* s = GfParmGetStr (handle, SECT_SIMU_SETTINGS, name, "none");
     v = StrToBool (s, v);
     option_list.Set(name, v);
 }
 
-bool SimulationOptions::StrToBool (char* s, bool dontcare)
+bool SimulationOptions::StrToBool (const char* s, bool dontcare)
 {
     if (!strcasecmp(s,"true")) {
         return true;

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="solid"
-	ProjectGUID="{60536B53-B69F-430A-BDFD-C058D878DBC3}"
+	ProjectGUID="{0C4288E1-99D2-4134-A416-98B9E6869478}"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -22,6 +23,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
+			EnableManagedIncrementalBuild="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -52,7 +54,7 @@
 				BrowseInformation="1"
 				WarningLevel="2"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -98,6 +100,7 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
+			EnableManagedIncrementalBuild="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -117,12 +120,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="2"
+				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="../../../../../export/include,../../../../libs/torcs"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
 				StringPooling="true"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="true"
+				BufferSecurityCheck="false"
+				EnableFunctionLevelLinking="false"
 				PrecompiledHeaderFile=".\Release/solid.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
