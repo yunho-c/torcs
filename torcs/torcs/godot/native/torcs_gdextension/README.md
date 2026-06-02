@@ -16,6 +16,9 @@ audio, GLUT, PLIB, SSG, and `tgfclient` dependencies.
 - `torcs_bridge_core`: static C++17 DTO/lifecycle/fixed-step bridge core.
 - `torcs_bridge_harness`: command-line deterministic CSV snapshot harness.
 - `torcs_bridge_tests`: dependency-free CTest regression checks.
+- `torcs_retained_smoke`: retained-core-only smoke executable that loads
+  `wheel-2` through `TorcsRetainedAdapter` when retained dependencies are
+  enabled.
 
 CTest also runs quick harness CLI smoke checks for `--help`, CSV output,
 deterministic repeat-run CSV output, JSON output, bounded sample duration, and
@@ -52,6 +55,11 @@ before the public bridge behavior changes. The adapter initializes TGF paths,
 loads one TORCS track through `TrackBuildv1`, copies track length/width and
 sampled segment center/border points into `TorcsBridgeTrackSnapshot`, and is
 not used by the current smoke scene.
+
+The retained-core CTest set also includes `torcs_retained_smoke`, which links
+the retained adapter executable path and verifies `wheel-2` track loading at
+runtime. This test only exists when `TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` and
+the dependency preflight passes.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future

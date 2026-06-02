@@ -206,6 +206,12 @@ TGF path globals, loads a single track with `TrackBuildv1`, and copies track
 length/width plus sampled segment center/border points into
 `TorcsBridgeTrackSnapshot`.
 
+When retained dependencies are enabled, CMake also builds
+`torcs_retained_smoke` and registers a retained-only CTest. The smoke test
+links the retained adapter executable path, loads `wheel-2`, checks positive
+track length/width, verifies copied debug points, and confirms shutdown unloads
+the adapter.
+
 ## Next Prototype Task
 
 Replace the retained adapter's initial placeholder car snapshot with a real
