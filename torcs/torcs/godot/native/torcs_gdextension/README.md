@@ -35,3 +35,6 @@ The current bridge intentionally uses generated placeholder motion. The next
 native milestone is replacing `TorcsRace::load()` and `TorcsRace::step()` with
 retained TORCS track loading, car setup, and `simuv2` stepping while preserving
 the public snapshot/input boundary.
+
+See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
+thin binding shape to add once `godot-cpp` is available.
