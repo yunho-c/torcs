@@ -81,6 +81,23 @@ main()
 		return fail("car/category XML merge provides initial fuel");
 	}
 
+	TorcsBridgeInputState input{};
+	input.throttle = 1.0;
+	input.gear = 1;
+	input.brakeBalance = 0.5;
+	adapter.setHumanInput(input);
+
+	const TorcsBridgeSnapshot steppedSnapshot = adapter.step(TORCS_BRIDGE_ROBOT_STEP_SECONDS);
+	if (steppedSnapshot.completedSubsteps != 10) {
+		return fail("retained step advances ten simulation substeps");
+	}
+	if (std::fabs(steppedSnapshot.raceTime - TORCS_BRIDGE_ROBOT_STEP_SECONDS) > 1e-9) {
+		return fail("retained step advances race time");
+	}
+	if (steppedSnapshot.cars.empty() || !std::isfinite(steppedSnapshot.cars[0].speed)) {
+		return fail("retained step refreshes finite car snapshot");
+	}
+
 	adapter.shutdown();
 	if (adapter.isLoaded()) {
 		return fail("retained adapter unloads on shutdown");

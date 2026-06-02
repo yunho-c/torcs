@@ -207,18 +207,22 @@ length/width plus sampled segment center/border points into
 `TorcsBridgeTrackSnapshot`. It also loads the configured car XML, reads the car
 category, merges the category and car parameter handles, and owns the merged
 handle while building a one-car `tRmInfo`/`tSituation`, calling `SimInit` and
-`SimConfig`, and extracting the initial car snapshot from `tCarElt`.
+`SimConfig`, and extracting the initial car snapshot from `tCarElt`. It now
+maps `TorcsBridgeInputState` into `tCarCtrl`, advances bounded `SimUpdate`
+substeps, updates `tSituation` time, and refreshes the bridge car snapshot from
+`tCarElt`.
 
 When retained dependencies are enabled and the PLIB `sg` link probe passes,
 CMake also builds `torcs_retained_smoke` and registers a retained-only CTest.
 The smoke test links the retained adapter executable path, loads `wheel-2`,
 checks positive track length/width, verifies copied debug points, checks finite
 simulator car pose/wheel state, checks `car1-trb1` initial fuel from the merged
-car/category handle, and confirms shutdown unloads the adapter. Scratch
-archives remain useful only for static `torcs_retained_core` compile checks.
+car/category handle, verifies a retained step advances ten simulation substeps,
+and confirms shutdown unloads the adapter. Scratch archives remain useful only
+for static `torcs_retained_core` compile checks.
 
 ## Next Prototype Task
 
-Map `TorcsBridgeInputState` into the retained car's `tCarCtrl`, step with
-`SimUpdate`, advance `tSituation` time, and refresh `TorcsBridgeCarSnapshot`
-from `tCarElt` after each bounded bridge step.
+Validate `torcs_retained_smoke` with a real PLIB install, then route the public
+runtime or GDExtension binding through `TorcsRetainedAdapter` while keeping the
+current snapshot/input DTO boundary stable.

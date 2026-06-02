@@ -41,6 +41,7 @@ private:
 	void *track = nullptr;
 	void *carHandle = nullptr;
 	void *raceInfo = nullptr;
+	double accumulator = 0.0;
 	bool simulationStarted = false;
 	bool initialized = false;
 	bool loaded = false;

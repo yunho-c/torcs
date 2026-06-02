@@ -247,6 +247,20 @@ makeCarSnapshotFromCarElt(const TorcsBridgeRaceConfig& raceConfig, const TorcsBr
 }
 
 static void
+applyHumanInput(tCarElt* car, const TorcsBridgeInputState& input)
+{
+	std::memset(&car->ctrl, 0, sizeof(car->ctrl));
+	car->ctrl.steer = static_cast<tdble>(input.steer);
+	car->ctrl.accelCmd = static_cast<tdble>(input.throttle);
+	car->ctrl.brakeCmd = static_cast<tdble>(input.brake);
+	car->ctrl.clutchCmd = static_cast<tdble>(input.clutch);
+	car->ctrl.gear = input.gear;
+	car->ctrl.raceCmd = input.pitRequest ? RM_CMD_PIT_ASKED : RM_CMD_NONE;
+	car->ctrl.lightCmd = input.lights ? (RM_LIGHT_HEAD1 | RM_LIGHT_HEAD2) : 0;
+	car->ctrl.brakeRepartitionCmd = static_cast<int>(std::lround((input.brakeBalance - 0.5) * 20.0));
+}
+
+static void
 copyLimited(char* destination, size_t destinationSize, const std::string& source)
 {
 	if (destinationSize == 0) {
@@ -538,7 +552,9 @@ TorcsRetainedAdapter::loadOneCarFreeDrive(const TorcsBridgeRaceConfig& config)
 	}
 
 	input = TorcsBridgeClampInput(input);
+	accumulator = 0.0;
 	snapshot.track = makeTrackSnapshot(static_cast<tTrack*>(track), raceConfig);
+	snapshot.raceTime = retainedRaceInfo->s->currentTime;
 	snapshot.cars.push_back(makeCarSnapshotFromCarElt(raceConfig, input, car));
 	loaded = true;
 
@@ -558,6 +574,28 @@ TorcsRetainedAdapter::step(double seconds)
 
 	if (!loaded || !std::isfinite(seconds) || seconds <= 0.0) {
 		return snapshot;
+	}
+
+	tRmInfo* retainedRaceInfo = static_cast<tRmInfo*>(raceInfo);
+	tCarElt* car = retainedCar(retainedRaceInfo);
+	if (retainedRaceInfo == nullptr || retainedRaceInfo->s == nullptr || car == nullptr) {
+		return snapshot;
+	}
+
+	accumulator += seconds;
+	while (accumulator >= TORCS_BRIDGE_SIM_STEP_SECONDS
+		&& snapshot.completedSubsteps < TORCS_BRIDGE_MAX_SUBSTEPS_PER_STEP) {
+		applyHumanInput(car, input);
+		retainedRaceInfo->s->deltaTime = TORCS_BRIDGE_SIM_STEP_SECONDS;
+		SimUpdate(retainedRaceInfo->s, TORCS_BRIDGE_SIM_STEP_SECONDS, -1);
+		retainedRaceInfo->s->currentTime += TORCS_BRIDGE_SIM_STEP_SECONDS;
+		accumulator -= TORCS_BRIDGE_SIM_STEP_SECONDS;
+		snapshot.completedSubsteps++;
+	}
+
+	snapshot.raceTime = retainedRaceInfo->s->currentTime;
+	if (!snapshot.cars.empty()) {
+		snapshot.cars[0] = makeCarSnapshotFromCarElt(raceConfig, input, car);
 	}
 
 	return snapshot;
@@ -604,6 +642,7 @@ TorcsRetainedAdapter::unloadRace()
 
 	raceConfig = {};
 	snapshot = {};
+	accumulator = 0.0;
 	loaded = false;
 }
 
