@@ -40,7 +40,9 @@ cmake -S torcs/torcs/godot/native/torcs_gdextension -B /private/tmp/torcs-bridge
 
 If PLIB is installed in a nonstandard location, pass
 `TORCS_BRIDGE_PLIB_INCLUDE_DIR`, `TORCS_BRIDGE_PLIB_SG_LIBRARY`, and
-`TORCS_BRIDGE_PLIB_UL_LIBRARY`.
+`TORCS_BRIDGE_PLIB_UL_LIBRARY`. On Windows, the preflight checks the bundled
+`src/windows/include` and `src/windows/lib` or `src/windows/lib64` PLIB paths
+before falling back to system search paths.
 
 When that option and preflight both pass, CMake adds a build-only
 `torcs_retained_core` target. It compiles `TorcsRetainedAdapter` plus the
