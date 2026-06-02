@@ -47,6 +47,19 @@ When that option and preflight both pass, CMake adds a disabled-prototype
 lifecycle skeleton for the future one-car direct TORCS adapter and is not used
 by the current smoke scene.
 
+CMake also runs a GDExtension dependency preflight. On systems without
+`godot-cpp`, the current harness and tests still build, but the future
+GDExtension target stays disabled. To require the binding dependency check:
+
+```bash
+cmake -S torcs/torcs/godot/native/torcs_gdextension -B /private/tmp/torcs-bridge-build -DTORCS_BRIDGE_ENABLE_GDEXTENSION=ON
+```
+
+If `godot-cpp` is installed or built in a nonstandard location, pass
+`TORCS_BRIDGE_GODOT_CPP_INCLUDE_DIR`,
+`TORCS_BRIDGE_GODOT_CPP_GEN_INCLUDE_DIR`, and
+`TORCS_BRIDGE_GODOT_CPP_LIBRARY`.
+
 Run a short harness sample:
 
 ```bash

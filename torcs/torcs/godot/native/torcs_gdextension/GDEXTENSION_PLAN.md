@@ -10,6 +10,9 @@ reloads, or export packaging fail.
 - `godot-cpp` headers/library are not present in this repository or under the
   local Homebrew prefix.
 - The repository has no network-dependent dependency bootstrap yet.
+- CMake now has a `TORCS_BRIDGE_ENABLE_GDEXTENSION` preflight option. Default
+  stub builds continue without `godot-cpp`; explicit GDExtension enable fails
+  early until the include, generated include, and library paths are provided.
 
 Do not add a non-compiling `.gdextension` resource or source file until the
 Godot C++ binding dependency is available. A `.gdextension` file that points to

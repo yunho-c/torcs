@@ -6,7 +6,9 @@ include(CTest)
 
 set(TORCS_BRIDGE_TORCS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
 option(TORCS_BRIDGE_ENABLE_RETAINED_CORE "Enable retained TORCS track/simuv2 prototype targets." OFF)
+option(TORCS_BRIDGE_ENABLE_GDEXTENSION "Enable Godot GDExtension binding target." OFF)
 include(cmake/TorcsRetainedCorePreflight.cmake)
+include(cmake/TorcsGDExtensionPreflight.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
