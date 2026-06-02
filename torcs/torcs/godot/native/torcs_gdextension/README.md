@@ -42,10 +42,12 @@ If PLIB is installed in a nonstandard location, pass
 `TORCS_BRIDGE_PLIB_INCLUDE_DIR`, `TORCS_BRIDGE_PLIB_SG_LIBRARY`, and
 `TORCS_BRIDGE_PLIB_UL_LIBRARY`.
 
-When that option and preflight both pass, CMake adds a disabled-prototype
-`torcs_retained_core` target containing `TorcsRetainedAdapter`. It is a
-lifecycle skeleton for the future one-car direct TORCS adapter and is not used
-by the current smoke scene.
+When that option and preflight both pass, CMake adds a build-only
+`torcs_retained_core` target. It compiles `TorcsRetainedAdapter` plus the
+retained TORCS source subset from `tgf`, `robottools`, `track`, `simuv2`, and
+SOLID so missing headers and legacy compile issues are isolated before the
+public bridge behavior changes. The adapter itself remains a lifecycle
+skeleton and is not used by the current smoke scene.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future

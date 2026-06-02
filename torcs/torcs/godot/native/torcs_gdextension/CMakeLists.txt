@@ -1,10 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(torcs_godot_bridge LANGUAGES CXX)
+project(torcs_godot_bridge LANGUAGES C CXX)
 
 include(CTest)
+include(CheckSymbolExists)
 
 set(TORCS_BRIDGE_TORCS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+if(WIN32)
+	set(TORCS_BRIDGE_OS_INCLUDE_DIR "${TORCS_BRIDGE_TORCS_ROOT}/src/windows")
+else()
+	set(TORCS_BRIDGE_OS_INCLUDE_DIR "${TORCS_BRIDGE_TORCS_ROOT}/src/linux")
+endif()
 option(TORCS_BRIDGE_ENABLE_RETAINED_CORE "Enable retained TORCS track/simuv2 prototype targets." OFF)
 option(TORCS_BRIDGE_ENABLE_GDEXTENSION "Enable Godot GDExtension binding target." OFF)
 include(cmake/TorcsRetainedCorePreflight.cmake)
@@ -13,6 +19,8 @@ include(cmake/TorcsGDExtensionPreflight.cmake)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+check_symbol_exists(strndup "string.h" TORCS_BRIDGE_HAVE_STRNDUP)
 
 add_library(torcs_bridge_core STATIC
 	src/torcs_bridge.cpp
@@ -116,8 +124,90 @@ set_tests_properties(torcs_bridge_harness_json_smoke PROPERTIES
 )
 
 if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
+	set(TORCS_BRIDGE_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/torcs-generated-include")
+	file(MAKE_DIRECTORY "${TORCS_BRIDGE_GENERATED_INCLUDE_DIR}/tmath")
+	foreach(TORCS_BRIDGE_TMATH_HEADER
+		linalg_t.h
+		straight2_t.h
+		v2_t.h
+		v3_t.h
+		v4_t.h
+	)
+		configure_file(
+			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/math/${TORCS_BRIDGE_TMATH_HEADER}
+			${TORCS_BRIDGE_GENERATED_INCLUDE_DIR}/tmath/${TORCS_BRIDGE_TMATH_HEADER}
+			COPYONLY
+		)
+	endforeach()
+
+	set(TORCS_BRIDGE_TGF_SOURCES
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/module.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/os.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/params.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/tgf.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/trace.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/directory.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/profiler.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/hash.cpp
+	)
+
+	set(TORCS_BRIDGE_ROBOTTOOLS_SOURCES
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/robottools/rttrack.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/robottools/rttelem.cpp
+	)
+
+	set(TORCS_BRIDGE_TRACK_SOURCES
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track/track.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track/trackitf.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track/trackutil.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track/track3.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track/track4.cpp
+	)
+
+	set(TORCS_BRIDGE_SIMUV2_SOURCES
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/aero.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/atmosphere.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/axle.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/brake.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/car.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/categories.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/collide.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/differential.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/engine.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/simu.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/simuitf.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/steer.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/susp.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/transmission.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/wheel.cpp
+	)
+
+	set(TORCS_BRIDGE_SOLID_SOURCES
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Transform.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Convex.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Box.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Cone.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Cylinder.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Sphere.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Simplex.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Polygon.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Polyhedron.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Complex.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/BBoxTree.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Endpoint.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Object.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/Response.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/RespTable.cpp
+		${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src/C-api.cpp
+	)
+
 	add_library(torcs_retained_core STATIC
 		src/torcs_retained_adapter.cpp
+		${TORCS_BRIDGE_TGF_SOURCES}
+		${TORCS_BRIDGE_ROBOTTOOLS_SOURCES}
+		${TORCS_BRIDGE_TRACK_SOURCES}
+		${TORCS_BRIDGE_SIMUV2_SOURCES}
+		${TORCS_BRIDGE_SOLID_SOURCES}
 	)
 
 	target_include_directories(torcs_retained_core
@@ -125,14 +215,23 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 			${CMAKE_CURRENT_SOURCE_DIR}/include
 		PRIVATE
 			${TORCS_BRIDGE_TORCS_ROOT}
+			${TORCS_BRIDGE_GENERATED_INCLUDE_DIR}
+			${TORCS_BRIDGE_OS_INCLUDE_DIR}
 			${TORCS_BRIDGE_TORCS_ROOT}/src/interfaces
+			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/portability
 			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf
+			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/txml
 			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/robottools
 			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track
 			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2
 			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/include
+			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/src
 			${TORCS_BRIDGE_PLIB_INCLUDE_DIR}
 	)
+
+	if(TORCS_BRIDGE_HAVE_STRNDUP)
+		target_compile_definitions(torcs_retained_core PRIVATE HAVE_STRNDUP=1)
+	endif()
 
 	target_link_libraries(torcs_retained_core
 		PUBLIC

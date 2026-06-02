@@ -190,16 +190,17 @@ Keep TORCS memory ownership native-side and copy into `TorcsBridgeSnapshot`.
 
 ## Next Prototype Task
 
-Add a `torcs_retained_core` CMake target that compiles only `tgf`,
-`robottools`, `track`, `simuv2`, and SOLID sources needed by the direct adapter.
-Start with a build-only target before changing `TorcsRace::load()` so missing
-headers/libraries are isolated from bridge behavior.
+Keep iterating on the build-only `torcs_retained_core` CMake target until it
+compiles cleanly on a machine with PLIB installed, then replace the
+`TorcsRetainedAdapter` lifecycle skeleton with the direct-call sequence above.
 
 The native CMake now includes a retained-core preflight. It reports missing
 PLIB headers/libraries by default and fails early only when
 `TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` is explicitly requested.
 
-A disabled `TorcsRetainedAdapter` skeleton now exists behind that option. The
-current source is intentionally a lifecycle placeholder; fill it with the
-direct-call sequence above only after the retained-core target can compile
-against the required PLIB/TORCS dependencies.
+When the preflight passes, `torcs_retained_core` compiles
+`TorcsRetainedAdapter` plus the retained TORCS source subset from `tgf`,
+`robottools`, `track`, `simuv2`, and SOLID. The current adapter source is
+intentionally a lifecycle placeholder; fill it with the direct-call sequence
+above only after the retained-core target can compile against the required
+PLIB/TORCS dependencies.
