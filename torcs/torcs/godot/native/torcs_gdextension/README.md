@@ -64,3 +64,9 @@ thin binding shape to add once `godot-cpp` is available.
 
 See `TORCS_CORE_SURVEY.md` for the retained TORCS track/sim integration path
 and the recommended direct-call adapter before linking the full race engine.
+
+The Godot fallback snapshot contract can be checked from the repository root:
+
+```bash
+HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --script res://scripts/bridge_smoke_check.gd
+```

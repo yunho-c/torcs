@@ -60,6 +60,7 @@ directory. Use a temporary home for headless verification:
 ```bash
 mkdir -p /private/tmp/torcs-godot-home
 HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --check-only --script res://scripts/bridge_smoke.gd
+HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --script res://scripts/bridge_smoke_check.gd
 HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --quit-after 3
 ```
 
