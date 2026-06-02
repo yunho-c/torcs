@@ -21,6 +21,12 @@ var _snapshot := {
 static func torcs_to_godot_position(position: Vector3) -> Vector3:
 	return Vector3(position.x, position.z, position.y)
 
+static func torcs_to_godot_linear_velocity(velocity: Vector3) -> Vector3:
+	return torcs_to_godot_position(velocity)
+
+static func torcs_to_godot_angular_velocity(velocity: Vector3) -> Vector3:
+	return Vector3(-velocity.x, -velocity.z, -velocity.y)
+
 func initialize(data_root: String, local_root: String, library_root: String) -> bool:
 	_runtime_config = {
 		"data_root": data_root,
@@ -102,7 +108,9 @@ func _default_car_snapshot() -> Dictionary:
 		"torcs_position": torcs_position,
 		"godot_position": torcs_to_godot_position(torcs_position),
 		"torcs_linear_velocity": Vector3.ZERO,
+		"godot_linear_velocity": Vector3.ZERO,
 		"torcs_angular_velocity": Vector3.ZERO,
+		"godot_angular_velocity": Vector3.ZERO,
 		"yaw": 0.0,
 		"speed": 0.0,
 		"rpm": 0.0,
@@ -192,7 +200,10 @@ func _step_one_substep() -> void:
 	car["gear"] = int(_human_input["gear"])
 	car["input"] = _human_input.duplicate(true)
 	car["torcs_linear_velocity"] = torcs_velocity
-	car["torcs_angular_velocity"] = Vector3(0.0, 0.0, yaw_rate)
+	car["godot_linear_velocity"] = torcs_to_godot_linear_velocity(torcs_velocity)
+	var torcs_angular_velocity := Vector3(0.0, 0.0, yaw_rate)
+	car["torcs_angular_velocity"] = torcs_angular_velocity
+	car["godot_angular_velocity"] = torcs_to_godot_angular_velocity(torcs_angular_velocity)
 	car["torcs_position"] = torcs_position
 	car["godot_position"] = torcs_to_godot_position(torcs_position)
 	car["skid"] = skid

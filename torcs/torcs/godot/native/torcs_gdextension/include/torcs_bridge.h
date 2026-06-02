@@ -88,7 +88,9 @@ struct TorcsBridgeCarSnapshot {
 	TorcsBridgeVec3 torcsPosition;
 	TorcsBridgeVec3 godotPosition;
 	TorcsBridgeVec3 torcsLinearVelocity;
+	TorcsBridgeVec3 godotLinearVelocity;
 	TorcsBridgeVec3 torcsAngularVelocity;
+	TorcsBridgeVec3 godotAngularVelocity;
 	double yaw;
 	double speed;
 	double rpm;
@@ -110,6 +112,8 @@ struct TorcsBridgeSnapshot {
 
 TorcsBridgeInputState TorcsBridgeClampInput(const TorcsBridgeInputState& input);
 TorcsBridgeVec3 TorcsBridgeTorcsToGodotPosition(const TorcsBridgeVec3& position);
+TorcsBridgeVec3 TorcsBridgeTorcsToGodotLinearVelocity(const TorcsBridgeVec3& velocity);
+TorcsBridgeVec3 TorcsBridgeTorcsToGodotAngularVelocity(const TorcsBridgeVec3& velocity);
 
 class TorcsRuntime {
 public:

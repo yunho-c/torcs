@@ -109,6 +109,22 @@ testCoordinateMapping()
 	expectNear(godotPosition.x, 1.0, 0.0, "Godot X uses TORCS X");
 	expectNear(godotPosition.y, 3.0, 0.0, "Godot Y uses TORCS Z");
 	expectNear(godotPosition.z, 2.0, 0.0, "Godot Z uses TORCS Y");
+
+	const TorcsBridgeVec3 torcsVelocity{ 4.0, 5.0, 6.0 };
+	const TorcsBridgeVec3 godotVelocity = TorcsBridgeTorcsToGodotLinearVelocity(torcsVelocity);
+	expectNear(godotVelocity.x, 4.0, 0.0, "Godot linear velocity X uses TORCS X");
+	expectNear(godotVelocity.y, 6.0, 0.0, "Godot linear velocity Y uses TORCS Z");
+	expectNear(godotVelocity.z, 5.0, 0.0, "Godot linear velocity Z uses TORCS Y");
+
+	const TorcsBridgeVec3 torcsAngularVelocity{ 7.0, 8.0, 9.0 };
+	const TorcsBridgeVec3 godotAngularVelocity =
+		TorcsBridgeTorcsToGodotAngularVelocity(torcsAngularVelocity);
+	expectNear(godotAngularVelocity.x, -7.0, 0.0,
+		"Godot angular velocity X flips TORCS roll sign");
+	expectNear(godotAngularVelocity.y, -9.0, 0.0,
+		"Godot angular velocity Y maps negative TORCS yaw");
+	expectNear(godotAngularVelocity.z, -8.0, 0.0,
+		"Godot angular velocity Z flips TORCS pitch sign");
 }
 
 static void
@@ -142,6 +158,8 @@ testSubstepAccumulator()
 		"straight input keeps zero yaw angular velocity");
 	expectNear(snapshot.cars[0].godotPosition.y, snapshot.cars[0].torcsPosition.z, 1e-12,
 		"snapshot stores mapped Godot Y");
+	expectNear(snapshot.cars[0].godotLinearVelocity.z, snapshot.cars[0].torcsLinearVelocity.y, 1e-12,
+		"snapshot stores mapped Godot linear velocity Z");
 }
 
 static void
@@ -162,6 +180,10 @@ testAngularVelocitySnapshot()
 	const TorcsBridgeSnapshot snapshot = race.step(TORCS_BRIDGE_SIM_STEP_SECONDS);
 	expectTrue(snapshot.cars[0].torcsAngularVelocity.z > 0.0,
 		"steering input writes positive yaw angular velocity");
+	expectNear(snapshot.cars[0].godotAngularVelocity.y,
+		-snapshot.cars[0].torcsAngularVelocity.z,
+		1e-12,
+		"snapshot maps TORCS yaw rate to negative Godot Y angular velocity");
 	expectNear(snapshot.cars[0].torcsAngularVelocity.x, 0.0, 1e-12,
 		"placeholder angular velocity has no roll rate");
 	expectNear(snapshot.cars[0].torcsAngularVelocity.y, 0.0, 1e-12,

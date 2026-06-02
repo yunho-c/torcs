@@ -47,10 +47,16 @@ func _check_fallback_snapshot() -> void:
 
 	var torcs_position: Vector3 = car["torcs_position"]
 	var godot_position: Vector3 = car["godot_position"]
+	var torcs_linear_velocity: Vector3 = car["torcs_linear_velocity"]
+	var godot_linear_velocity: Vector3 = car["godot_linear_velocity"]
 	var torcs_angular_velocity: Vector3 = car["torcs_angular_velocity"]
+	var godot_angular_velocity: Vector3 = car["godot_angular_velocity"]
 	_expect(is_equal_approx(godot_position.y, torcs_position.z), "Godot Y maps from TORCS Z")
 	_expect(is_equal_approx(godot_position.z, torcs_position.y), "Godot Z maps from TORCS Y")
+	_expect(is_equal_approx(godot_linear_velocity.y, torcs_linear_velocity.z), "Godot linear velocity Y maps from TORCS Z")
+	_expect(is_equal_approx(godot_linear_velocity.z, torcs_linear_velocity.y), "Godot linear velocity Z maps from TORCS Y")
 	_expect(torcs_angular_velocity.z > 0.0, "steering input writes yaw angular velocity")
+	_expect(is_equal_approx(godot_angular_velocity.y, -torcs_angular_velocity.z), "Godot angular velocity Y maps negative TORCS yaw")
 
 	snapshot = bridge.step(1.0)
 	_expect(
