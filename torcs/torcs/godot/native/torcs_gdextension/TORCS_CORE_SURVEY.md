@@ -188,11 +188,12 @@ Keep TORCS memory ownership native-side and copy into `TorcsBridgeSnapshot`.
   adapter should skip driver setup handles until the base car/category merge is
   proven.
 
-## Next Prototype Task
+## Current Prototype State
 
-Keep iterating on the build-only `torcs_retained_core` CMake target until it
-compiles cleanly on a machine with PLIB installed, then replace the
-`TorcsRetainedAdapter` lifecycle skeleton with the direct-call sequence above.
+The build-only `torcs_retained_core` CMake target compiles when the retained
+preflight finds PLIB headers and libraries. Legacy TORCS include directories
+are marked as system include paths for this target so strict warnings remain
+focused on bridge-owned adapter code.
 
 The native CMake now includes a retained-core preflight. It reports missing
 PLIB headers/libraries by default and fails early only when
@@ -200,7 +201,14 @@ PLIB headers/libraries by default and fails early only when
 
 When the preflight passes, `torcs_retained_core` compiles
 `TorcsRetainedAdapter` plus the retained TORCS source subset from `tgf`,
-`txml`, `robottools`, `track`, `simuv2`, and SOLID. The current adapter source
-is intentionally a lifecycle placeholder; fill it with the direct-call sequence
-above only after the retained-core target can compile against the required
-PLIB/TORCS dependencies.
+`txml`, `robottools`, `track`, `simuv2`, and SOLID. The adapter now initializes
+TGF path globals, loads a single track with `TrackBuildv1`, and copies track
+length/width plus sampled segment center/border points into
+`TorcsBridgeTrackSnapshot`.
+
+## Next Prototype Task
+
+Replace the retained adapter's initial placeholder car snapshot with a real
+one-car setup: merge car/category XML, initialize the starting grid position,
+call `SimInit`/`SimConfig`, map `TorcsBridgeInputState` into `tCarCtrl`, step
+with `SimUpdate`, and copy `tCarElt` fields into `TorcsBridgeCarSnapshot`.

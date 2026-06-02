@@ -48,8 +48,10 @@ When that option and preflight both pass, CMake adds a build-only
 `torcs_retained_core` target. It compiles `TorcsRetainedAdapter` plus the
 retained TORCS source subset from `tgf`, `txml`, `robottools`, `track`,
 `simuv2`, and SOLID so missing headers and legacy compile issues are isolated
-before the public bridge behavior changes. The adapter itself remains a
-lifecycle skeleton and is not used by the current smoke scene.
+before the public bridge behavior changes. The adapter initializes TGF paths,
+loads one TORCS track through `TrackBuildv1`, copies track length/width and
+sampled segment center/border points into `TorcsBridgeTrackSnapshot`, and is
+not used by the current smoke scene.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future
@@ -74,9 +76,10 @@ Run a short harness sample:
 
 Snapshots include car transform, TORCS/Godot linear and angular velocity,
 TORCS/Godot yaw, controls, wheel state, and a `TorcsBridgeTrackSnapshot` with
-debug centerline and left/right road border points. The current track data is a
-deterministic straight placeholder; retained-core work should replace it with
-points generated from TORCS physics track segments.
+debug centerline and left/right road border points. The default bridge harness
+still emits a deterministic straight placeholder; the retained adapter already
+copies debug points from TORCS physics track segments when
+`torcs_retained_core` is enabled.
 
 The harness bounds its final step to the requested `--seconds` duration. For
 example, `--seconds 0.01 --sample-seconds 0.02` emits one sample at 0.010000
@@ -86,10 +89,10 @@ Each `step(seconds)` call consumes at most 50 fixed 0.002s substeps. Extra time
 stays queued in the accumulator so a single slow Godot frame cannot run an
 unbounded catch-up loop.
 
-The current bridge intentionally uses generated placeholder motion. The next
-native milestone is replacing `TorcsRace::load()` and `TorcsRace::step()` with
-retained TORCS track loading, car setup, and `simuv2` stepping while preserving
-the public snapshot/input boundary.
+The current public bridge intentionally uses generated placeholder motion. The
+next retained-core milestone is one-car XML/category setup plus `SimInit`,
+`SimConfig`, and `SimUpdate` stepping while preserving the public
+snapshot/input boundary.
 
 See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
 thin binding shape to add once `godot-cpp` is available.

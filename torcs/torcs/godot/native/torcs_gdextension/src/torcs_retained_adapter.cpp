@@ -18,19 +18,179 @@
 
 #include "torcs_retained_adapter.h"
 
-/*
- * This file is compiled only when TORCS_BRIDGE_ENABLE_RETAINED_CORE is ON and
- * the retained-core dependency preflight passes. The next implementation step
- * is to include the TORCS interfaces here, then replace this lifecycle skeleton
- * with direct calls to GfInit, TrackBuildv1, SimInit, SimConfig, SimUpdate, and
- * SimShutdown as documented in TORCS_CORE_SURVEY.md.
- */
+#include <algorithm>
+#include <cmath>
+#include <string>
+
+#include <tgf.h>
+
+#include <track.h>
+
+#include "trackinc.h"
+
+static std::string
+withTrailingSlash(const std::string& path)
+{
+	if (path.empty() || path[path.size() - 1] == '/' || path[path.size() - 1] == '\\') {
+		return path;
+	}
+
+	return path + "/";
+}
+
+static bool
+isAbsolutePath(const std::string& path)
+{
+	return !path.empty()
+		&& (path[0] == '/'
+			|| path[0] == '\\'
+			|| (path.size() > 2 && path[1] == ':' && (path[2] == '/' || path[2] == '\\')));
+}
+
+static bool
+stripDataPrefix(const std::string& path, std::string* suffix)
+{
+	if (path == "data" || path == "data/" || path == "data\\") {
+		*suffix = "";
+		return true;
+	}
+
+	if (path.rfind("data/", 0) == 0 || path.rfind("data\\", 0) == 0) {
+		*suffix = path.substr(5);
+		return true;
+	}
+
+	return false;
+}
+
+static std::string
+resolveTrackXmlPath(const TorcsBridgeRuntimeConfig& runtimeConfig, const TorcsBridgeRaceConfig& raceConfig)
+{
+	if (raceConfig.trackXml.empty()) {
+		return withTrailingSlash(runtimeConfig.dataRoot) + "tracks/road/wheel-2/wheel-2.xml";
+	}
+
+	if (isAbsolutePath(raceConfig.trackXml)) {
+		return raceConfig.trackXml;
+	}
+
+	std::string dataRelativePath;
+	if (stripDataPrefix(raceConfig.trackXml, &dataRelativePath)) {
+		return withTrailingSlash(runtimeConfig.dataRoot) + dataRelativePath;
+	}
+
+	return withTrailingSlash(runtimeConfig.dataRoot) + raceConfig.trackXml;
+}
+
+static TorcsBridgeVec3
+makeBridgeVec3(const t3Dd& point)
+{
+	return { point.x, point.y, point.z };
+}
+
+static TorcsBridgeVec3
+midpoint(const t3Dd& left, const t3Dd& right)
+{
+	return {
+		(static_cast<double>(left.x) + static_cast<double>(right.x)) * 0.5,
+		(static_cast<double>(left.y) + static_cast<double>(right.y)) * 0.5,
+		(static_cast<double>(left.z) + static_cast<double>(right.z)) * 0.5
+	};
+}
+
+static void
+appendTrackDebugPoint(TorcsBridgeTrackSnapshot* snapshot, const t3Dd& left, const t3Dd& right)
+{
+	TorcsBridgeTrackDebugPoint point{};
+	point.torcsCenter = midpoint(left, right);
+	point.torcsLeftBorder = makeBridgeVec3(left);
+	point.torcsRightBorder = makeBridgeVec3(right);
+	point.godotCenter = TorcsBridgeTorcsToGodotPosition(point.torcsCenter);
+	point.godotLeftBorder = TorcsBridgeTorcsToGodotPosition(point.torcsLeftBorder);
+	point.godotRightBorder = TorcsBridgeTorcsToGodotPosition(point.torcsRightBorder);
+	snapshot->debugPoints.push_back(point);
+}
+
+static TorcsBridgeTrackSnapshot
+makeTrackSnapshot(const tTrack* track, const TorcsBridgeRaceConfig& raceConfig)
+{
+	TorcsBridgeTrackSnapshot snapshot{};
+	snapshot.trackId = track->internalname != nullptr ? track->internalname : raceConfig.trackXml;
+	snapshot.length = track->length;
+	snapshot.width = track->width;
+
+	if (track->seg == nullptr || track->nseg <= 0) {
+		return snapshot;
+	}
+
+	static constexpr int MAX_DEBUG_POINTS = 256;
+	const int stride = std::max(1, (track->nseg + MAX_DEBUG_POINTS - 1) / MAX_DEBUG_POINTS);
+	const tTrackSeg* seg = track->seg;
+	const tTrackSeg* lastIncluded = nullptr;
+
+	for (int index = 0; index < track->nseg && seg != nullptr; index++) {
+		if (index % stride == 0) {
+			appendTrackDebugPoint(&snapshot, seg->vertex[TR_SL], seg->vertex[TR_SR]);
+			lastIncluded = seg;
+		}
+		seg = seg->next;
+	}
+
+	if (lastIncluded != nullptr) {
+		appendTrackDebugPoint(&snapshot, lastIncluded->vertex[TR_EL], lastIncluded->vertex[TR_ER]);
+	}
+
+	return snapshot;
+}
+
+static TorcsBridgeCarSnapshot
+makeInitialCarSnapshot(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridgeInputState& input)
+{
+	TorcsBridgeCarSnapshot car{};
+	car.id = 0;
+	car.carId = raceConfig.carId.empty() ? "car1-trb1" : raceConfig.carId;
+	car.godotPosition = TorcsBridgeTorcsToGodotPosition(car.torcsPosition);
+	car.godotYaw = TorcsBridgeTorcsToGodotYaw(car.yaw);
+	car.gear = 1;
+	car.fuel = 1.0;
+	car.input = input;
+	return car;
+}
+
+static void
+initializeTgfOnce()
+{
+	static const bool initialized = []() {
+		GfInit();
+		return true;
+	}();
+	(void)initialized;
+}
 
 bool
 TorcsRetainedAdapter::initialize(const TorcsBridgeRuntimeConfig& config)
 {
+	if (track != nullptr) {
+		TrackShutdown();
+		track = nullptr;
+		loaded = false;
+		snapshot = {};
+	}
+
 	runtimeConfig = config;
 	initialized = !runtimeConfig.dataRoot.empty();
+	if (!initialized) {
+		return false;
+	}
+
+	initializeTgfOnce();
+	const std::string dataRoot = withTrailingSlash(runtimeConfig.dataRoot);
+	const std::string localRoot = withTrailingSlash(runtimeConfig.localRoot);
+	const std::string libraryRoot = withTrailingSlash(runtimeConfig.libraryRoot);
+	SetDataDir(const_cast<char*>(dataRoot.c_str()));
+	SetLocalDir(const_cast<char*>(localRoot.c_str()));
+	SetLibDir(const_cast<char*>(libraryRoot.c_str()));
+
 	return initialized;
 }
 
@@ -41,10 +201,28 @@ TorcsRetainedAdapter::loadOneCarFreeDrive(const TorcsBridgeRaceConfig& config)
 		return false;
 	}
 
+	if (loaded) {
+		TrackShutdown();
+		track = nullptr;
+		loaded = false;
+	}
+
 	raceConfig = config;
-	loaded = false;
 	snapshot = {};
-	return false;
+
+	const std::string trackXmlPath = resolveTrackXmlPath(runtimeConfig, raceConfig);
+	std::string mutableTrackXmlPath = trackXmlPath;
+	track = TrackBuildv1(&mutableTrackXmlPath[0]);
+	loaded = track != nullptr;
+	if (!loaded) {
+		return false;
+	}
+
+	input = TorcsBridgeClampInput(input);
+	snapshot.track = makeTrackSnapshot(static_cast<tTrack*>(track), raceConfig);
+	snapshot.cars.push_back(makeInitialCarSnapshot(raceConfig, input));
+
+	return true;
 }
 
 void
@@ -54,8 +232,14 @@ TorcsRetainedAdapter::setHumanInput(const TorcsBridgeInputState& bridgeInput)
 }
 
 TorcsBridgeSnapshot
-TorcsRetainedAdapter::step(double /* seconds */)
+TorcsRetainedAdapter::step(double seconds)
 {
+	snapshot.completedSubsteps = 0;
+
+	if (!loaded || !std::isfinite(seconds) || seconds <= 0.0) {
+		return snapshot;
+	}
+
 	return snapshot;
 }
 
@@ -68,6 +252,11 @@ TorcsRetainedAdapter::getSnapshot() const
 void
 TorcsRetainedAdapter::shutdown()
 {
+	if (track != nullptr) {
+		TrackShutdown();
+		track = nullptr;
+	}
+
 	runtimeConfig = {};
 	raceConfig = {};
 	input = {};

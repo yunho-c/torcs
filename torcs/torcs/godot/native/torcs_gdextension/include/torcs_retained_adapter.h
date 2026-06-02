@@ -36,6 +36,7 @@ private:
 	TorcsBridgeRaceConfig raceConfig;
 	TorcsBridgeInputState input{};
 	TorcsBridgeSnapshot snapshot;
+	void *track = nullptr;
 	bool initialized = false;
 	bool loaded = false;
 };

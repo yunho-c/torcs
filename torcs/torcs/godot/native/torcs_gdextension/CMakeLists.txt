@@ -222,7 +222,10 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 	target_include_directories(torcs_retained_core
 		PUBLIC
 			${CMAKE_CURRENT_SOURCE_DIR}/include
-		PRIVATE
+	)
+
+	target_include_directories(torcs_retained_core
+		SYSTEM PRIVATE
 			${TORCS_BRIDGE_TORCS_ROOT}
 			${TORCS_BRIDGE_GENERATED_INCLUDE_DIR}
 			${TORCS_BRIDGE_OS_INCLUDE_DIR}
