@@ -38,3 +38,6 @@ the public snapshot/input boundary.
 
 See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
 thin binding shape to add once `godot-cpp` is available.
+
+See `TORCS_CORE_SURVEY.md` for the retained TORCS track/sim integration path
+and the recommended direct-call adapter before linking the full race engine.
