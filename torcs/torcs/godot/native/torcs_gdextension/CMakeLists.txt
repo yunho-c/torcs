@@ -151,6 +151,14 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf/hash.cpp
 	)
 
+	set(TORCS_BRIDGE_TXML_SOURCES
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/txml/xmltok.c
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/txml/xmlrole.c
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/txml/xmlparse.c
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/txml/hashtable.c
+		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/txml/xml.cpp
+	)
+
 	set(TORCS_BRIDGE_ROBOTTOOLS_SOURCES
 		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/robottools/rttrack.cpp
 		${TORCS_BRIDGE_TORCS_ROOT}/src/libs/robottools/rttelem.cpp
@@ -204,6 +212,7 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 	add_library(torcs_retained_core STATIC
 		src/torcs_retained_adapter.cpp
 		${TORCS_BRIDGE_TGF_SOURCES}
+		${TORCS_BRIDGE_TXML_SOURCES}
 		${TORCS_BRIDGE_ROBOTTOOLS_SOURCES}
 		${TORCS_BRIDGE_TRACK_SOURCES}
 		${TORCS_BRIDGE_SIMUV2_SOURCES}

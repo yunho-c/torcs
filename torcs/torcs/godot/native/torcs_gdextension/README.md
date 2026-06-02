@@ -44,10 +44,10 @@ If PLIB is installed in a nonstandard location, pass
 
 When that option and preflight both pass, CMake adds a build-only
 `torcs_retained_core` target. It compiles `TorcsRetainedAdapter` plus the
-retained TORCS source subset from `tgf`, `robottools`, `track`, `simuv2`, and
-SOLID so missing headers and legacy compile issues are isolated before the
-public bridge behavior changes. The adapter itself remains a lifecycle
-skeleton and is not used by the current smoke scene.
+retained TORCS source subset from `tgf`, `txml`, `robottools`, `track`,
+`simuv2`, and SOLID so missing headers and legacy compile issues are isolated
+before the public bridge behavior changes. The adapter itself remains a
+lifecycle skeleton and is not used by the current smoke scene.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future

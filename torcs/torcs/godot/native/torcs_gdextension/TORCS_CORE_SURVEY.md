@@ -200,7 +200,7 @@ PLIB headers/libraries by default and fails early only when
 
 When the preflight passes, `torcs_retained_core` compiles
 `TorcsRetainedAdapter` plus the retained TORCS source subset from `tgf`,
-`robottools`, `track`, `simuv2`, and SOLID. The current adapter source is
-intentionally a lifecycle placeholder; fill it with the direct-call sequence
+`txml`, `robottools`, `track`, `simuv2`, and SOLID. The current adapter source
+is intentionally a lifecycle placeholder; fill it with the direct-call sequence
 above only after the retained-core target can compile against the required
 PLIB/TORCS dependencies.
