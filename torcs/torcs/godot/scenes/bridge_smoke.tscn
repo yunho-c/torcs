@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://cfbsfcoxsvr56"]
+
+[ext_resource type="Script" path="res://scripts/bridge_smoke.gd" id="1_bridge"]
+
+[node name="BridgeSmoke" type="Node3D"]
+script = ExtResource("1_bridge")
+
+[node name="Road" type="CSGBox3D" parent="."]
+size = Vector3(120, 0.05, 10)
+position = Vector3(35, -0.05, 0)
+material_override = null
+
+[node name="Car" type="CSGBox3D" parent="."]
+size = Vector3(1.9, 0.7, 4.2)
+position = Vector3(0, 0.35, 0)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 12, 0)
+light_energy = 2.5
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.707107, -0.235702, 0.666667, 0, 0.942809, 0.333333, -0.707107, -0.235702, 0.666667, -8, 4, 8)
+current = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Telemetry" type="Label" parent="CanvasLayer"]
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 46.0
+theme_override_font_sizes/font_size = 18
+text = "time 0.00  speed 0.00 m/s  rpm 0  substeps 0"

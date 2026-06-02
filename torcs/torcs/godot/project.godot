@@ -11,6 +11,7 @@ config_version=5
 config/name="TORCS Godot Port"
 config/description="Godot front end for retained TORCS simulation prototypes."
 config/features=PackedStringArray("4.6")
+run/main_scene="res://scenes/bridge_smoke.tscn"
 
 [physics]
 
