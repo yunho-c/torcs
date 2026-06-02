@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -36,10 +37,14 @@ struct HarnessOptions {
 	std::string dataRoot = TORCS_BRIDGE_DEFAULT_DATA_ROOT;
 	std::string localRoot = TORCS_BRIDGE_DEFAULT_LOCAL_ROOT;
 	std::string libraryRoot = TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT;
+	std::string trackXml = "data/tracks/road/wheel-2/wheel-2.xml";
+	std::string carXml = "data/cars/models/car1-trb1/car1-trb1.xml";
+	std::string carId = "car1-trb1";
 	std::string outputPath;
 	HarnessOutputFormat outputFormat = HARNESS_OUTPUT_CSV;
 	double seconds = 10.0;
 	double sampleSeconds = TORCS_BRIDGE_ROBOT_STEP_SECONDS;
+	int laps = 0;
 };
 
 static void
@@ -52,6 +57,10 @@ printUsage(const char* program)
 		<< "  --data-root <path>      TORCS data root.\n"
 		<< "  --local-root <path>     TORCS local root.\n"
 		<< "  --library-root <path>   TORCS native library root.\n"
+		<< "  --track-xml <path>      Track XML path, default wheel-2.\n"
+		<< "  --car-xml <path>        Car XML path, default car1-trb1.\n"
+		<< "  --car-id <id>           Car id for snapshots, default car1-trb1.\n"
+		<< "  --laps <count>          Race lap count, default 0 free-drive.\n"
 		<< "  --seconds <value>       Simulation duration, default 10.0.\n"
 		<< "  --sample-seconds <val>  Snapshot sample period, default 0.02.\n"
 		<< "  --output <path>         Write output to a file instead of stdout.\n"
@@ -69,6 +78,21 @@ parseDouble(const char* value, double* result)
 	}
 
 	*result = parsed;
+	return true;
+}
+
+static bool
+parseInt(const char* value, int* result)
+{
+	char* end = nullptr;
+	const long parsed = std::strtol(value, &end, 10);
+	if (end == value || *end != '\0'
+		|| parsed < std::numeric_limits<int>::min()
+		|| parsed > std::numeric_limits<int>::max()) {
+		return false;
+	}
+
+	*result = static_cast<int>(parsed);
 	return true;
 }
 
@@ -100,6 +124,12 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 			options->localRoot = value;
 		} else if (arg == "--library-root") {
 			options->libraryRoot = value;
+		} else if (arg == "--track-xml") {
+			options->trackXml = value;
+		} else if (arg == "--car-xml") {
+			options->carXml = value;
+		} else if (arg == "--car-id") {
+			options->carId = value;
 		} else if (arg == "--output") {
 			options->outputPath = value;
 		} else if (arg == "--format") {
@@ -122,6 +152,11 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 				std::cerr << "Invalid --sample-seconds value: " << value << "\n";
 				return HARNESS_PARSE_ERROR;
 			}
+		} else if (arg == "--laps") {
+			if (!parseInt(value, &options->laps)) {
+				std::cerr << "Invalid --laps value: " << value << "\n";
+				return HARNESS_PARSE_ERROR;
+			}
 		} else {
 			std::cerr << "Unknown option: " << arg << "\n";
 			return HARNESS_PARSE_ERROR;
@@ -136,6 +171,26 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 	if (options->sampleSeconds < TORCS_BRIDGE_SIM_STEP_SECONDS) {
 		std::cerr << "--sample-seconds must be at least "
 			<< TORCS_BRIDGE_SIM_STEP_SECONDS << ".\n";
+		return HARNESS_PARSE_ERROR;
+	}
+
+	if (options->trackXml.empty()) {
+		std::cerr << "--track-xml must not be empty.\n";
+		return HARNESS_PARSE_ERROR;
+	}
+
+	if (options->carXml.empty()) {
+		std::cerr << "--car-xml must not be empty.\n";
+		return HARNESS_PARSE_ERROR;
+	}
+
+	if (options->carId.empty()) {
+		std::cerr << "--car-id must not be empty.\n";
+		return HARNESS_PARSE_ERROR;
+	}
+
+	if (options->laps < 0) {
+		std::cerr << "--laps must not be negative.\n";
 		return HARNESS_PARSE_ERROR;
 	}
 
@@ -374,10 +429,10 @@ main(int argc, char** argv)
 
 	TorcsRace race(runtime);
 	if (!race.load({
-		"data/tracks/road/wheel-2/wheel-2.xml",
-		"data/cars/models/car1-trb1/car1-trb1.xml",
-		"car1-trb1",
-		0
+		options.trackXml,
+		options.carXml,
+		options.carId,
+		options.laps
 	})) {
 		std::cerr << "Failed to load TORCS bridge race.\n";
 		return 1;

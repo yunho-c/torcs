@@ -17,9 +17,9 @@ audio, GLUT, PLIB, SSG, and `tgfclient` dependencies.
 - `torcs_bridge_harness`: command-line deterministic CSV snapshot harness.
 - `torcs_bridge_tests`: dependency-free CTest regression checks.
 
-CTest also runs quick harness CLI smoke checks for `--help`, CSV output, and
-JSON output so regressions in the standalone debugging path are caught with the
-core tests.
+CTest also runs quick harness CLI smoke checks for `--help`, CSV output, JSON
+output, bounded sample duration, and custom race configuration so regressions in
+the standalone debugging path are caught with the core tests.
 
 Build from the repository root:
 
@@ -51,12 +51,17 @@ Run a short harness sample:
 ```bash
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04 --format json
+/private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04 --track-xml data/tracks/road/wheel-2/wheel-2.xml --car-xml data/cars/models/car1-trb1/car1-trb1.xml --car-id car1-trb1 --laps 0
 ```
 
 Snapshots include car state plus a `TorcsBridgeTrackSnapshot` with debug
 centerline and left/right road border points. The current track data is a
 deterministic straight placeholder; retained-core work should replace it with
 points generated from TORCS physics track segments.
+
+The harness bounds its final step to the requested `--seconds` duration. For
+example, `--seconds 0.01 --sample-seconds 0.02` emits one sample at 0.010000
+seconds instead of advancing a full 0.02 seconds.
 
 Each `step(seconds)` call consumes at most 50 fixed 0.002s substeps. Extra time
 stays queued in the accumulator so a single slow Godot frame cannot run an

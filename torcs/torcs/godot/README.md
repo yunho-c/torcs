@@ -44,7 +44,9 @@ Run the harness:
 
 The harness emits CSV or JSON snapshots with time, substep count, TORCS/Godot
 positions, yaw, speed, RPM, gear, input values, wheel state, damage, skid, and
-track debug geometry.
+track debug geometry. It also accepts `--track-xml`, `--car-xml`, `--car-id`,
+and `--laps` so future retained-core runs can use the same standalone harness
+for different race configurations.
 
 ## Godot Smoke Scene
 
