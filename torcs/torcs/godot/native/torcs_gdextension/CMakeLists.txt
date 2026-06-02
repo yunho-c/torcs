@@ -77,7 +77,7 @@ add_test(NAME torcs_bridge_harness_csv_smoke
 	COMMAND torcs_bridge_harness --seconds 0.04 --sample-seconds 0.02
 )
 set_tests_properties(torcs_bridge_harness_csv_smoke PROPERTIES
-	PASS_REGULAR_EXPRESSION "time,substeps"
+	PASS_REGULAR_EXPRESSION "godot_lvx,.*godot_avz,.*godot_yaw"
 )
 
 add_test(NAME torcs_bridge_harness_deterministic_csv
@@ -112,7 +112,7 @@ add_test(NAME torcs_bridge_harness_json_smoke
 	COMMAND torcs_bridge_harness --seconds 0.04 --sample-seconds 0.02 --format json
 )
 set_tests_properties(torcs_bridge_harness_json_smoke PROPERTIES
-	PASS_REGULAR_EXPRESSION "\"samples\""
+	PASS_REGULAR_EXPRESSION "\"godot_linear_velocity\".*\"godot_angular_velocity\".*\"godot_yaw\""
 )
 
 if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
