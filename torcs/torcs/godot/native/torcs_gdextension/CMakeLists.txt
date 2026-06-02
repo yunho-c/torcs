@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 project(torcs_godot_bridge LANGUAGES CXX)
 
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -44,3 +46,20 @@ if(MSVC)
 else()
 	target_compile_options(torcs_bridge_harness PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+add_executable(torcs_bridge_tests
+	tests/torcs_bridge_tests.cpp
+)
+
+target_link_libraries(torcs_bridge_tests
+	PRIVATE
+		torcs_bridge_core
+)
+
+if(MSVC)
+	target_compile_options(torcs_bridge_tests PRIVATE /W4)
+else()
+	target_compile_options(torcs_bridge_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(NAME torcs_bridge_tests COMMAND torcs_bridge_tests)
