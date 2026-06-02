@@ -39,10 +39,12 @@ Run the harness:
 
 ```bash
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 10 --output /private/tmp/torcs-bridge.csv
+/private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 10 --format json --output /private/tmp/torcs-bridge.json
 ```
 
-The harness emits CSV snapshots with time, substep count, TORCS/Godot
-positions, yaw, speed, RPM, gear, input values, damage, and skid.
+The harness emits CSV or JSON snapshots with time, substep count, TORCS/Godot
+positions, yaw, speed, RPM, gear, input values, wheel state, damage, skid, and
+track debug geometry.
 
 ## Godot Smoke Scene
 

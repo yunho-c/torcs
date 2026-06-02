@@ -26,11 +26,17 @@
 #include <ostream>
 #include <string>
 
+enum HarnessOutputFormat {
+	HARNESS_OUTPUT_CSV,
+	HARNESS_OUTPUT_JSON
+};
+
 struct HarnessOptions {
 	std::string dataRoot = TORCS_BRIDGE_DEFAULT_DATA_ROOT;
 	std::string localRoot = TORCS_BRIDGE_DEFAULT_LOCAL_ROOT;
 	std::string libraryRoot = TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT;
 	std::string outputPath;
+	HarnessOutputFormat outputFormat = HARNESS_OUTPUT_CSV;
 	double seconds = 10.0;
 	double sampleSeconds = TORCS_BRIDGE_ROBOT_STEP_SECONDS;
 };
@@ -46,8 +52,9 @@ printUsage(const char* program)
 		<< "  --local-root <path>     TORCS local root.\n"
 		<< "  --library-root <path>   TORCS native library root.\n"
 		<< "  --seconds <value>       Simulation duration, default 10.0.\n"
-		<< "  --sample-seconds <val>  CSV sample period, default 0.02.\n"
-		<< "  --output <path>         Write CSV to a file instead of stdout.\n"
+		<< "  --sample-seconds <val>  Snapshot sample period, default 0.02.\n"
+		<< "  --output <path>         Write output to a file instead of stdout.\n"
+		<< "  --format <csv|json>     Output format, default csv.\n"
 		<< "  --help                  Show this message.\n";
 }
 
@@ -94,6 +101,16 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 			options->libraryRoot = value;
 		} else if (arg == "--output") {
 			options->outputPath = value;
+		} else if (arg == "--format") {
+			const std::string format = value;
+			if (format == "csv") {
+				options->outputFormat = HARNESS_OUTPUT_CSV;
+			} else if (format == "json") {
+				options->outputFormat = HARNESS_OUTPUT_JSON;
+			} else {
+				std::cerr << "Invalid --format value: " << value << "\n";
+				return HARNESS_PARSE_ERROR;
+			}
 		} else if (arg == "--seconds") {
 			if (!parseDouble(value, &options->seconds)) {
 				std::cerr << "Invalid --seconds value: " << value << "\n";
@@ -184,6 +201,158 @@ writeCsvRow(std::ostream& out, const TorcsBridgeSnapshot& snapshot)
 		<< car.skid << '\n';
 }
 
+static void
+writeJsonString(std::ostream& out, const std::string& value)
+{
+	out << '"';
+	for (const char ch : value) {
+		switch (ch) {
+		case '\\':
+			out << "\\\\";
+			break;
+		case '"':
+			out << "\\\"";
+			break;
+		case '\n':
+			out << "\\n";
+			break;
+		case '\r':
+			out << "\\r";
+			break;
+		case '\t':
+			out << "\\t";
+			break;
+		default:
+			out << ch;
+			break;
+		}
+	}
+	out << '"';
+}
+
+static void
+writeJsonVec3(std::ostream& out, const TorcsBridgeVec3& vec)
+{
+	out
+		<< "{\"x\":" << vec.x
+		<< ",\"y\":" << vec.y
+		<< ",\"z\":" << vec.z
+		<< '}';
+}
+
+static void
+writeJsonInput(std::ostream& out, const TorcsBridgeInputState& input)
+{
+	out
+		<< "{\"steer\":" << input.steer
+		<< ",\"throttle\":" << input.throttle
+		<< ",\"brake\":" << input.brake
+		<< ",\"clutch\":" << input.clutch
+		<< ",\"gear\":" << input.gear
+		<< ",\"lights\":" << (input.lights ? "true" : "false")
+		<< ",\"pit_request\":" << (input.pitRequest ? "true" : "false")
+		<< ",\"brake_balance\":" << input.brakeBalance
+		<< '}';
+}
+
+static void
+writeJsonTrack(std::ostream& out, const TorcsBridgeTrackSnapshot& track)
+{
+	out << "{\"track_id\":";
+	writeJsonString(out, track.trackId);
+	out
+		<< ",\"length\":" << track.length
+		<< ",\"width\":" << track.width
+		<< ",\"debug_points\":[";
+
+	for (size_t i = 0; i < track.debugPoints.size(); i++) {
+		const TorcsBridgeTrackDebugPoint& point = track.debugPoints[i];
+		if (i != 0) {
+			out << ',';
+		}
+		out << "{\"torcs_center\":";
+		writeJsonVec3(out, point.torcsCenter);
+		out << ",\"godot_center\":";
+		writeJsonVec3(out, point.godotCenter);
+		out << ",\"torcs_left_border\":";
+		writeJsonVec3(out, point.torcsLeftBorder);
+		out << ",\"godot_left_border\":";
+		writeJsonVec3(out, point.godotLeftBorder);
+		out << ",\"torcs_right_border\":";
+		writeJsonVec3(out, point.torcsRightBorder);
+		out << ",\"godot_right_border\":";
+		writeJsonVec3(out, point.godotRightBorder);
+		out << '}';
+	}
+
+	out << "]}";
+}
+
+static void
+writeJsonWheel(std::ostream& out, const TorcsBridgeWheelSnapshot& wheel)
+{
+	out
+		<< "{\"spin_velocity\":" << wheel.spinVelocity
+		<< ",\"ride_height\":" << wheel.rideHeight
+		<< ",\"slip_side\":" << wheel.slipSide
+		<< ",\"slip_accel\":" << wheel.slipAccel
+		<< ",\"skid\":" << wheel.skid
+		<< ",\"surface_id\":" << wheel.surfaceId
+		<< '}';
+}
+
+static void
+writeJsonCar(std::ostream& out, const TorcsBridgeCarSnapshot& car)
+{
+	out
+		<< "{\"id\":" << car.id
+		<< ",\"car_id\":";
+	writeJsonString(out, car.carId);
+	out << ",\"torcs_position\":";
+	writeJsonVec3(out, car.torcsPosition);
+	out << ",\"godot_position\":";
+	writeJsonVec3(out, car.godotPosition);
+	out << ",\"torcs_linear_velocity\":";
+	writeJsonVec3(out, car.torcsLinearVelocity);
+	out
+		<< ",\"yaw\":" << car.yaw
+		<< ",\"speed\":" << car.speed
+		<< ",\"rpm\":" << car.rpm
+		<< ",\"gear\":" << car.gear
+		<< ",\"fuel\":" << car.fuel
+		<< ",\"damage\":" << car.damage
+		<< ",\"skid\":" << car.skid
+		<< ",\"collision\":" << (car.collision ? "true" : "false")
+		<< ",\"input\":";
+	writeJsonInput(out, car.input);
+	out << ",\"wheels\":[";
+	for (size_t i = 0; i < car.wheels.size(); i++) {
+		if (i != 0) {
+			out << ',';
+		}
+		writeJsonWheel(out, car.wheels[i]);
+	}
+	out << "]}";
+}
+
+static void
+writeJsonSample(std::ostream& out, const TorcsBridgeSnapshot& snapshot)
+{
+	out
+		<< "{\"time\":" << snapshot.raceTime
+		<< ",\"substeps\":" << snapshot.completedSubsteps
+		<< ",\"cars\":[";
+
+	for (size_t i = 0; i < snapshot.cars.size(); i++) {
+		if (i != 0) {
+			out << ',';
+		}
+		writeJsonCar(out, snapshot.cars[i]);
+	}
+
+	out << "]}";
+}
+
 int
 main(int argc, char** argv)
 {
@@ -224,11 +393,34 @@ main(int argc, char** argv)
 		out = file.get();
 	}
 
-	writeCsvHeader(*out);
+	out->setf(std::ios::fixed);
+	out->precision(6);
+
+	if (options.outputFormat == HARNESS_OUTPUT_CSV) {
+		writeCsvHeader(*out);
+	} else {
+		*out << "{\"track\":";
+		writeJsonTrack(*out, race.getSnapshot().track);
+		*out << ",\"samples\":[";
+	}
+
+	bool wroteJsonSample = false;
 	for (double elapsed = 0.0; elapsed < options.seconds; elapsed += options.sampleSeconds) {
 		race.setHumanInput(0, scriptedInput(elapsed));
 		const TorcsBridgeSnapshot snapshot = race.step(options.sampleSeconds);
-		writeCsvRow(*out, snapshot);
+		if (options.outputFormat == HARNESS_OUTPUT_CSV) {
+			writeCsvRow(*out, snapshot);
+		} else {
+			if (wroteJsonSample) {
+				*out << ',';
+			}
+			writeJsonSample(*out, snapshot);
+			wroteJsonSample = true;
+		}
+	}
+
+	if (options.outputFormat == HARNESS_OUTPUT_JSON) {
+		*out << "]}\n";
 	}
 
 	race.shutdown();

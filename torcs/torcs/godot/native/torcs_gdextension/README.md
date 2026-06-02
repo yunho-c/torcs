@@ -46,6 +46,7 @@ Run a short harness sample:
 
 ```bash
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04
+/private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04 --format json
 ```
 
 Snapshots include car state plus a `TorcsBridgeTrackSnapshot` with debug
