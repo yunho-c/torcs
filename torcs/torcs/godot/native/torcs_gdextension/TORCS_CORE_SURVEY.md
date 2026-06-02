@@ -204,17 +204,20 @@ When the preflight passes, `torcs_retained_core` compiles
 `txml`, `robottools`, `track`, `simuv2`, and SOLID. The adapter now initializes
 TGF path globals, loads a single track with `TrackBuildv1`, and copies track
 length/width plus sampled segment center/border points into
-`TorcsBridgeTrackSnapshot`.
+`TorcsBridgeTrackSnapshot`. It also loads the configured car XML, reads the car
+category, merges the category and car parameter handles, and owns the merged
+handle for the later `SimConfig` step.
 
 When retained dependencies are enabled, CMake also builds
 `torcs_retained_smoke` and registers a retained-only CTest. The smoke test
 links the retained adapter executable path, loads `wheel-2`, checks positive
-track length/width, verifies copied debug points, and confirms shutdown unloads
-the adapter.
+track length/width, verifies copied debug points, checks `car1-trb1` initial
+fuel from the merged car/category handle, and confirms shutdown unloads the
+adapter.
 
 ## Next Prototype Task
 
 Replace the retained adapter's initial placeholder car snapshot with a real
-one-car setup: merge car/category XML, initialize the starting grid position,
-call `SimInit`/`SimConfig`, map `TorcsBridgeInputState` into `tCarCtrl`, step
-with `SimUpdate`, and copy `tCarElt` fields into `TorcsBridgeCarSnapshot`.
+one-car setup: initialize the starting grid position, call
+`SimInit`/`SimConfig`, map `TorcsBridgeInputState` into `tCarCtrl`, step with
+`SimUpdate`, and copy `tCarElt` fields into `TorcsBridgeCarSnapshot`.

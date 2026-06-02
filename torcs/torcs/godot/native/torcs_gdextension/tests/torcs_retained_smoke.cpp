@@ -69,6 +69,9 @@ main()
 	if (snapshot.cars.size() != 1 || snapshot.cars[0].carId != "car1-trb1") {
 		return fail("initial car placeholder is present");
 	}
+	if (std::fabs(snapshot.cars[0].fuel - 94.0) > 1e-6) {
+		return fail("car/category XML merge provides initial fuel");
+	}
 
 	adapter.shutdown();
 	if (adapter.isLoaded()) {

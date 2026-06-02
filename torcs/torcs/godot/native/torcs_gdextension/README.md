@@ -53,13 +53,14 @@ retained TORCS source subset from `tgf`, `txml`, `robottools`, `track`,
 `simuv2`, and SOLID so missing headers and legacy compile issues are isolated
 before the public bridge behavior changes. The adapter initializes TGF paths,
 loads one TORCS track through `TrackBuildv1`, copies track length/width and
-sampled segment center/border points into `TorcsBridgeTrackSnapshot`, and is
-not used by the current smoke scene.
+sampled segment center/border points into `TorcsBridgeTrackSnapshot`, loads and
+merges the car model/category XML for later sim setup, and is not used by the
+current smoke scene.
 
 The retained-core CTest set also includes `torcs_retained_smoke`, which links
 the retained adapter executable path and verifies `wheel-2` track loading at
-runtime. This test only exists when `TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` and
-the dependency preflight passes.
+runtime plus `car1-trb1` car/category parameter loading. This test only exists
+when `TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` and the dependency preflight passes.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future
@@ -98,9 +99,9 @@ stays queued in the accumulator so a single slow Godot frame cannot run an
 unbounded catch-up loop.
 
 The current public bridge intentionally uses generated placeholder motion. The
-next retained-core milestone is one-car XML/category setup plus `SimInit`,
-`SimConfig`, and `SimUpdate` stepping while preserving the public
-snapshot/input boundary.
+next retained-core milestone is creating the one-car `tCarElt`/`tSituation`
+state, calling `SimInit`/`SimConfig`, and then adding `SimUpdate` stepping while
+preserving the public snapshot/input boundary.
 
 See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
 thin binding shape to add once `godot-cpp` is available.

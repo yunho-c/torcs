@@ -22,6 +22,7 @@
 #include <cmath>
 #include <string>
 
+#include <car.h>
 #include <tgf.h>
 
 #include <track.h>
@@ -80,6 +81,67 @@ resolveTrackXmlPath(const TorcsBridgeRuntimeConfig& runtimeConfig, const TorcsBr
 	}
 
 	return withTrailingSlash(runtimeConfig.dataRoot) + raceConfig.trackXml;
+}
+
+static std::string
+resolveCarXmlPath(const TorcsBridgeRuntimeConfig& runtimeConfig, const TorcsBridgeRaceConfig& raceConfig)
+{
+	if (raceConfig.carXml.empty()) {
+		return withTrailingSlash(runtimeConfig.dataRoot) + "cars/models/car1-trb1/car1-trb1.xml";
+	}
+
+	if (isAbsolutePath(raceConfig.carXml)) {
+		return raceConfig.carXml;
+	}
+
+	std::string dataRelativePath;
+	if (stripDataPrefix(raceConfig.carXml, &dataRelativePath)) {
+		return withTrailingSlash(runtimeConfig.dataRoot) + dataRelativePath;
+	}
+
+	return withTrailingSlash(runtimeConfig.dataRoot) + raceConfig.carXml;
+}
+
+static std::string
+resolveCategoryXmlPath(const TorcsBridgeRuntimeConfig& runtimeConfig, const char* category)
+{
+	const std::string categoryName = category != nullptr ? category : "";
+	return withTrailingSlash(runtimeConfig.dataRoot)
+		+ "cars/categories/" + categoryName + "/" + categoryName + ".xml";
+}
+
+static void*
+loadMergedCarHandle(const TorcsBridgeRuntimeConfig& runtimeConfig, const TorcsBridgeRaceConfig& raceConfig)
+{
+	const std::string carXmlPath = resolveCarXmlPath(runtimeConfig, raceConfig);
+	void* carHandle = GfParmReadFile(carXmlPath.c_str(), GFPARM_RMODE_STD | GFPARM_RMODE_PRIVATE);
+	if (carHandle == nullptr) {
+		return nullptr;
+	}
+
+	const char* category = GfParmGetStr(carHandle, SECT_CAR, PRM_CATEGORY, nullptr);
+	if (category == nullptr || category[0] == '\0') {
+		GfParmReleaseHandle(carHandle);
+		return nullptr;
+	}
+
+	const std::string categoryXmlPath = resolveCategoryXmlPath(runtimeConfig, category);
+	void* categoryHandle = GfParmReadFile(categoryXmlPath.c_str(), GFPARM_RMODE_STD | GFPARM_RMODE_PRIVATE);
+	if (categoryHandle == nullptr) {
+		GfParmReleaseHandle(carHandle);
+		return nullptr;
+	}
+
+	if (GfParmCheckHandle(categoryHandle, carHandle)) {
+		GfParmReleaseHandle(categoryHandle);
+		GfParmReleaseHandle(carHandle);
+		return nullptr;
+	}
+
+	return GfParmMergeHandles(
+		categoryHandle,
+		carHandle,
+		GFPARM_MMODE_SRC | GFPARM_MMODE_DST | GFPARM_MMODE_RELSRC | GFPARM_MMODE_RELDST);
 }
 
 static TorcsBridgeVec3
@@ -144,7 +206,7 @@ makeTrackSnapshot(const tTrack* track, const TorcsBridgeRaceConfig& raceConfig)
 }
 
 static TorcsBridgeCarSnapshot
-makeInitialCarSnapshot(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridgeInputState& input)
+makeInitialCarSnapshot(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridgeInputState& input, void* carHandle)
 {
 	TorcsBridgeCarSnapshot car{};
 	car.id = 0;
@@ -152,7 +214,7 @@ makeInitialCarSnapshot(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridg
 	car.godotPosition = TorcsBridgeTorcsToGodotPosition(car.torcsPosition);
 	car.godotYaw = TorcsBridgeTorcsToGodotYaw(car.yaw);
 	car.gear = 1;
-	car.fuel = 1.0;
+	car.fuel = GfParmGetNum(carHandle, SECT_CAR, PRM_FUEL, "l", 0.0f);
 	car.input = input;
 	return car;
 }
@@ -170,12 +232,7 @@ initializeTgfOnce()
 bool
 TorcsRetainedAdapter::initialize(const TorcsBridgeRuntimeConfig& config)
 {
-	if (track != nullptr) {
-		TrackShutdown();
-		track = nullptr;
-		loaded = false;
-		snapshot = {};
-	}
+	unloadRace();
 
 	runtimeConfig = config;
 	initialized = !runtimeConfig.dataRoot.empty();
@@ -201,26 +258,27 @@ TorcsRetainedAdapter::loadOneCarFreeDrive(const TorcsBridgeRaceConfig& config)
 		return false;
 	}
 
-	if (loaded) {
-		TrackShutdown();
-		track = nullptr;
-		loaded = false;
-	}
+	unloadRace();
 
 	raceConfig = config;
-	snapshot = {};
 
 	const std::string trackXmlPath = resolveTrackXmlPath(runtimeConfig, raceConfig);
 	std::string mutableTrackXmlPath = trackXmlPath;
 	track = TrackBuildv1(&mutableTrackXmlPath[0]);
-	loaded = track != nullptr;
-	if (!loaded) {
+	if (track == nullptr) {
+		return false;
+	}
+
+	carHandle = loadMergedCarHandle(runtimeConfig, raceConfig);
+	if (carHandle == nullptr) {
+		unloadRace();
 		return false;
 	}
 
 	input = TorcsBridgeClampInput(input);
 	snapshot.track = makeTrackSnapshot(static_cast<tTrack*>(track), raceConfig);
-	snapshot.cars.push_back(makeInitialCarSnapshot(raceConfig, input));
+	snapshot.cars.push_back(makeInitialCarSnapshot(raceConfig, input, carHandle));
+	loaded = true;
 
 	return true;
 }
@@ -252,16 +310,28 @@ TorcsRetainedAdapter::getSnapshot() const
 void
 TorcsRetainedAdapter::shutdown()
 {
+	unloadRace();
+
+	runtimeConfig = {};
+	input = {};
+	initialized = false;
+}
+
+void
+TorcsRetainedAdapter::unloadRace()
+{
+	if (carHandle != nullptr) {
+		GfParmReleaseHandle(carHandle);
+		carHandle = nullptr;
+	}
+
 	if (track != nullptr) {
 		TrackShutdown();
 		track = nullptr;
 	}
 
-	runtimeConfig = {};
 	raceConfig = {};
-	input = {};
 	snapshot = {};
-	initialized = false;
 	loaded = false;
 }
 

@@ -32,11 +32,14 @@ public:
 	bool isLoaded() const;
 
 private:
+	void unloadRace();
+
 	TorcsBridgeRuntimeConfig runtimeConfig;
 	TorcsBridgeRaceConfig raceConfig;
 	TorcsBridgeInputState input{};
 	TorcsBridgeSnapshot snapshot;
 	void *track = nullptr;
+	void *carHandle = nullptr;
 	bool initialized = false;
 	bool loaded = false;
 };
