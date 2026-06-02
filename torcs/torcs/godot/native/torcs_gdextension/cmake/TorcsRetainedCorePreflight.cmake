@@ -1,4 +1,7 @@
+include(CheckCXXSourceCompiles)
+
 set(TORCS_BRIDGE_RETAINED_CORE_AVAILABLE OFF)
+set(TORCS_BRIDGE_RETAINED_CORE_LINKABLE OFF)
 set(TORCS_BRIDGE_RETAINED_CORE_MISSING "")
 set(TORCS_BRIDGE_PLIB_HINTS "")
 set(TORCS_BRIDGE_PLIB_LIBRARY_HINTS "")
@@ -54,7 +57,32 @@ if(TORCS_BRIDGE_RETAINED_CORE_MISSING)
 	message(STATUS "Retained TORCS core preflight: missing ${TORCS_BRIDGE_RETAINED_CORE_MISSING_TEXT}; retained-core targets disabled.")
 else()
 	set(TORCS_BRIDGE_RETAINED_CORE_AVAILABLE ON)
-	message(STATUS "Retained TORCS core preflight: PLIB dependencies found.")
+
+	set(TORCS_BRIDGE_SAVED_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES}")
+	set(TORCS_BRIDGE_SAVED_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES}")
+	set(CMAKE_REQUIRED_INCLUDES "${TORCS_BRIDGE_PLIB_INCLUDE_DIR}")
+	set(CMAKE_REQUIRED_LIBRARIES
+		"${TORCS_BRIDGE_PLIB_SG_LIBRARY};${TORCS_BRIDGE_PLIB_UL_LIBRARY}"
+	)
+	unset(TORCS_BRIDGE_PLIB_SG_LINKS CACHE)
+	check_cxx_source_compiles("
+		#include <plib/sg.h>
+		int main()
+		{
+			sgMat4 matrix;
+			sgMakeCoordMat4(matrix, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+			return 0;
+		}
+	" TORCS_BRIDGE_PLIB_SG_LINKS)
+	set(CMAKE_REQUIRED_INCLUDES "${TORCS_BRIDGE_SAVED_REQUIRED_INCLUDES}")
+	set(CMAKE_REQUIRED_LIBRARIES "${TORCS_BRIDGE_SAVED_REQUIRED_LIBRARIES}")
+
+	if(TORCS_BRIDGE_PLIB_SG_LINKS)
+		set(TORCS_BRIDGE_RETAINED_CORE_LINKABLE ON)
+		message(STATUS "Retained TORCS core preflight: PLIB dependencies found and linkable.")
+	else()
+		message(STATUS "Retained TORCS core preflight: PLIB files found, but sg symbols do not link; retained smoke target disabled.")
+	endif()
 endif()
 
 if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND NOT TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)

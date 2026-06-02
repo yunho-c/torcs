@@ -40,6 +40,8 @@ private:
 	TorcsBridgeSnapshot snapshot;
 	void *track = nullptr;
 	void *carHandle = nullptr;
+	void *raceInfo = nullptr;
+	bool simulationStarted = false;
 	bool initialized = false;
 	bool loaded = false;
 };

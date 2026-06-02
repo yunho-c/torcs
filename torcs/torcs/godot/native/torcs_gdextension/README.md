@@ -54,13 +54,16 @@ retained TORCS source subset from `tgf`, `txml`, `robottools`, `track`,
 before the public bridge behavior changes. The adapter initializes TGF paths,
 loads one TORCS track through `TrackBuildv1`, copies track length/width and
 sampled segment center/border points into `TorcsBridgeTrackSnapshot`, loads and
-merges the car model/category XML for later sim setup, and is not used by the
-current smoke scene.
+merges the car model/category XML, builds a one-car `tRmInfo`/`tSituation`,
+calls `SimInit`/`SimConfig`, and extracts the initial car snapshot from
+`tCarElt`. It is not used by the current smoke scene.
 
-The retained-core CTest set also includes `torcs_retained_smoke`, which links
-the retained adapter executable path and verifies `wheel-2` track loading at
-runtime plus `car1-trb1` car/category parameter loading. This test only exists
-when `TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` and the dependency preflight passes.
+When PLIB can also link required `sg` symbols, the retained-core CTest set
+includes `torcs_retained_smoke`, which links the retained adapter executable
+path and verifies `wheel-2` track loading at runtime plus `car1-trb1`
+simulator-backed car setup. Empty scratch archives are only enough for static
+`torcs_retained_core` compile checks, so CMake leaves the smoke target disabled
+if the PLIB files are present but the `sg` link probe fails.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future
@@ -99,9 +102,9 @@ stays queued in the accumulator so a single slow Godot frame cannot run an
 unbounded catch-up loop.
 
 The current public bridge intentionally uses generated placeholder motion. The
-next retained-core milestone is creating the one-car `tCarElt`/`tSituation`
-state, calling `SimInit`/`SimConfig`, and then adding `SimUpdate` stepping while
-preserving the public snapshot/input boundary.
+next retained-core milestone is mapping `TorcsBridgeInputState` into `tCarCtrl`,
+stepping with `SimUpdate`, and refreshing `TorcsBridgeCarSnapshot` from
+`tCarElt` while preserving the public snapshot/input boundary.
 
 See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
 thin binding shape to add once `godot-cpp` is available.

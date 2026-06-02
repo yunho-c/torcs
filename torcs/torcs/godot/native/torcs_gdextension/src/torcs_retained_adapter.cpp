@@ -20,13 +20,18 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include <car.h>
+#include <raceman.h>
+#include <robottools.h>
 #include <tgf.h>
 
 #include <track.h>
 
+#include "sim.h"
 #include "trackinc.h"
 
 static std::string
@@ -206,17 +211,249 @@ makeTrackSnapshot(const tTrack* track, const TorcsBridgeRaceConfig& raceConfig)
 }
 
 static TorcsBridgeCarSnapshot
-makeInitialCarSnapshot(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridgeInputState& input, void* carHandle)
+makeCarSnapshotFromCarElt(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridgeInputState& input, const tCarElt* carElt)
 {
 	TorcsBridgeCarSnapshot car{};
 	car.id = 0;
 	car.carId = raceConfig.carId.empty() ? "car1-trb1" : raceConfig.carId;
+	car.torcsPosition = { carElt->_pos_X, carElt->_pos_Y, carElt->_pos_Z };
 	car.godotPosition = TorcsBridgeTorcsToGodotPosition(car.torcsPosition);
+	car.torcsLinearVelocity = { carElt->pub.DynGCg.vel.x, carElt->pub.DynGCg.vel.y, carElt->pub.DynGCg.vel.z };
+	car.godotLinearVelocity = TorcsBridgeTorcsToGodotLinearVelocity(car.torcsLinearVelocity);
+	car.torcsAngularVelocity = { carElt->pub.DynGC.vel.ax, carElt->pub.DynGC.vel.ay, carElt->pub.DynGC.vel.az };
+	car.godotAngularVelocity = TorcsBridgeTorcsToGodotAngularVelocity(car.torcsAngularVelocity);
+	car.yaw = carElt->_yaw;
 	car.godotYaw = TorcsBridgeTorcsToGodotYaw(car.yaw);
-	car.gear = 1;
-	car.fuel = GfParmGetNum(carHandle, SECT_CAR, PRM_FUEL, "l", 0.0f);
+	car.speed = carElt->pub.speed;
+	car.rpm = carElt->_enginerpm;
+	car.gear = carElt->_gear;
+	car.fuel = carElt->_fuel;
+	car.damage = carElt->_dammage;
+	car.collision = carElt->priv.collision != 0 || carElt->priv.simcollision != 0;
 	car.input = input;
+
+	for (int i = 0; i < 4; i++) {
+		const tWheelState& wheel = carElt->priv.wheel[i];
+		car.wheels[i].spinVelocity = wheel.spinVel;
+		car.wheels[i].rideHeight = wheel.relPos.z;
+		car.wheels[i].slipSide = wheel.slipSide;
+		car.wheels[i].slipAccel = wheel.slipAccel;
+		car.wheels[i].skid = carElt->_skid[i];
+		car.wheels[i].surfaceId = 0;
+		car.skid = std::max(car.skid, static_cast<double>(std::fabs(carElt->_skid[i])));
+	}
+
 	return car;
+}
+
+static void
+copyLimited(char* destination, size_t destinationSize, const std::string& source)
+{
+	if (destinationSize == 0) {
+		return;
+	}
+
+	std::strncpy(destination, source.c_str(), destinationSize - 1);
+	destination[destinationSize - 1] = '\0';
+}
+
+static tCarElt*
+retainedCar(tRmInfo* info)
+{
+	return info != nullptr && info->carList != nullptr ? &info->carList[0] : nullptr;
+}
+
+static void
+freeRaceInfo(tRmInfo* info)
+{
+	if (info == nullptr) {
+		return;
+	}
+
+	if (info->s != nullptr) {
+		std::free(info->s->cars);
+		info->s->cars = nullptr;
+		std::free(info->s);
+		info->s = nullptr;
+	}
+	std::free(info->carList);
+	info->carList = nullptr;
+	std::free(info);
+}
+
+static tdble
+getTrackGridNum(tTrack* raceTrack, const char* attribute, tdble defaultValue)
+{
+	if (raceTrack == nullptr || raceTrack->params == nullptr) {
+		return defaultValue;
+	}
+
+	return GfParmGetNum(
+		raceTrack->params,
+		RM_SECT_STARTINGGRID,
+		attribute,
+		static_cast<char*>(nullptr),
+		defaultValue);
+}
+
+static const char*
+getTrackGridStr(tTrack* raceTrack, const char* attribute, const char* defaultValue)
+{
+	if (raceTrack == nullptr || raceTrack->params == nullptr) {
+		return defaultValue;
+	}
+
+	return GfParmGetStr(raceTrack->params, RM_SECT_STARTINGGRID, attribute, defaultValue);
+}
+
+static tRmInfo*
+allocateOneCarRaceInfo(tTrack* raceTrack, void* mergedCarHandle, const TorcsBridgeRaceConfig& raceConfig)
+{
+	tRmInfo* info = static_cast<tRmInfo*>(std::calloc(1, sizeof(tRmInfo)));
+	if (info == nullptr) {
+		return nullptr;
+	}
+
+	info->s = static_cast<tSituation*>(std::calloc(1, sizeof(tSituation)));
+	info->carList = static_cast<tCarElt*>(std::calloc(1, sizeof(tCarElt)));
+	if (info->s == nullptr || info->carList == nullptr) {
+		freeRaceInfo(info);
+		return nullptr;
+	}
+
+	info->s->cars = static_cast<tCarElt**>(std::calloc(1, sizeof(tCarElt*)));
+	if (info->s->cars == nullptr) {
+		freeRaceInfo(info);
+		return nullptr;
+	}
+
+	info->track = raceTrack;
+	info->s->cars[0] = &info->carList[0];
+	info->s->_ncars = 1;
+	info->s->_totLaps = raceConfig.laps > 0 ? raceConfig.laps : 0;
+	info->s->_raceType = RM_TYPE_PRACTICE;
+	info->s->_raceState = RM_RACE_RUNNING;
+	info->s->deltaTime = TORCS_BRIDGE_SIM_STEP_SECONDS;
+	info->raceRules.fuelFactor = 0.0f;
+	info->raceRules.damageFactor = 0.0f;
+	info->raceRules.tireFactor = 0.0f;
+
+	tCarElt* car = &info->carList[0];
+	GF_TAILQ_INIT(&car->_penaltyList);
+	car->index = 0;
+	car->_carHandle = mergedCarHandle;
+	car->_paramsHandle = mergedCarHandle;
+	car->_driverType = RM_DRV_HUMAN;
+	car->_startRank = 0;
+	car->_pos = 1;
+	car->_remainingLaps = info->s->_totLaps;
+	car->_gear = 1;
+	car->_fuel = GfParmGetNum(mergedCarHandle, SECT_CAR, PRM_FUEL, "l", 0.0f);
+
+	const std::string carId = raceConfig.carId.empty() ? "car1-trb1" : raceConfig.carId;
+	copyLimited(car->_name, sizeof(car->_name), carId);
+	copyLimited(car->_carName, sizeof(car->_carName), carId);
+	copyLimited(car->_teamname, sizeof(car->_teamname), "Godot Bridge");
+	copyLimited(car->_category, sizeof(car->_category),
+		GfParmGetStr(mergedCarHandle, SECT_CAR, PRM_CATEGORY, ""));
+	RtInitCarPitSetup(mergedCarHandle, &car->pitcmd.setup, false);
+
+	return info;
+}
+
+static bool
+placeOneCarStartingGrid(tRmInfo* info)
+{
+	if (info == nullptr || info->track == nullptr || info->track->seg == nullptr || info->carList == nullptr) {
+		return false;
+	}
+
+	tTrack* raceTrack = info->track;
+	tCarElt* car = &info->carList[0];
+	tTrackSeg* curseg = raceTrack->seg->next;
+	const char* pole = "right";
+
+	for (int i = 0; i < raceTrack->nseg && curseg != nullptr; i++) {
+		if (curseg->type != TR_STR) {
+			pole = curseg->type == TR_LFT ? "left" : "right";
+			break;
+		}
+		curseg = curseg->next;
+	}
+	pole = getTrackGridStr(raceTrack, RM_ATTR_POLE, pole);
+
+	tdble a;
+	tdble b;
+	if (std::strcmp(pole, "left") == 0) {
+		a = raceTrack->width;
+		b = -a;
+	} else {
+		a = 0.0f;
+		b = raceTrack->width;
+	}
+
+	int rows = static_cast<int>(getTrackGridNum(raceTrack, RM_ATTR_ROWS, 2.0f));
+	if (rows < 1) {
+		rows = 1;
+	}
+
+	if (raceTrack->length <= 0.0f) {
+		return false;
+	}
+
+	const tdble distanceToStart = getTrackGridNum(raceTrack, RM_ATTR_TOSTART, 10.0f);
+	const tdble heightInit = getTrackGridNum(raceTrack, RM_ATTR_INITHEIGHT, 0.3f);
+	const tdble speedInit = getTrackGridNum(raceTrack, RM_ATTR_INITSPEED, 0.0f);
+	tdble startpos = raceTrack->length - distanceToStart;
+	while (startpos < 0.0f) {
+		startpos += raceTrack->length;
+	}
+	while (startpos > raceTrack->length) {
+		startpos -= raceTrack->length;
+	}
+	const tdble toRight = a + b / static_cast<tdble>(rows + 1);
+
+	curseg = raceTrack->seg;
+	for (int i = 0; i < raceTrack->nseg && curseg != nullptr && startpos < curseg->lgfromstart; i++) {
+		curseg = curseg->prev;
+	}
+	if (curseg == nullptr || startpos < curseg->lgfromstart) {
+		return false;
+	}
+
+	const tdble toStart = startpos - curseg->lgfromstart;
+	car->_speed_x = speedInit;
+	car->_commitBestLapTime = true;
+	car->_trkPos.seg = curseg;
+	car->_trkPos.toRight = toRight;
+	car->_trkPos.toMiddle = toRight - curseg->width * 0.5f;
+	car->_trkPos.toLeft = curseg->width - toRight;
+	switch (curseg->type) {
+		case TR_STR:
+			car->_trkPos.toStart = toStart;
+			RtTrackLocal2Global(&car->_trkPos, &car->_pos_X, &car->_pos_Y, TR_TORIGHT);
+			car->_yaw = curseg->angle[TR_ZS];
+			break;
+		case TR_RGT:
+			car->_trkPos.toStart = toStart / curseg->radius;
+			RtTrackLocal2Global(&car->_trkPos, &car->_pos_X, &car->_pos_Y, TR_TORIGHT);
+			car->_yaw = curseg->angle[TR_ZS] - car->_trkPos.toStart;
+			break;
+		case TR_LFT:
+			car->_trkPos.toStart = toStart / curseg->radius;
+			RtTrackLocal2Global(&car->_trkPos, &car->_pos_X, &car->_pos_Y, TR_TORIGHT);
+			car->_yaw = curseg->angle[TR_ZS] + car->_trkPos.toStart;
+			break;
+		default:
+			return false;
+	}
+
+	car->_pos_Z = RtTrackHeightL(&car->_trkPos) + heightInit;
+	NORM0_2PI(car->_yaw);
+	SimConfig(car, info);
+	car->_fuel = GfParmGetNum(car->_carHandle, SECT_CAR, PRM_FUEL, "l", 0.0f);
+
+	return true;
 }
 
 static void
@@ -275,9 +512,34 @@ TorcsRetainedAdapter::loadOneCarFreeDrive(const TorcsBridgeRaceConfig& config)
 		return false;
 	}
 
+	raceInfo = allocateOneCarRaceInfo(static_cast<tTrack*>(track), carHandle, raceConfig);
+	if (raceInfo == nullptr) {
+		unloadRace();
+		return false;
+	}
+
+	tRmInfo* retainedRaceInfo = static_cast<tRmInfo*>(raceInfo);
+	SimInit(
+		1,
+		static_cast<tTrack*>(track),
+		retainedRaceInfo->raceRules.fuelFactor,
+		retainedRaceInfo->raceRules.damageFactor,
+		retainedRaceInfo->raceRules.tireFactor);
+	simulationStarted = true;
+	if (!placeOneCarStartingGrid(retainedRaceInfo)) {
+		unloadRace();
+		return false;
+	}
+
+	tCarElt* car = retainedCar(retainedRaceInfo);
+	if (car == nullptr) {
+		unloadRace();
+		return false;
+	}
+
 	input = TorcsBridgeClampInput(input);
 	snapshot.track = makeTrackSnapshot(static_cast<tTrack*>(track), raceConfig);
-	snapshot.cars.push_back(makeInitialCarSnapshot(raceConfig, input, carHandle));
+	snapshot.cars.push_back(makeCarSnapshotFromCarElt(raceConfig, input, car));
 	loaded = true;
 
 	return true;
@@ -320,6 +582,16 @@ TorcsRetainedAdapter::shutdown()
 void
 TorcsRetainedAdapter::unloadRace()
 {
+	if (simulationStarted) {
+		SimShutdown();
+		simulationStarted = false;
+	}
+
+	if (raceInfo != nullptr) {
+		freeRaceInfo(static_cast<tRmInfo*>(raceInfo));
+		raceInfo = nullptr;
+	}
+
 	if (carHandle != nullptr) {
 		GfParmReleaseHandle(carHandle);
 		carHandle = nullptr;

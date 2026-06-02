@@ -67,7 +67,15 @@ main()
 		return fail("track debug points were copied");
 	}
 	if (snapshot.cars.size() != 1 || snapshot.cars[0].carId != "car1-trb1") {
-		return fail("initial car placeholder is present");
+		return fail("sim car snapshot is present");
+	}
+	if (!std::isfinite(snapshot.cars[0].torcsPosition.x)
+		|| !std::isfinite(snapshot.cars[0].torcsPosition.y)
+		|| !std::isfinite(snapshot.cars[0].torcsPosition.z)) {
+		return fail("sim car position is finite");
+	}
+	if (!std::isfinite(snapshot.cars[0].wheels[0].rideHeight)) {
+		return fail("sim wheel state is finite");
 	}
 	if (std::fabs(snapshot.cars[0].fuel - 94.0) > 1e-6) {
 		return fail("car/category XML merge provides initial fuel");

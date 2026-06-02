@@ -259,27 +259,29 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 		set_source_files_properties(src/torcs_retained_adapter.cpp PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic")
 	endif()
 
-	add_executable(torcs_retained_smoke
-		tests/torcs_retained_smoke.cpp
-	)
+	if(TORCS_BRIDGE_RETAINED_CORE_LINKABLE)
+		add_executable(torcs_retained_smoke
+			tests/torcs_retained_smoke.cpp
+		)
 
-	target_link_libraries(torcs_retained_smoke
-		PRIVATE
-			torcs_retained_core
-	)
+		target_link_libraries(torcs_retained_smoke
+			PRIVATE
+				torcs_retained_core
+		)
 
-	target_compile_definitions(torcs_retained_smoke
-		PRIVATE
-			TORCS_BRIDGE_DEFAULT_DATA_ROOT="${TORCS_BRIDGE_TORCS_ROOT}/data"
-			TORCS_BRIDGE_DEFAULT_LOCAL_ROOT="${TORCS_BRIDGE_TORCS_ROOT}"
-			TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT="${TORCS_BRIDGE_TORCS_ROOT}"
-	)
+		target_compile_definitions(torcs_retained_smoke
+			PRIVATE
+				TORCS_BRIDGE_DEFAULT_DATA_ROOT="${TORCS_BRIDGE_TORCS_ROOT}/data"
+				TORCS_BRIDGE_DEFAULT_LOCAL_ROOT="${TORCS_BRIDGE_TORCS_ROOT}"
+				TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT="${TORCS_BRIDGE_TORCS_ROOT}"
+		)
 
-	if(MSVC)
-		target_compile_options(torcs_retained_smoke PRIVATE /W4)
-	else()
-		target_compile_options(torcs_retained_smoke PRIVATE -Wall -Wextra -Wpedantic)
+		if(MSVC)
+			target_compile_options(torcs_retained_smoke PRIVATE /W4)
+		else()
+			target_compile_options(torcs_retained_smoke PRIVATE -Wall -Wextra -Wpedantic)
+		endif()
+
+		add_test(NAME torcs_retained_smoke COMMAND torcs_retained_smoke)
 	endif()
-
-	add_test(NAME torcs_retained_smoke COMMAND torcs_retained_smoke)
 endif()
