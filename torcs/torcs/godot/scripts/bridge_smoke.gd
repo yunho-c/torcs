@@ -20,6 +20,9 @@ func _ready() -> void:
 	_scripted_drive = DisplayServer.get_name() == "headless"
 	_load_race()
 
+func _exit_tree() -> void:
+	_bridge.shutdown()
+
 func _physics_process(delta: float) -> void:
 	if _scripted_drive:
 		var race_time := float(_snapshot.get("race_time", 0.0))
@@ -32,6 +35,8 @@ func _physics_process(delta: float) -> void:
 	_update_scene_from_snapshot(delta)
 
 func _load_race() -> void:
+	_clear_track_debug_overlay()
+
 	var data_root := ProjectSettings.globalize_path("res://../data")
 	var local_root := ProjectSettings.globalize_path("res://..")
 	var loaded: bool = _bridge.initialize(data_root, local_root, local_root)
@@ -173,6 +178,12 @@ func _rebuild_track_debug_overlay() -> void:
 	_add_debug_line("LeftBorder", debug_points, "godot_left_border", Color(0.95, 0.85, 0.2))
 	_add_debug_line("RightBorder", debug_points, "godot_right_border", Color(0.95, 0.85, 0.2))
 	_track_debug_built = true
+
+func _clear_track_debug_overlay() -> void:
+	for child in _track_debug.get_children():
+		_track_debug.remove_child(child)
+		child.queue_free()
+	_track_debug_built = false
 
 func _add_debug_line(node_name: String, debug_points: Array, point_key: String, color: Color) -> void:
 	var vertices := PackedVector3Array()

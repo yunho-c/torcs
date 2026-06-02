@@ -36,6 +36,8 @@ func _run() -> void:
 		_expect(is_equal_approx(road.position.x, 60.0), "road is centered on placeholder track")
 	if track_debug != null:
 		_expect(track_debug.get_child_count() >= 3, "track debug overlay is built")
+		scene.call("_load_race")
+		_expect(track_debug.get_child_count() == 3, "track debug overlay rebuild does not duplicate lines")
 	if telemetry != null:
 		_expect(telemetry.text.contains("speed"), "telemetry updates from snapshot")
 
