@@ -18,6 +18,7 @@
 
 #include "torcs_bridge.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -405,9 +406,10 @@ main(int argc, char** argv)
 	}
 
 	bool wroteJsonSample = false;
-	for (double elapsed = 0.0; elapsed < options.seconds; elapsed += options.sampleSeconds) {
+	for (double elapsed = 0.0; elapsed < options.seconds;) {
+		const double stepSeconds = std::min(options.sampleSeconds, options.seconds - elapsed);
 		race.setHumanInput(0, scriptedInput(elapsed));
-		const TorcsBridgeSnapshot snapshot = race.step(options.sampleSeconds);
+		const TorcsBridgeSnapshot snapshot = race.step(stepSeconds);
 		if (options.outputFormat == HARNESS_OUTPUT_CSV) {
 			writeCsvRow(*out, snapshot);
 		} else {
@@ -417,6 +419,7 @@ main(int argc, char** argv)
 			writeJsonSample(*out, snapshot);
 			wroteJsonSample = true;
 		}
+		elapsed += stepSeconds;
 	}
 
 	if (options.outputFormat == HARNESS_OUTPUT_JSON) {

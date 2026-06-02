@@ -78,6 +78,13 @@ set_tests_properties(torcs_bridge_harness_csv_smoke PROPERTIES
 	PASS_REGULAR_EXPRESSION "time,substeps"
 )
 
+add_test(NAME torcs_bridge_harness_bounded_duration
+	COMMAND torcs_bridge_harness --seconds 0.01 --sample-seconds 0.02
+)
+set_tests_properties(torcs_bridge_harness_bounded_duration PROPERTIES
+	PASS_REGULAR_EXPRESSION "0.010000,5,"
+)
+
 add_test(NAME torcs_bridge_harness_json_smoke
 	COMMAND torcs_bridge_harness --seconds 0.04 --sample-seconds 0.02 --format json
 )
