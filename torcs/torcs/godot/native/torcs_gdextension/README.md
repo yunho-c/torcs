@@ -17,6 +17,10 @@ audio, GLUT, PLIB, SSG, and `tgfclient` dependencies.
 - `torcs_bridge_harness`: command-line deterministic CSV snapshot harness.
 - `torcs_bridge_tests`: dependency-free CTest regression checks.
 
+CTest also runs quick harness CLI smoke checks for `--help`, CSV output, and
+JSON output so regressions in the standalone debugging path are caught with the
+core tests.
+
 Build from the repository root:
 
 ```bash

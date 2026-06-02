@@ -66,6 +66,25 @@ endif()
 
 add_test(NAME torcs_bridge_tests COMMAND torcs_bridge_tests)
 
+add_test(NAME torcs_bridge_harness_help COMMAND torcs_bridge_harness --help)
+set_tests_properties(torcs_bridge_harness_help PROPERTIES
+	PASS_REGULAR_EXPRESSION "Usage:"
+)
+
+add_test(NAME torcs_bridge_harness_csv_smoke
+	COMMAND torcs_bridge_harness --seconds 0.04 --sample-seconds 0.02
+)
+set_tests_properties(torcs_bridge_harness_csv_smoke PROPERTIES
+	PASS_REGULAR_EXPRESSION "time,substeps"
+)
+
+add_test(NAME torcs_bridge_harness_json_smoke
+	COMMAND torcs_bridge_harness --seconds 0.04 --sample-seconds 0.02 --format json
+)
+set_tests_properties(torcs_bridge_harness_json_smoke PROPERTIES
+	PASS_REGULAR_EXPRESSION "\"samples\""
+)
+
 if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 	add_library(torcs_retained_core STATIC
 		src/torcs_retained_adapter.cpp
