@@ -79,3 +79,7 @@ torcs/torcs/installer/windows/base/wheels/
 
 # Godot editor/import cache
 torcs/torcs/godot/.godot/
+!torcs/torcs/godot/bin/
+!torcs/torcs/godot/bin/**
+!torcs/torcs/godot/native/torcs_gdextension/bin/
+!torcs/torcs/godot/native/torcs_gdextension/bin/**
