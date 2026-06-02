@@ -1,0 +1,21 @@
+; Engine configuration file.
+; Prefer editing this file through the Godot editor when possible.
+;
+; Format details:
+;   https://docs.godotengine.org/en/stable/tutorials/best_practices/project_organization.html
+
+config_version=5
+
+[application]
+
+config/name="TORCS Godot Port"
+config/description="Godot front end for retained TORCS simulation prototypes."
+config/features=PackedStringArray("4.6")
+
+[physics]
+
+common/physics_ticks_per_second=60
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
