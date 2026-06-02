@@ -78,6 +78,13 @@ set_tests_properties(torcs_bridge_harness_csv_smoke PROPERTIES
 	PASS_REGULAR_EXPRESSION "time,substeps"
 )
 
+add_test(NAME torcs_bridge_harness_deterministic_csv
+	COMMAND ${CMAKE_COMMAND}
+		-DTORCS_BRIDGE_HARNESS=$<TARGET_FILE:torcs_bridge_harness>
+		-DTORCS_BRIDGE_OUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/harness-determinism
+		-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompareHarnessRuns.cmake
+)
+
 add_test(NAME torcs_bridge_harness_bounded_duration
 	COMMAND torcs_bridge_harness --seconds 0.01 --sample-seconds 0.02
 )
