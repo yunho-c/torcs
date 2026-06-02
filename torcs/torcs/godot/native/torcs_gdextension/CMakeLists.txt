@@ -20,3 +20,27 @@ if(MSVC)
 else()
 	target_compile_options(torcs_bridge_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+set(TORCS_BRIDGE_DEFAULT_TORCS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+
+add_executable(torcs_bridge_harness
+	src/torcs_bridge_harness.cpp
+)
+
+target_link_libraries(torcs_bridge_harness
+	PRIVATE
+		torcs_bridge_core
+)
+
+target_compile_definitions(torcs_bridge_harness
+	PRIVATE
+		TORCS_BRIDGE_DEFAULT_DATA_ROOT="${TORCS_BRIDGE_DEFAULT_TORCS_ROOT}/data"
+		TORCS_BRIDGE_DEFAULT_LOCAL_ROOT="${TORCS_BRIDGE_DEFAULT_TORCS_ROOT}"
+		TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT="${TORCS_BRIDGE_DEFAULT_TORCS_ROOT}"
+)
+
+if(MSVC)
+	target_compile_options(torcs_bridge_harness PRIVATE /W4)
+else()
+	target_compile_options(torcs_bridge_harness PRIVATE -Wall -Wextra -Wpedantic)
+endif()
