@@ -224,6 +224,7 @@ TorcsRace::stepOneSubstep()
 		std::sin(car.yaw) * car.speed,
 		0.0
 	};
+	car.torcsAngularVelocity = { 0.0, 0.0, yawRate };
 	car.torcsPosition.x += car.torcsLinearVelocity.x * dt;
 	car.torcsPosition.y += car.torcsLinearVelocity.y * dt;
 	car.godotPosition = TorcsBridgeTorcsToGodotPosition(car.torcsPosition);

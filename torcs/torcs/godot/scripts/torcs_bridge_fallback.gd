@@ -102,6 +102,7 @@ func _default_car_snapshot() -> Dictionary:
 		"torcs_position": torcs_position,
 		"godot_position": torcs_to_godot_position(torcs_position),
 		"torcs_linear_velocity": Vector3.ZERO,
+		"torcs_angular_velocity": Vector3.ZERO,
 		"yaw": 0.0,
 		"speed": 0.0,
 		"rpm": 0.0,
@@ -191,6 +192,7 @@ func _step_one_substep() -> void:
 	car["gear"] = int(_human_input["gear"])
 	car["input"] = _human_input.duplicate(true)
 	car["torcs_linear_velocity"] = torcs_velocity
+	car["torcs_angular_velocity"] = Vector3(0.0, 0.0, yaw_rate)
 	car["torcs_position"] = torcs_position
 	car["godot_position"] = torcs_to_godot_position(torcs_position)
 	car["skid"] = skid

@@ -88,6 +88,7 @@ struct TorcsBridgeCarSnapshot {
 	TorcsBridgeVec3 torcsPosition;
 	TorcsBridgeVec3 godotPosition;
 	TorcsBridgeVec3 torcsLinearVelocity;
+	TorcsBridgeVec3 torcsAngularVelocity;
 	double yaw;
 	double speed;
 	double rpm;

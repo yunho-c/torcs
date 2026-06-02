@@ -96,6 +96,8 @@ testNonFiniteInputClamp()
 	expectTrue(std::isfinite(snapshot.cars[0].torcsPosition.x), "non-finite input keeps finite X position");
 	expectTrue(std::isfinite(snapshot.cars[0].torcsPosition.y), "non-finite input keeps finite Y position");
 	expectTrue(std::isfinite(snapshot.cars[0].yaw), "non-finite input keeps finite yaw");
+	expectTrue(std::isfinite(snapshot.cars[0].torcsAngularVelocity.z),
+		"non-finite input keeps finite angular velocity");
 }
 
 static void
@@ -136,8 +138,34 @@ testSubstepAccumulator()
 	expectNear(snapshot.raceTime, 0.022, 1e-12, "race time includes previous and robot substeps");
 	expectTrue(!snapshot.cars.empty(), "snapshot includes one car");
 	expectTrue(snapshot.cars[0].speed > 0.0, "throttle increases speed");
+	expectNear(snapshot.cars[0].torcsAngularVelocity.z, 0.0, 1e-12,
+		"straight input keeps zero yaw angular velocity");
 	expectNear(snapshot.cars[0].godotPosition.y, snapshot.cars[0].torcsPosition.z, 1e-12,
 		"snapshot stores mapped Godot Y");
+}
+
+static void
+testAngularVelocitySnapshot()
+{
+	TorcsRuntime runtime;
+	expectTrue(runtime.initialize({ "data", ".", "." }), "runtime initializes for angular velocity");
+
+	TorcsRace race(runtime);
+	expectTrue(race.load({ "track.xml", "car.xml", "test-car", 0 }), "race loads for angular velocity");
+
+	TorcsBridgeInputState input{};
+	input.throttle = 1.0;
+	input.steer = 1.0;
+	input.gear = 1;
+	race.setHumanInput(0, input);
+
+	const TorcsBridgeSnapshot snapshot = race.step(TORCS_BRIDGE_SIM_STEP_SECONDS);
+	expectTrue(snapshot.cars[0].torcsAngularVelocity.z > 0.0,
+		"steering input writes positive yaw angular velocity");
+	expectNear(snapshot.cars[0].torcsAngularVelocity.x, 0.0, 1e-12,
+		"placeholder angular velocity has no roll rate");
+	expectNear(snapshot.cars[0].torcsAngularVelocity.y, 0.0, 1e-12,
+		"placeholder angular velocity has no pitch rate");
 }
 
 static void
@@ -226,6 +254,7 @@ main()
 	testNonFiniteInputClamp();
 	testCoordinateMapping();
 	testSubstepAccumulator();
+	testAngularVelocitySnapshot();
 	testTrackDebugSnapshot();
 	testSubstepCatchUpCap();
 	testNonFiniteStepDeltaDoesNotPoisonAccumulator();
