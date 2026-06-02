@@ -64,19 +64,25 @@ parseDouble(const char* value, double* result)
 	return true;
 }
 
-static bool
+enum HarnessParseResult {
+	HARNESS_PARSE_OK,
+	HARNESS_PARSE_HELP,
+	HARNESS_PARSE_ERROR
+};
+
+static HarnessParseResult
 parseOptions(int argc, char** argv, HarnessOptions* options)
 {
 	for (int i = 1; i < argc; i++) {
 		const std::string arg = argv[i];
 		if (arg == "--help") {
 			printUsage(argv[0]);
-			return false;
+			return HARNESS_PARSE_HELP;
 		}
 
 		if (i + 1 >= argc) {
 			std::cerr << "Missing value for " << arg << "\n";
-			return false;
+			return HARNESS_PARSE_ERROR;
 		}
 
 		const char* value = argv[++i];
@@ -91,31 +97,31 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 		} else if (arg == "--seconds") {
 			if (!parseDouble(value, &options->seconds)) {
 				std::cerr << "Invalid --seconds value: " << value << "\n";
-				return false;
+				return HARNESS_PARSE_ERROR;
 			}
 		} else if (arg == "--sample-seconds") {
 			if (!parseDouble(value, &options->sampleSeconds)) {
 				std::cerr << "Invalid --sample-seconds value: " << value << "\n";
-				return false;
+				return HARNESS_PARSE_ERROR;
 			}
 		} else {
 			std::cerr << "Unknown option: " << arg << "\n";
-			return false;
+			return HARNESS_PARSE_ERROR;
 		}
 	}
 
 	if (options->seconds <= 0.0) {
 		std::cerr << "--seconds must be positive.\n";
-		return false;
+		return HARNESS_PARSE_ERROR;
 	}
 
 	if (options->sampleSeconds < TORCS_BRIDGE_SIM_STEP_SECONDS) {
 		std::cerr << "--sample-seconds must be at least "
 			<< TORCS_BRIDGE_SIM_STEP_SECONDS << ".\n";
-		return false;
+		return HARNESS_PARSE_ERROR;
 	}
 
-	return true;
+	return HARNESS_PARSE_OK;
 }
 
 static TorcsBridgeInputState
@@ -182,7 +188,11 @@ int
 main(int argc, char** argv)
 {
 	HarnessOptions options;
-	if (!parseOptions(argc, argv, &options)) {
+	const HarnessParseResult parseResult = parseOptions(argc, argv, &options);
+	if (parseResult == HARNESS_PARSE_HELP) {
+		return 0;
+	}
+	if (parseResult == HARNESS_PARSE_ERROR) {
 		return 2;
 	}
 
