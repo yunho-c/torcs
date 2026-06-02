@@ -10,8 +10,28 @@ const TorcsBridgeFallbackScript := preload("res://scripts/torcs_bridge_fallback.
 var _bridge = TorcsBridgeFallbackScript.new()
 var _snapshot: Dictionary = {}
 var _track_debug_built := false
+var _scripted_drive := false
+var _gear := 1
+var _shift_up_pressed := false
+var _shift_down_pressed := false
+var _reset_pressed := false
 
 func _ready() -> void:
+	_scripted_drive = DisplayServer.get_name() == "headless"
+	_load_race()
+
+func _physics_process(delta: float) -> void:
+	if _scripted_drive:
+		var race_time := float(_snapshot.get("race_time", 0.0))
+		_bridge.set_human_input(0, _scripted_input(race_time))
+	else:
+		_handle_reset_input()
+		_bridge.set_human_input(0, _interactive_input())
+
+	_snapshot = _bridge.step(delta)
+	_update_scene_from_snapshot(delta)
+
+func _load_race() -> void:
 	var data_root := ProjectSettings.globalize_path("res://../data")
 	var local_root := ProjectSettings.globalize_path("res://..")
 	var loaded: bool = _bridge.initialize(data_root, local_root, local_root)
@@ -28,15 +48,10 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 
+	_gear = 1
 	_snapshot = _bridge.get_snapshot()
-	_update_scene_from_snapshot()
+	_update_scene_from_snapshot(0.0, true)
 	_rebuild_track_debug_overlay()
-
-func _physics_process(delta: float) -> void:
-	var race_time := float(_snapshot.get("race_time", 0.0))
-	_bridge.set_human_input(0, _scripted_input(race_time))
-	_snapshot = _bridge.step(delta)
-	_update_scene_from_snapshot()
 
 func _scripted_input(time: float) -> Dictionary:
 	var input := {
@@ -63,16 +78,81 @@ func _scripted_input(time: float) -> Dictionary:
 
 	return input
 
-func _update_scene_from_snapshot() -> void:
+func _interactive_input() -> Dictionary:
+	_update_gear_input()
+
+	var steer := _keyboard_axis(KEY_A, KEY_LEFT, KEY_D, KEY_RIGHT)
+	var throttle := 1.0 if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP) else 0.0
+	var brake := 1.0 if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN) else 0.0
+
+	var joypads := Input.get_connected_joypads()
+	if not joypads.is_empty():
+		var joypad: int = joypads[0]
+		var joy_steer := Input.get_joy_axis(joypad, JOY_AXIS_LEFT_X)
+		if absf(joy_steer) > 0.1:
+			steer = joy_steer
+		throttle = maxf(throttle, _normalized_trigger(Input.get_joy_axis(joypad, JOY_AXIS_TRIGGER_RIGHT)))
+		brake = maxf(brake, _normalized_trigger(Input.get_joy_axis(joypad, JOY_AXIS_TRIGGER_LEFT)))
+
+	return {
+		"steer": steer,
+		"throttle": throttle,
+		"brake": brake,
+		"clutch": 0.0,
+		"gear": _gear,
+		"lights": Input.is_key_pressed(KEY_L),
+		"pit_request": false,
+		"brake_balance": 0.55
+	}
+
+func _keyboard_axis(negative_key: Key, negative_alt_key: Key, positive_key: Key, positive_alt_key: Key) -> float:
+	var value := 0.0
+	if Input.is_key_pressed(negative_key) or Input.is_key_pressed(negative_alt_key):
+		value -= 1.0
+	if Input.is_key_pressed(positive_key) or Input.is_key_pressed(positive_alt_key):
+		value += 1.0
+	return value
+
+func _normalized_trigger(value: float) -> float:
+	if value < -0.05:
+		return clampf((value + 1.0) * 0.5, 0.0, 1.0)
+	return clampf(value, 0.0, 1.0)
+
+func _update_gear_input() -> void:
+	var shift_up_now := Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_PAGEUP)
+	if shift_up_now and not _shift_up_pressed:
+		_gear = mini(_gear + 1, 6)
+	_shift_up_pressed = shift_up_now
+
+	var shift_down_now := Input.is_key_pressed(KEY_Q) or Input.is_key_pressed(KEY_PAGEDOWN)
+	if shift_down_now and not _shift_down_pressed:
+		_gear = maxi(_gear - 1, -1)
+	_shift_down_pressed = shift_down_now
+
+func _handle_reset_input() -> void:
+	var reset_now := Input.is_key_pressed(KEY_R)
+	if reset_now and not _reset_pressed:
+		_bridge.shutdown()
+		_load_race()
+	_reset_pressed = reset_now
+
+func _update_scene_from_snapshot(delta: float, snap_camera := false) -> void:
 	if _snapshot.is_empty() or _snapshot["cars"].is_empty():
 		return
 
 	var car: Dictionary = _snapshot["cars"][0]
 	var position: Vector3 = car["godot_position"]
+	var yaw := float(car["yaw"])
+	var forward := Vector3(cos(yaw), 0.0, sin(yaw))
 	_car.position = position
-	_car.rotation.y = -float(car["yaw"])
-	_camera.position = position + Vector3(-8.0, 4.0, 8.0)
-	_camera.look_at(position + Vector3(4.0, 0.5, 0.0))
+	_car.rotation.y = -yaw - PI * 0.5
+
+	var camera_position := position - forward * 8.0 + Vector3(0.0, 4.0, 0.0)
+	if snap_camera:
+		_camera.position = camera_position
+	else:
+		_camera.position = _camera.position.lerp(camera_position, minf(delta * 6.0, 1.0))
+	_camera.look_at(position + forward * 4.0 + Vector3(0.0, 0.6, 0.0))
 	_telemetry.text = "time %.2f  speed %.2f m/s  rpm %.0f  substeps %d" % [
 		_snapshot["race_time"],
 		car["speed"],

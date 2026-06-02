@@ -54,6 +54,12 @@ Run the current smoke scene:
 godot --path torcs/torcs/godot
 ```
 
+Windowed runs use live keyboard/gamepad input. Keyboard controls are
+W/Up throttle, S/Down brake, A/Left and D/Right steering, Q/E gear changes,
+R reset, and L lights. The first connected gamepad's left stick steers and
+triggers map to brake/throttle. Headless runs keep the deterministic scripted
+input path so smoke checks remain repeatable.
+
 In this sandboxed macOS environment, Godot cannot write to the normal user data
 directory. Use a temporary home for headless verification:
 
