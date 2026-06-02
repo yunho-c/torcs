@@ -613,7 +613,7 @@ TorcsRetainedAdapter::shutdown()
 	unloadRace();
 
 	runtimeConfig = {};
-	input = {};
+	input = { 0.0, 0.0, 0.0, 0.0, 1, false, false, 0.5 };
 	initialized = false;
 }
 

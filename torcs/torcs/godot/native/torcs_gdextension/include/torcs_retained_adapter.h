@@ -36,7 +36,7 @@ private:
 
 	TorcsBridgeRuntimeConfig runtimeConfig;
 	TorcsBridgeRaceConfig raceConfig;
-	TorcsBridgeInputState input{};
+	TorcsBridgeInputState input{ 0.0, 0.0, 0.0, 0.0, 1, false, false, 0.5 };
 	TorcsBridgeSnapshot snapshot;
 	void *track = nullptr;
 	void *carHandle = nullptr;
