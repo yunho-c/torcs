@@ -13,6 +13,7 @@ var _human_input := _default_input()
 var _snapshot := {
 	"race_time": 0.0,
 	"completed_substeps": 0,
+	"track": {},
 	"cars": []
 }
 
@@ -38,6 +39,7 @@ func shutdown() -> void:
 	_snapshot = {
 		"race_time": 0.0,
 		"completed_substeps": 0,
+		"track": {},
 		"cars": []
 	}
 
@@ -52,6 +54,7 @@ func load(config: Dictionary) -> bool:
 	_snapshot = {
 		"race_time": 0.0,
 		"completed_substeps": 0,
+		"track": _default_track_snapshot(),
 		"cars": [_default_car_snapshot()]
 	}
 	return true
@@ -123,6 +126,30 @@ static func _default_wheel_snapshot() -> Dictionary:
 		"slip_accel": 0.0,
 		"skid": 0.0,
 		"surface_id": 0
+	}
+
+func _default_track_snapshot() -> Dictionary:
+	var debug_points: Array[Dictionary] = []
+	var track_width := 10.0
+	for index in range(13):
+		var x := float(index) * 10.0
+		var torcs_center := Vector3(x, 0.0, 0.0)
+		var torcs_left_border := Vector3(x, track_width * 0.5, 0.0)
+		var torcs_right_border := Vector3(x, -track_width * 0.5, 0.0)
+		debug_points.append({
+			"torcs_center": torcs_center,
+			"godot_center": torcs_to_godot_position(torcs_center),
+			"torcs_left_border": torcs_left_border,
+			"godot_left_border": torcs_to_godot_position(torcs_left_border),
+			"torcs_right_border": torcs_right_border,
+			"godot_right_border": torcs_to_godot_position(torcs_right_border)
+		})
+
+	return {
+		"track_id": _race_config.get("track_xml", "wheel-2"),
+		"length": 120.0,
+		"width": track_width,
+		"debug_points": debug_points
 	}
 
 static func _clamp_input(input: Dictionary) -> Dictionary:

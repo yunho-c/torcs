@@ -5,9 +5,11 @@ const TorcsBridgeFallbackScript := preload("res://scripts/torcs_bridge_fallback.
 @onready var _car: Node3D = $Car
 @onready var _camera: Camera3D = $Camera3D
 @onready var _telemetry: Label = $CanvasLayer/Telemetry
+@onready var _track_debug: Node3D = $TrackDebug
 
 var _bridge = TorcsBridgeFallbackScript.new()
 var _snapshot: Dictionary = {}
+var _track_debug_built := false
 
 func _ready() -> void:
 	var data_root := ProjectSettings.globalize_path("res://../data")
@@ -28,6 +30,7 @@ func _ready() -> void:
 
 	_snapshot = _bridge.get_snapshot()
 	_update_scene_from_snapshot()
+	_rebuild_track_debug_overlay()
 
 func _physics_process(delta: float) -> void:
 	var race_time := float(_snapshot.get("race_time", 0.0))
@@ -76,3 +79,42 @@ func _update_scene_from_snapshot() -> void:
 		car["rpm"],
 		_snapshot["completed_substeps"]
 	]
+
+func _rebuild_track_debug_overlay() -> void:
+	if _track_debug_built or _snapshot.is_empty():
+		return
+
+	var track: Dictionary = _snapshot.get("track", {})
+	var debug_points: Array = track.get("debug_points", [])
+	if debug_points.size() < 2:
+		return
+
+	_add_debug_line("CenterLine", debug_points, "godot_center", Color(0.1, 0.65, 1.0))
+	_add_debug_line("LeftBorder", debug_points, "godot_left_border", Color(0.95, 0.85, 0.2))
+	_add_debug_line("RightBorder", debug_points, "godot_right_border", Color(0.95, 0.85, 0.2))
+	_track_debug_built = true
+
+func _add_debug_line(node_name: String, debug_points: Array, point_key: String, color: Color) -> void:
+	var vertices := PackedVector3Array()
+	for index in range(debug_points.size() - 1):
+		var start: Vector3 = debug_points[index][point_key]
+		var finish: Vector3 = debug_points[index + 1][point_key]
+		vertices.append(start + Vector3(0.0, 0.03, 0.0))
+		vertices.append(finish + Vector3(0.0, 0.03, 0.0))
+
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
+
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = color
+
+	var line := MeshInstance3D.new()
+	line.name = node_name
+	line.mesh = mesh
+	line.material_override = material
+	_track_debug.add_child(line)

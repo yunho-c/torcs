@@ -49,6 +49,29 @@ defaultCarSnapshot(const TorcsBridgeRaceConfig& config)
 	return car;
 }
 
+static TorcsBridgeTrackSnapshot
+defaultTrackSnapshot(const TorcsBridgeRaceConfig& config)
+{
+	TorcsBridgeTrackSnapshot track{};
+	track.trackId = config.trackXml.empty() ? "wheel-2" : config.trackXml;
+	track.length = 120.0;
+	track.width = 10.0;
+
+	for (int i = 0; i <= 12; i++) {
+		const double x = static_cast<double>(i) * 10.0;
+		TorcsBridgeTrackDebugPoint point{};
+		point.torcsCenter = { x, 0.0, 0.0 };
+		point.torcsLeftBorder = { x, track.width * 0.5, 0.0 };
+		point.torcsRightBorder = { x, -track.width * 0.5, 0.0 };
+		point.godotCenter = TorcsBridgeTorcsToGodotPosition(point.torcsCenter);
+		point.godotLeftBorder = TorcsBridgeTorcsToGodotPosition(point.torcsLeftBorder);
+		point.godotRightBorder = TorcsBridgeTorcsToGodotPosition(point.torcsRightBorder);
+		track.debugPoints.push_back(point);
+	}
+
+	return track;
+}
+
 TorcsBridgeInputState
 TorcsBridgeClampInput(const TorcsBridgeInputState& input)
 {
@@ -114,6 +137,7 @@ TorcsRace::load(const TorcsBridgeRaceConfig& raceConfig)
 	loaded = true;
 	accumulator = 0.0;
 	snapshot = {};
+	snapshot.track = defaultTrackSnapshot(config);
 	snapshot.cars.push_back(defaultCarSnapshot(config));
 
 	return true;

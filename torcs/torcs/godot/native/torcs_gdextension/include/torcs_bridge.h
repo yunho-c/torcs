@@ -65,6 +65,22 @@ struct TorcsBridgeWheelSnapshot {
 	int surfaceId;
 };
 
+struct TorcsBridgeTrackDebugPoint {
+	TorcsBridgeVec3 torcsCenter;
+	TorcsBridgeVec3 godotCenter;
+	TorcsBridgeVec3 torcsLeftBorder;
+	TorcsBridgeVec3 godotLeftBorder;
+	TorcsBridgeVec3 torcsRightBorder;
+	TorcsBridgeVec3 godotRightBorder;
+};
+
+struct TorcsBridgeTrackSnapshot {
+	std::string trackId;
+	double length;
+	double width;
+	std::vector<TorcsBridgeTrackDebugPoint> debugPoints;
+};
+
 struct TorcsBridgeCarSnapshot {
 	int id;
 	std::string carId;
@@ -86,6 +102,7 @@ struct TorcsBridgeCarSnapshot {
 struct TorcsBridgeSnapshot {
 	double raceTime;
 	int completedSubsteps;
+	TorcsBridgeTrackSnapshot track;
 	std::vector<TorcsBridgeCarSnapshot> cars;
 };
 

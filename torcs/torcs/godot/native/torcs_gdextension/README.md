@@ -48,6 +48,11 @@ Run a short harness sample:
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04
 ```
 
+Snapshots include car state plus a `TorcsBridgeTrackSnapshot` with debug
+centerline and left/right road border points. The current track data is a
+deterministic straight placeholder; retained-core work should replace it with
+points generated from TORCS physics track segments.
+
 The current bridge intentionally uses generated placeholder motion. The next
 native milestone is replacing `TorcsRace::load()` and `TorcsRace::step()` with
 retained TORCS track loading, car setup, and `simuv2` stepping while preserving

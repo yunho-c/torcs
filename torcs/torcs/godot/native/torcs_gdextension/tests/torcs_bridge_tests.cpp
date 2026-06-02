@@ -108,12 +108,34 @@ testSubstepAccumulator()
 		"snapshot stores mapped Godot Y");
 }
 
+static void
+testTrackDebugSnapshot()
+{
+	TorcsRuntime runtime;
+	expectTrue(runtime.initialize({ "data", ".", "." }), "runtime initializes for track snapshot");
+
+	TorcsRace race(runtime);
+	expectTrue(race.load({ "data/tracks/road/wheel-2/wheel-2.xml", "car.xml", "test-car", 0 }),
+		"race loads for track snapshot");
+
+	const TorcsBridgeSnapshot& snapshot = race.getSnapshot();
+	expectTrue(!snapshot.track.debugPoints.empty(), "track snapshot includes debug points");
+	expectNear(snapshot.track.width, 10.0, 0.0, "track snapshot stores debug width");
+	expectNear(snapshot.track.debugPoints[0].godotCenter.y, snapshot.track.debugPoints[0].torcsCenter.z, 0.0,
+		"track center maps Godot Y from TORCS Z");
+	expectNear(snapshot.track.debugPoints[0].godotLeftBorder.z, snapshot.track.debugPoints[0].torcsLeftBorder.y, 0.0,
+		"track left border maps Godot Z from TORCS Y");
+	expectNear(snapshot.track.debugPoints.back().torcsCenter.x, 120.0, 0.0,
+		"track debug points cover placeholder length");
+}
+
 int
 main()
 {
 	testInputClamp();
 	testCoordinateMapping();
 	testSubstepAccumulator();
+	testTrackDebugSnapshot();
 
 	if (Failures != 0) {
 		std::cerr << Failures << " bridge test failure(s).\n";

@@ -63,4 +63,6 @@ HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --q
 
 The smoke scene currently uses `scripts/torcs_bridge_fallback.gd`, which mirrors
 the native stub's DTOs and fixed-step behavior until a real GDExtension binding
-is added.
+is added. It also renders the bridge snapshot's track debug centerline and road
+borders so future retained `tTrackSeg` output can be checked against Godot
+coordinates early.
