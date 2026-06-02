@@ -19,6 +19,7 @@
 #include "torcs_bridge.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
 #include <iomanip>
@@ -163,13 +164,14 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 		}
 	}
 
-	if (options->seconds <= 0.0) {
-		std::cerr << "--seconds must be positive.\n";
+	if (!std::isfinite(options->seconds) || options->seconds <= 0.0) {
+		std::cerr << "--seconds must be finite and positive.\n";
 		return HARNESS_PARSE_ERROR;
 	}
 
-	if (options->sampleSeconds < TORCS_BRIDGE_SIM_STEP_SECONDS) {
-		std::cerr << "--sample-seconds must be at least "
+	if (!std::isfinite(options->sampleSeconds)
+		|| options->sampleSeconds < TORCS_BRIDGE_SIM_STEP_SECONDS) {
+		std::cerr << "--sample-seconds must be finite and at least "
 			<< TORCS_BRIDGE_SIM_STEP_SECONDS << ".\n";
 		return HARNESS_PARSE_ERROR;
 	}

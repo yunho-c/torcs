@@ -92,6 +92,13 @@ set_tests_properties(torcs_bridge_harness_race_config PROPERTIES
 	PASS_REGULAR_EXPRESSION "custom-car"
 )
 
+add_test(NAME torcs_bridge_harness_rejects_infinite_seconds
+	COMMAND torcs_bridge_harness --seconds inf
+)
+set_tests_properties(torcs_bridge_harness_rejects_infinite_seconds PROPERTIES
+	WILL_FAIL TRUE
+)
+
 add_test(NAME torcs_bridge_harness_json_smoke
 	COMMAND torcs_bridge_harness --seconds 0.04 --sample-seconds 0.02 --format json
 )
