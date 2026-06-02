@@ -4,6 +4,10 @@ project(torcs_godot_bridge LANGUAGES CXX)
 
 include(CTest)
 
+set(TORCS_BRIDGE_TORCS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+option(TORCS_BRIDGE_ENABLE_RETAINED_CORE "Enable retained TORCS track/simuv2 prototype targets." OFF)
+include(cmake/TorcsRetainedCorePreflight.cmake)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -23,8 +27,6 @@ else()
 	target_compile_options(torcs_bridge_core PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
-set(TORCS_BRIDGE_DEFAULT_TORCS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
-
 add_executable(torcs_bridge_harness
 	src/torcs_bridge_harness.cpp
 )
@@ -36,9 +38,9 @@ target_link_libraries(torcs_bridge_harness
 
 target_compile_definitions(torcs_bridge_harness
 	PRIVATE
-		TORCS_BRIDGE_DEFAULT_DATA_ROOT="${TORCS_BRIDGE_DEFAULT_TORCS_ROOT}/data"
-		TORCS_BRIDGE_DEFAULT_LOCAL_ROOT="${TORCS_BRIDGE_DEFAULT_TORCS_ROOT}"
-		TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT="${TORCS_BRIDGE_DEFAULT_TORCS_ROOT}"
+		TORCS_BRIDGE_DEFAULT_DATA_ROOT="${TORCS_BRIDGE_TORCS_ROOT}/data"
+		TORCS_BRIDGE_DEFAULT_LOCAL_ROOT="${TORCS_BRIDGE_TORCS_ROOT}"
+		TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT="${TORCS_BRIDGE_TORCS_ROOT}"
 )
 
 if(MSVC)

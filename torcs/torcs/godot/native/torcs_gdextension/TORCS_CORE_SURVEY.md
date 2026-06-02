@@ -194,3 +194,7 @@ Add a `torcs_retained_core` CMake target that compiles only `tgf`,
 `robottools`, `track`, `simuv2`, and SOLID sources needed by the direct adapter.
 Start with a build-only target before changing `TorcsRace::load()` so missing
 headers/libraries are isolated from bridge behavior.
+
+The native CMake now includes a retained-core preflight. It reports missing
+PLIB headers/libraries by default and fails early only when
+`TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` is explicitly requested.

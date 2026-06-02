@@ -25,6 +25,18 @@ cmake --build /private/tmp/torcs-bridge-build
 ctest --test-dir /private/tmp/torcs-bridge-build --output-on-failure
 ```
 
+CMake also runs a retained TORCS core preflight. On systems without PLIB
+headers/libraries, the current stub targets still build, but retained-core
+targets stay disabled. To require the retained core dependency check:
+
+```bash
+cmake -S torcs/torcs/godot/native/torcs_gdextension -B /private/tmp/torcs-bridge-build -DTORCS_BRIDGE_ENABLE_RETAINED_CORE=ON
+```
+
+If PLIB is installed in a nonstandard location, pass
+`TORCS_BRIDGE_PLIB_INCLUDE_DIR`, `TORCS_BRIDGE_PLIB_SG_LIBRARY`, and
+`TORCS_BRIDGE_PLIB_UL_LIBRARY`.
+
 Run a short harness sample:
 
 ```bash
