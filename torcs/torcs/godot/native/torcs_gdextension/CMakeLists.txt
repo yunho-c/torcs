@@ -65,3 +65,37 @@ else()
 endif()
 
 add_test(NAME torcs_bridge_tests COMMAND torcs_bridge_tests)
+
+if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
+	add_library(torcs_retained_core STATIC
+		src/torcs_retained_adapter.cpp
+	)
+
+	target_include_directories(torcs_retained_core
+		PUBLIC
+			${CMAKE_CURRENT_SOURCE_DIR}/include
+		PRIVATE
+			${TORCS_BRIDGE_TORCS_ROOT}
+			${TORCS_BRIDGE_TORCS_ROOT}/src/interfaces
+			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/tgf
+			${TORCS_BRIDGE_TORCS_ROOT}/src/libs/robottools
+			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/track
+			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2
+			${TORCS_BRIDGE_TORCS_ROOT}/src/modules/simu/simuv2/SOLID-2.0/include
+			${TORCS_BRIDGE_PLIB_INCLUDE_DIR}
+	)
+
+	target_link_libraries(torcs_retained_core
+		PUBLIC
+			torcs_bridge_core
+		PRIVATE
+			${TORCS_BRIDGE_PLIB_SG_LIBRARY}
+			${TORCS_BRIDGE_PLIB_UL_LIBRARY}
+	)
+
+	if(MSVC)
+		target_compile_options(torcs_retained_core PRIVATE /W4)
+	else()
+		target_compile_options(torcs_retained_core PRIVATE -Wall -Wextra -Wpedantic)
+	endif()
+endif()

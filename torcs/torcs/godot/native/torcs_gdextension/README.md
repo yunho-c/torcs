@@ -37,6 +37,11 @@ If PLIB is installed in a nonstandard location, pass
 `TORCS_BRIDGE_PLIB_INCLUDE_DIR`, `TORCS_BRIDGE_PLIB_SG_LIBRARY`, and
 `TORCS_BRIDGE_PLIB_UL_LIBRARY`.
 
+When that option and preflight both pass, CMake adds a disabled-prototype
+`torcs_retained_core` target containing `TorcsRetainedAdapter`. It is a
+lifecycle skeleton for the future one-car direct TORCS adapter and is not used
+by the current smoke scene.
+
 Run a short harness sample:
 
 ```bash

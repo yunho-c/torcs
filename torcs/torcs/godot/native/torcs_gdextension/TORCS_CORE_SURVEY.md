@@ -198,3 +198,8 @@ headers/libraries are isolated from bridge behavior.
 The native CMake now includes a retained-core preflight. It reports missing
 PLIB headers/libraries by default and fails early only when
 `TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` is explicitly requested.
+
+A disabled `TorcsRetainedAdapter` skeleton now exists behind that option. The
+current source is intentionally a lifecycle placeholder; fill it with the
+direct-call sequence above only after the retained-core target can compile
+against the required PLIB/TORCS dependencies.
