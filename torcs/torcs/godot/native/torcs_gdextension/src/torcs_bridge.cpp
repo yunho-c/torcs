@@ -158,7 +158,7 @@ TorcsRace::step(double seconds)
 {
 	snapshot.completedSubsteps = 0;
 
-	if (!loaded || seconds <= 0.0) {
+	if (!loaded || !std::isfinite(seconds) || seconds <= 0.0) {
 		return snapshot;
 	}
 

@@ -57,6 +57,22 @@ func _check_fallback_snapshot() -> void:
 	)
 
 	bridge.shutdown()
+	_expect(bridge.initialize(data_root, local_root, local_root), "bridge reinitializes after catch-up check")
+	_expect(bridge.load({
+		"track_xml": "data/tracks/road/wheel-2/wheel-2.xml",
+		"car_xml": "data/cars/models/car1-trb1/car1-trb1.xml",
+		"car_id": "car1-trb1",
+		"laps": 0
+	}), "bridge reloads after catch-up check")
+
+	snapshot = bridge.step(NAN)
+	_expect(int(snapshot["completed_substeps"]) == 0, "NaN delta does not advance fallback")
+	snapshot = bridge.step(INF)
+	_expect(int(snapshot["completed_substeps"]) == 0, "infinite delta does not advance fallback")
+	snapshot = bridge.step(TorcsBridgeFallbackScript.SIM_STEP_SECONDS)
+	_expect(int(snapshot["completed_substeps"]) == 1, "finite delta still advances fallback")
+
+	bridge.shutdown()
 
 func _expect(condition: bool, message: String) -> void:
 	if condition:

@@ -68,7 +68,7 @@ func set_human_input(car_index: int, input: Dictionary) -> void:
 
 func step(seconds: float) -> Dictionary:
 	_snapshot["completed_substeps"] = 0
-	if not _loaded or seconds <= 0.0:
+	if not _loaded or is_nan(seconds) or is_inf(seconds) or seconds <= 0.0:
 		return get_snapshot()
 
 	_accumulator += seconds

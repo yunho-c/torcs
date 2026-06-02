@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <string>
 
 static int Failures = 0;
@@ -159,6 +160,34 @@ testSubstepCatchUpCap()
 		"pending accumulator is consumed on later positive step");
 }
 
+static void
+testNonFiniteStepDeltaDoesNotPoisonAccumulator()
+{
+	TorcsRuntime runtime;
+	expectTrue(runtime.initialize({ "data", ".", "." }), "runtime initializes for non-finite delta");
+
+	TorcsRace race(runtime);
+	expectTrue(race.load({ "track.xml", "car.xml", "test-car", 0 }), "race loads for non-finite delta");
+
+	TorcsBridgeInputState input{};
+	input.throttle = 1.0;
+	input.gear = 1;
+	race.setHumanInput(0, input);
+
+	TorcsBridgeSnapshot snapshot = race.step(std::numeric_limits<double>::quiet_NaN());
+	expectTrue(snapshot.completedSubsteps == 0, "NaN delta does not advance substeps");
+	expectNear(snapshot.raceTime, 0.0, 0.0, "NaN delta does not advance race time");
+
+	snapshot = race.step(std::numeric_limits<double>::infinity());
+	expectTrue(snapshot.completedSubsteps == 0, "infinite delta does not advance substeps");
+	expectNear(snapshot.raceTime, 0.0, 0.0, "infinite delta does not advance race time");
+
+	snapshot = race.step(TORCS_BRIDGE_SIM_STEP_SECONDS);
+	expectTrue(snapshot.completedSubsteps == 1, "finite delta still advances after non-finite deltas");
+	expectNear(snapshot.raceTime, TORCS_BRIDGE_SIM_STEP_SECONDS, 1e-12,
+		"finite delta advances one substep after non-finite deltas");
+}
+
 int
 main()
 {
@@ -167,6 +196,7 @@ main()
 	testSubstepAccumulator();
 	testTrackDebugSnapshot();
 	testSubstepCatchUpCap();
+	testNonFiniteStepDeltaDoesNotPoisonAccumulator();
 
 	if (Failures != 0) {
 		std::cerr << Failures << " bridge test failure(s).\n";
