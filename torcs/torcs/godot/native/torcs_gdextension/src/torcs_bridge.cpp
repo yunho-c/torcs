@@ -22,8 +22,18 @@
 #include <cmath>
 
 static double
-clampDouble(double value, double low, double high)
+clampDouble(double value, double low, double high, double fallback)
 {
+	if (!std::isfinite(value)) {
+		if (value > 0.0) {
+			return high;
+		}
+		if (value < 0.0) {
+			return low;
+		}
+		return fallback;
+	}
+
 	return std::max(low, std::min(value, high));
 }
 
@@ -77,12 +87,12 @@ TorcsBridgeClampInput(const TorcsBridgeInputState& input)
 {
 	TorcsBridgeInputState clamped = input;
 
-	clamped.steer = clampDouble(clamped.steer, -1.0, 1.0);
-	clamped.throttle = clampDouble(clamped.throttle, 0.0, 1.0);
-	clamped.brake = clampDouble(clamped.brake, 0.0, 1.0);
-	clamped.clutch = clampDouble(clamped.clutch, 0.0, 1.0);
+	clamped.steer = clampDouble(clamped.steer, -1.0, 1.0, 0.0);
+	clamped.throttle = clampDouble(clamped.throttle, 0.0, 1.0, 0.0);
+	clamped.brake = clampDouble(clamped.brake, 0.0, 1.0, 0.0);
+	clamped.clutch = clampDouble(clamped.clutch, 0.0, 1.0, 0.0);
 	clamped.gear = std::max(-1, std::min(clamped.gear, 6));
-	clamped.brakeBalance = clampDouble(clamped.brakeBalance, 0.0, 1.0);
+	clamped.brakeBalance = clampDouble(clamped.brakeBalance, 0.0, 1.0, 0.5);
 
 	return clamped;
 }

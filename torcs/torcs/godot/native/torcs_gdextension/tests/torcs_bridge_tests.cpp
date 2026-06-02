@@ -68,6 +68,37 @@ testInputClamp()
 }
 
 static void
+testNonFiniteInputClamp()
+{
+	TorcsBridgeInputState input{};
+	input.steer = std::numeric_limits<double>::quiet_NaN();
+	input.throttle = std::numeric_limits<double>::infinity();
+	input.brake = -std::numeric_limits<double>::infinity();
+	input.clutch = std::numeric_limits<double>::quiet_NaN();
+	input.gear = 1;
+	input.brakeBalance = std::numeric_limits<double>::quiet_NaN();
+
+	const TorcsBridgeInputState clamped = TorcsBridgeClampInput(input);
+	expectNear(clamped.steer, 0.0, 0.0, "NaN steer falls back to neutral");
+	expectNear(clamped.throttle, 1.0, 0.0, "infinite throttle clamps high");
+	expectNear(clamped.brake, 0.0, 0.0, "negative infinite brake clamps low");
+	expectNear(clamped.clutch, 0.0, 0.0, "NaN clutch falls back to neutral");
+	expectNear(clamped.brakeBalance, 0.5, 0.0, "NaN brake balance falls back to default");
+
+	TorcsRuntime runtime;
+	expectTrue(runtime.initialize({ "data", ".", "." }), "runtime initializes for non-finite input");
+
+	TorcsRace race(runtime);
+	expectTrue(race.load({ "track.xml", "car.xml", "test-car", 0 }), "race loads for non-finite input");
+	race.setHumanInput(0, input);
+
+	const TorcsBridgeSnapshot snapshot = race.step(TORCS_BRIDGE_SIM_STEP_SECONDS);
+	expectTrue(std::isfinite(snapshot.cars[0].torcsPosition.x), "non-finite input keeps finite X position");
+	expectTrue(std::isfinite(snapshot.cars[0].torcsPosition.y), "non-finite input keeps finite Y position");
+	expectTrue(std::isfinite(snapshot.cars[0].yaw), "non-finite input keeps finite yaw");
+}
+
+static void
 testCoordinateMapping()
 {
 	const TorcsBridgeVec3 torcsPosition{ 1.0, 2.0, 3.0 };
@@ -192,6 +223,7 @@ int
 main()
 {
 	testInputClamp();
+	testNonFiniteInputClamp();
 	testCoordinateMapping();
 	testSubstepAccumulator();
 	testTrackDebugSnapshot();

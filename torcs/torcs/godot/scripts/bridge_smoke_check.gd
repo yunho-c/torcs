@@ -72,6 +72,23 @@ func _check_fallback_snapshot() -> void:
 	snapshot = bridge.step(TorcsBridgeFallbackScript.SIM_STEP_SECONDS)
 	_expect(int(snapshot["completed_substeps"]) == 1, "finite delta still advances fallback")
 
+	bridge.set_human_input(0, {
+		"steer": NAN,
+		"throttle": INF,
+		"brake": -INF,
+		"clutch": NAN,
+		"gear": 1,
+		"lights": false,
+		"pit_request": false,
+		"brake_balance": NAN
+	})
+	snapshot = bridge.step(TorcsBridgeFallbackScript.SIM_STEP_SECONDS)
+	car = snapshot["cars"][0]
+	torcs_position = car["torcs_position"]
+	_expect(is_finite(torcs_position.x), "non-finite input keeps fallback X finite")
+	_expect(is_finite(torcs_position.y), "non-finite input keeps fallback Y finite")
+	_expect(is_finite(float(car["yaw"])), "non-finite input keeps fallback yaw finite")
+
 	bridge.shutdown()
 
 func _expect(condition: bool, message: String) -> void:

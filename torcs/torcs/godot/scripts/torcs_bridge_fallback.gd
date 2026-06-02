@@ -159,13 +159,20 @@ static func _clamp_input(input: Dictionary) -> Dictionary:
 		if clamped.has(key):
 			clamped[key] = input[key]
 
-	clamped["steer"] = clampf(float(clamped["steer"]), -1.0, 1.0)
-	clamped["throttle"] = clampf(float(clamped["throttle"]), 0.0, 1.0)
-	clamped["brake"] = clampf(float(clamped["brake"]), 0.0, 1.0)
-	clamped["clutch"] = clampf(float(clamped["clutch"]), 0.0, 1.0)
+	clamped["steer"] = _clamp_float(float(clamped["steer"]), -1.0, 1.0, 0.0)
+	clamped["throttle"] = _clamp_float(float(clamped["throttle"]), 0.0, 1.0, 0.0)
+	clamped["brake"] = _clamp_float(float(clamped["brake"]), 0.0, 1.0, 0.0)
+	clamped["clutch"] = _clamp_float(float(clamped["clutch"]), 0.0, 1.0, 0.0)
 	clamped["gear"] = clampi(int(clamped["gear"]), -1, 6)
-	clamped["brake_balance"] = clampf(float(clamped["brake_balance"]), 0.0, 1.0)
+	clamped["brake_balance"] = _clamp_float(float(clamped["brake_balance"]), 0.0, 1.0, 0.5)
 	return clamped
+
+static func _clamp_float(value: float, low: float, high: float, fallback: float) -> float:
+	if is_nan(value):
+		return fallback
+	if is_inf(value):
+		return high if value > 0.0 else low
+	return clampf(value, low, high)
 
 func _step_one_substep() -> void:
 	var car: Dictionary = _snapshot["cars"][0]
