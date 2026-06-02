@@ -125,6 +125,11 @@ testCoordinateMapping()
 		"Godot angular velocity Y maps negative TORCS yaw");
 	expectNear(godotAngularVelocity.z, -8.0, 0.0,
 		"Godot angular velocity Z flips TORCS pitch sign");
+
+	expectNear(TorcsBridgeTorcsToGodotYaw(0.0), -1.5707963267948966, 1e-12,
+		"TORCS zero yaw maps to Godot forward down +X");
+	expectNear(TorcsBridgeTorcsToGodotYaw(0.25), -1.8207963267948966, 1e-12,
+		"Godot yaw decreases as TORCS yaw increases");
 }
 
 static void
@@ -160,6 +165,8 @@ testSubstepAccumulator()
 		"snapshot stores mapped Godot Y");
 	expectNear(snapshot.cars[0].godotLinearVelocity.z, snapshot.cars[0].torcsLinearVelocity.y, 1e-12,
 		"snapshot stores mapped Godot linear velocity Z");
+	expectNear(snapshot.cars[0].godotYaw, TorcsBridgeTorcsToGodotYaw(snapshot.cars[0].yaw), 1e-12,
+		"snapshot stores mapped Godot yaw");
 }
 
 static void

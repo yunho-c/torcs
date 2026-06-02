@@ -231,7 +231,7 @@ writeCsvHeader(std::ostream& out)
 		<< "godot_x,godot_y,godot_z,"
 		<< "torcs_lvx,torcs_lvy,torcs_lvz,godot_lvx,godot_lvy,godot_lvz,"
 		<< "torcs_avx,torcs_avy,torcs_avz,godot_avx,godot_avy,godot_avz,"
-		<< "yaw,speed,rpm,gear,"
+		<< "yaw,godot_yaw,speed,rpm,gear,"
 		<< "steer,throttle,brake,clutch,damage,skid\n";
 }
 
@@ -263,6 +263,7 @@ writeCsvRow(std::ostream& out, const TorcsBridgeSnapshot& snapshot)
 		<< car.godotAngularVelocity.y << ','
 		<< car.godotAngularVelocity.z << ','
 		<< car.yaw << ','
+		<< car.godotYaw << ','
 		<< car.speed << ','
 		<< car.rpm << ','
 		<< car.gear << ','
@@ -395,6 +396,7 @@ writeJsonCar(std::ostream& out, const TorcsBridgeCarSnapshot& car)
 	writeJsonVec3(out, car.godotAngularVelocity);
 	out
 		<< ",\"yaw\":" << car.yaw
+		<< ",\"godot_yaw\":" << car.godotYaw
 		<< ",\"speed\":" << car.speed
 		<< ",\"rpm\":" << car.rpm
 		<< ",\"gear\":" << car.gear

@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <cmath>
 
+static constexpr double GODOT_FORWARD_YAW_OFFSET = -1.57079632679489661923;
+
 static double
 clampDouble(double value, double low, double high, double fallback)
 {
@@ -53,6 +55,7 @@ defaultCarSnapshot(const TorcsBridgeRaceConfig& config)
 	car.id = 0;
 	car.carId = config.carId.empty() ? "car1-trb1" : config.carId;
 	car.godotPosition = TorcsBridgeTorcsToGodotPosition(car.torcsPosition);
+	car.godotYaw = TorcsBridgeTorcsToGodotYaw(car.yaw);
 	car.gear = 1;
 	car.fuel = 1.0;
 	car.input = defaultInput();
@@ -113,6 +116,12 @@ TorcsBridgeVec3
 TorcsBridgeTorcsToGodotAngularVelocity(const TorcsBridgeVec3& velocity)
 {
 	return { -velocity.x, -velocity.z, -velocity.y };
+}
+
+double
+TorcsBridgeTorcsToGodotYaw(double yaw)
+{
+	return -yaw + GODOT_FORWARD_YAW_OFFSET;
 }
 
 bool
@@ -227,6 +236,7 @@ TorcsRace::stepOneSubstep()
 	const double yawRate = humanInput.steer * std::min(newSpeed, 30.0) * 0.025;
 
 	car.yaw += yawRate * dt;
+	car.godotYaw = TorcsBridgeTorcsToGodotYaw(car.yaw);
 	car.speed = newSpeed;
 	car.rpm = 900.0 + car.speed * 120.0 + humanInput.throttle * 1800.0;
 	car.gear = humanInput.gear;

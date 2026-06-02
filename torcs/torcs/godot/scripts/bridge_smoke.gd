@@ -147,10 +147,10 @@ func _update_scene_from_snapshot(delta: float, snap_camera := false) -> void:
 
 	var car: Dictionary = _snapshot["cars"][0]
 	var position: Vector3 = car["godot_position"]
-	var yaw := float(car["yaw"])
-	var forward := Vector3(cos(yaw), 0.0, sin(yaw))
+	var godot_yaw := float(car["godot_yaw"])
+	var forward := _forward_from_godot_yaw(godot_yaw)
 	_car.position = position
-	_car.rotation.y = -yaw - PI * 0.5
+	_car.rotation.y = godot_yaw
 
 	var camera_position := position - forward * 8.0 + Vector3(0.0, 4.0, 0.0)
 	if snap_camera:
@@ -164,6 +164,9 @@ func _update_scene_from_snapshot(delta: float, snap_camera := false) -> void:
 		car["rpm"],
 		_snapshot["completed_substeps"]
 	]
+
+func _forward_from_godot_yaw(godot_yaw: float) -> Vector3:
+	return Vector3(-sin(godot_yaw), 0.0, -cos(godot_yaw))
 
 func _rebuild_track_debug_overlay() -> void:
 	if _track_debug_built or _snapshot.is_empty():

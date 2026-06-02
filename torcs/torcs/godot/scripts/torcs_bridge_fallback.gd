@@ -4,6 +4,7 @@ extends RefCounted
 const SIM_STEP_SECONDS := 0.002
 const ROBOT_STEP_SECONDS := 0.02
 const MAX_SUBSTEPS_PER_STEP := 50
+const GODOT_FORWARD_YAW_OFFSET := -PI * 0.5
 
 var _initialized := false
 var _loaded := false
@@ -26,6 +27,9 @@ static func torcs_to_godot_linear_velocity(velocity: Vector3) -> Vector3:
 
 static func torcs_to_godot_angular_velocity(velocity: Vector3) -> Vector3:
 	return Vector3(-velocity.x, -velocity.z, -velocity.y)
+
+static func torcs_to_godot_yaw(yaw: float) -> float:
+	return -yaw + GODOT_FORWARD_YAW_OFFSET
 
 func initialize(data_root: String, local_root: String, library_root: String) -> bool:
 	_runtime_config = {
@@ -112,6 +116,7 @@ func _default_car_snapshot() -> Dictionary:
 		"torcs_angular_velocity": Vector3.ZERO,
 		"godot_angular_velocity": Vector3.ZERO,
 		"yaw": 0.0,
+		"godot_yaw": torcs_to_godot_yaw(0.0),
 		"speed": 0.0,
 		"rpm": 0.0,
 		"gear": 1,
@@ -195,6 +200,7 @@ func _step_one_substep() -> void:
 	var skid: float = absf(float(_human_input["steer"])) * new_speed * 0.02
 
 	car["yaw"] = yaw
+	car["godot_yaw"] = torcs_to_godot_yaw(yaw)
 	car["speed"] = new_speed
 	car["rpm"] = 900.0 + new_speed * 120.0 + float(_human_input["throttle"]) * 1800.0
 	car["gear"] = int(_human_input["gear"])

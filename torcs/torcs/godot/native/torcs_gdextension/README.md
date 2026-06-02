@@ -69,10 +69,10 @@ Run a short harness sample:
 ```
 
 Snapshots include car transform, TORCS/Godot linear and angular velocity,
-controls, wheel state, and a `TorcsBridgeTrackSnapshot` with debug centerline
-and left/right road border points. The current track data is a deterministic
-straight placeholder; retained-core work should replace it with points generated
-from TORCS physics track segments.
+TORCS/Godot yaw, controls, wheel state, and a `TorcsBridgeTrackSnapshot` with
+debug centerline and left/right road border points. The current track data is a
+deterministic straight placeholder; retained-core work should replace it with
+points generated from TORCS physics track segments.
 
 The harness bounds its final step to the requested `--seconds` duration. For
 example, `--seconds 0.01 --sample-seconds 0.02` emits one sample at 0.010000
