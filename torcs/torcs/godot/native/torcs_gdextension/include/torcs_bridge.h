@@ -25,6 +25,7 @@
 
 constexpr double TORCS_BRIDGE_SIM_STEP_SECONDS = 0.002;
 constexpr double TORCS_BRIDGE_ROBOT_STEP_SECONDS = 0.02;
+constexpr int TORCS_BRIDGE_MAX_SUBSTEPS_PER_STEP = 50;
 
 struct TorcsBridgeVec3 {
 	double x;

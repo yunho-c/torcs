@@ -3,6 +3,7 @@ extends RefCounted
 
 const SIM_STEP_SECONDS := 0.002
 const ROBOT_STEP_SECONDS := 0.02
+const MAX_SUBSTEPS_PER_STEP := 50
 
 var _initialized := false
 var _loaded := false
@@ -71,7 +72,7 @@ func step(seconds: float) -> Dictionary:
 		return get_snapshot()
 
 	_accumulator += seconds
-	while _accumulator >= SIM_STEP_SECONDS:
+	while _accumulator >= SIM_STEP_SECONDS and int(_snapshot["completed_substeps"]) < MAX_SUBSTEPS_PER_STEP:
 		_step_one_substep()
 		_accumulator -= SIM_STEP_SECONDS
 		_snapshot["completed_substeps"] += 1

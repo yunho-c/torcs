@@ -163,7 +163,8 @@ TorcsRace::step(double seconds)
 	}
 
 	accumulator += seconds;
-	while (accumulator >= TORCS_BRIDGE_SIM_STEP_SECONDS) {
+	while (accumulator >= TORCS_BRIDGE_SIM_STEP_SECONDS
+		&& snapshot.completedSubsteps < TORCS_BRIDGE_MAX_SUBSTEPS_PER_STEP) {
 		stepOneSubstep();
 		accumulator -= TORCS_BRIDGE_SIM_STEP_SECONDS;
 		snapshot.completedSubsteps++;

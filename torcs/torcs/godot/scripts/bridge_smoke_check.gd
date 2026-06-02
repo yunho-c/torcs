@@ -50,6 +50,12 @@ func _check_fallback_snapshot() -> void:
 	_expect(is_equal_approx(godot_position.y, torcs_position.z), "Godot Y maps from TORCS Z")
 	_expect(is_equal_approx(godot_position.z, torcs_position.y), "Godot Z maps from TORCS Y")
 
+	snapshot = bridge.step(1.0)
+	_expect(
+		int(snapshot["completed_substeps"]) == TorcsBridgeFallbackScript.MAX_SUBSTEPS_PER_STEP,
+		"large delta is capped"
+	)
+
 	bridge.shutdown()
 
 func _expect(condition: bool, message: String) -> void:

@@ -129,6 +129,36 @@ testTrackDebugSnapshot()
 		"track debug points cover placeholder length");
 }
 
+static void
+testSubstepCatchUpCap()
+{
+	TorcsRuntime runtime;
+	expectTrue(runtime.initialize({ "data", ".", "." }), "runtime initializes for catch-up cap");
+
+	TorcsRace race(runtime);
+	expectTrue(race.load({ "track.xml", "car.xml", "test-car", 0 }), "race loads for catch-up cap");
+
+	TorcsBridgeInputState input{};
+	input.throttle = 1.0;
+	input.gear = 1;
+	race.setHumanInput(0, input);
+
+	TorcsBridgeSnapshot snapshot = race.step(1.0);
+	expectTrue(snapshot.completedSubsteps == TORCS_BRIDGE_MAX_SUBSTEPS_PER_STEP,
+		"large delta caps substeps per call");
+	expectNear(snapshot.raceTime,
+		TORCS_BRIDGE_MAX_SUBSTEPS_PER_STEP * TORCS_BRIDGE_SIM_STEP_SECONDS,
+		1e-12,
+		"large delta advances only capped substeps");
+
+	snapshot = race.step(0.0);
+	expectTrue(snapshot.completedSubsteps == 0, "zero delta does not drain pending accumulator");
+
+	snapshot = race.step(TORCS_BRIDGE_SIM_STEP_SECONDS);
+	expectTrue(snapshot.completedSubsteps == TORCS_BRIDGE_MAX_SUBSTEPS_PER_STEP,
+		"pending accumulator is consumed on later positive step");
+}
+
 int
 main()
 {
@@ -136,6 +166,7 @@ main()
 	testCoordinateMapping();
 	testSubstepAccumulator();
 	testTrackDebugSnapshot();
+	testSubstepCatchUpCap();
 
 	if (Failures != 0) {
 		std::cerr << Failures << " bridge test failure(s).\n";

@@ -54,6 +54,10 @@ centerline and left/right road border points. The current track data is a
 deterministic straight placeholder; retained-core work should replace it with
 points generated from TORCS physics track segments.
 
+Each `step(seconds)` call consumes at most 50 fixed 0.002s substeps. Extra time
+stays queued in the accumulator so a single slow Godot frame cannot run an
+unbounded catch-up loop.
+
 The current bridge intentionally uses generated placeholder motion. The next
 native milestone is replacing `TorcsRace::load()` and `TorcsRace::step()` with
 retained TORCS track loading, car setup, and `simuv2` stepping while preserving
