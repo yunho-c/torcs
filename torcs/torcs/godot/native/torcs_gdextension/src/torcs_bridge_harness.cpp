@@ -18,6 +18,10 @@
 
 #include "torcs_bridge.h"
 
+#ifdef TORCS_BRIDGE_HAS_RETAINED_BACKEND
+#include "torcs_retained_adapter.h"
+#endif
+
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -34,6 +38,11 @@ enum HarnessOutputFormat {
 	HARNESS_OUTPUT_JSON
 };
 
+enum HarnessBackend {
+	HARNESS_BACKEND_STUB,
+	HARNESS_BACKEND_RETAINED
+};
+
 struct HarnessOptions {
 	std::string dataRoot = TORCS_BRIDGE_DEFAULT_DATA_ROOT;
 	std::string localRoot = TORCS_BRIDGE_DEFAULT_LOCAL_ROOT;
@@ -43,6 +52,7 @@ struct HarnessOptions {
 	std::string carId = "car1-trb1";
 	std::string outputPath;
 	HarnessOutputFormat outputFormat = HARNESS_OUTPUT_CSV;
+	HarnessBackend backend = HARNESS_BACKEND_STUB;
 	double seconds = 10.0;
 	double sampleSeconds = TORCS_BRIDGE_ROBOT_STEP_SECONDS;
 	int laps = 0;
@@ -62,6 +72,7 @@ printUsage(const char* program)
 		<< "  --car-xml <path>        Car XML path, default car1-trb1.\n"
 		<< "  --car-id <id>           Car id for snapshots, default car1-trb1.\n"
 		<< "  --laps <count>          Race lap count, default 0 free-drive.\n"
+		<< "  --backend <stub|retained> Simulation backend, default stub.\n"
 		<< "  --seconds <value>       Simulation duration, default 10.0.\n"
 		<< "  --sample-seconds <val>  Snapshot sample period, default 0.02.\n"
 		<< "  --output <path>         Write output to a file instead of stdout.\n"
@@ -143,6 +154,21 @@ parseOptions(int argc, char** argv, HarnessOptions* options)
 				std::cerr << "Invalid --format value: " << value << "\n";
 				return HARNESS_PARSE_ERROR;
 			}
+		} else if (arg == "--backend") {
+			const std::string backend = value;
+			if (backend == "stub") {
+				options->backend = HARNESS_BACKEND_STUB;
+			} else if (backend == "retained") {
+#ifdef TORCS_BRIDGE_HAS_RETAINED_BACKEND
+				options->backend = HARNESS_BACKEND_RETAINED;
+#else
+				std::cerr << "Retained backend is not available in this build.\n";
+				return HARNESS_PARSE_ERROR;
+#endif
+			} else {
+				std::cerr << "Invalid --backend value: " << value << "\n";
+				return HARNESS_PARSE_ERROR;
+			}
 		} else if (arg == "--seconds") {
 			if (!parseDouble(value, &options->seconds)) {
 				std::cerr << "Invalid --seconds value: " << value << "\n";
@@ -221,6 +247,129 @@ scriptedInput(double time)
 	}
 
 	return input;
+}
+
+class HarnessBackendRunner {
+public:
+	virtual ~HarnessBackendRunner() = default;
+	virtual bool initialize(const HarnessOptions& options) = 0;
+	virtual void setHumanInput(const TorcsBridgeInputState& input) = 0;
+	virtual TorcsBridgeSnapshot step(double seconds) = 0;
+	virtual const TorcsBridgeSnapshot& getSnapshot() const = 0;
+	virtual void shutdown() = 0;
+};
+
+class StubBackendRunner : public HarnessBackendRunner {
+public:
+	bool initialize(const HarnessOptions& options) override
+	{
+		if (!runtime.initialize({ options.dataRoot, options.localRoot, options.libraryRoot })) {
+			std::cerr << "Failed to initialize TORCS bridge runtime.\n";
+			return false;
+		}
+
+		race.reset(new TorcsRace(runtime));
+		if (!race->load({
+			options.trackXml,
+			options.carXml,
+			options.carId,
+			options.laps
+		})) {
+			std::cerr << "Failed to load TORCS bridge race.\n";
+			return false;
+		}
+
+		return true;
+	}
+
+	void setHumanInput(const TorcsBridgeInputState& input) override
+	{
+		race->setHumanInput(0, input);
+	}
+
+	TorcsBridgeSnapshot step(double seconds) override
+	{
+		return race->step(seconds);
+	}
+
+	const TorcsBridgeSnapshot& getSnapshot() const override
+	{
+		return race->getSnapshot();
+	}
+
+	void shutdown() override
+	{
+		if (race) {
+			race->shutdown();
+		}
+		runtime.shutdown();
+	}
+
+private:
+	TorcsRuntime runtime;
+	std::unique_ptr<TorcsRace> race;
+};
+
+#ifdef TORCS_BRIDGE_HAS_RETAINED_BACKEND
+class RetainedBackendRunner : public HarnessBackendRunner {
+public:
+	bool initialize(const HarnessOptions& options) override
+	{
+		if (!adapter.initialize({ options.dataRoot, options.localRoot, options.libraryRoot })) {
+			std::cerr << "Failed to initialize retained TORCS bridge runtime.\n";
+			return false;
+		}
+
+		if (!adapter.loadOneCarFreeDrive({
+			options.trackXml,
+			options.carXml,
+			options.carId,
+			options.laps
+		})) {
+			std::cerr << "Failed to load retained TORCS bridge race.\n";
+			return false;
+		}
+
+		return true;
+	}
+
+	void setHumanInput(const TorcsBridgeInputState& input) override
+	{
+		adapter.setHumanInput(input);
+	}
+
+	TorcsBridgeSnapshot step(double seconds) override
+	{
+		return adapter.step(seconds);
+	}
+
+	const TorcsBridgeSnapshot& getSnapshot() const override
+	{
+		return adapter.getSnapshot();
+	}
+
+	void shutdown() override
+	{
+		adapter.shutdown();
+	}
+
+private:
+	TorcsRetainedAdapter adapter;
+};
+#endif
+
+static std::unique_ptr<HarnessBackendRunner>
+createBackendRunner(HarnessBackend backend)
+{
+	if (backend == HARNESS_BACKEND_STUB) {
+		return std::unique_ptr<HarnessBackendRunner>(new StubBackendRunner());
+	}
+
+#ifdef TORCS_BRIDGE_HAS_RETAINED_BACKEND
+	return std::unique_ptr<HarnessBackendRunner>(new RetainedBackendRunner());
+#else
+	return nullptr;
+#endif
 }
 
 static void
@@ -446,20 +595,8 @@ main(int argc, char** argv)
 		return 2;
 	}
 
-	TorcsRuntime runtime;
-	if (!runtime.initialize({ options.dataRoot, options.localRoot, options.libraryRoot })) {
-		std::cerr << "Failed to initialize TORCS bridge runtime.\n";
-		return 1;
-	}
-
-	TorcsRace race(runtime);
-	if (!race.load({
-		options.trackXml,
-		options.carXml,
-		options.carId,
-		options.laps
-	})) {
-		std::cerr << "Failed to load TORCS bridge race.\n";
+	std::unique_ptr<HarnessBackendRunner> backend = createBackendRunner(options.backend);
+	if (!backend || !backend->initialize(options)) {
 		return 1;
 	}
 
@@ -481,15 +618,15 @@ main(int argc, char** argv)
 		writeCsvHeader(*out);
 	} else {
 		*out << "{\"track\":";
-		writeJsonTrack(*out, race.getSnapshot().track);
+		writeJsonTrack(*out, backend->getSnapshot().track);
 		*out << ",\"samples\":[";
 	}
 
 	bool wroteJsonSample = false;
 	for (double elapsed = 0.0; elapsed < options.seconds;) {
 		const double stepSeconds = std::min(options.sampleSeconds, options.seconds - elapsed);
-		race.setHumanInput(0, scriptedInput(elapsed));
-		const TorcsBridgeSnapshot snapshot = race.step(stepSeconds);
+		backend->setHumanInput(scriptedInput(elapsed));
+		const TorcsBridgeSnapshot snapshot = backend->step(stepSeconds);
 		if (options.outputFormat == HARNESS_OUTPUT_CSV) {
 			writeCsvRow(*out, snapshot);
 		} else {
@@ -506,8 +643,7 @@ main(int argc, char** argv)
 		*out << "]}\n";
 	}
 
-	race.shutdown();
-	runtime.shutdown();
+	backend->shutdown();
 
 	return 0;
 }

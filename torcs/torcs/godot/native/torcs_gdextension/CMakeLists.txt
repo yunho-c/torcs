@@ -260,6 +260,16 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 	endif()
 
 	if(TORCS_BRIDGE_RETAINED_CORE_LINKABLE)
+		target_link_libraries(torcs_bridge_harness
+			PRIVATE
+				torcs_retained_core
+		)
+
+		target_compile_definitions(torcs_bridge_harness
+			PRIVATE
+				TORCS_BRIDGE_HAS_RETAINED_BACKEND=1
+		)
+
 		add_executable(torcs_retained_smoke
 			tests/torcs_retained_smoke.cpp
 		)
@@ -283,5 +293,27 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 		endif()
 
 		add_test(NAME torcs_retained_smoke COMMAND torcs_retained_smoke)
+
+		add_test(NAME torcs_bridge_harness_retained_csv_smoke
+			COMMAND torcs_bridge_harness --backend retained --seconds 0.04 --sample-seconds 0.02
+		)
+		set_tests_properties(torcs_bridge_harness_retained_csv_smoke PROPERTIES
+			PASS_REGULAR_EXPRESSION "godot_lvx,.*godot_avz,.*godot_yaw"
+		)
+
+		add_test(NAME torcs_bridge_harness_retained_json_smoke
+			COMMAND torcs_bridge_harness --backend retained --seconds 0.04 --sample-seconds 0.02 --format json
+		)
+		set_tests_properties(torcs_bridge_harness_retained_json_smoke PROPERTIES
+			PASS_REGULAR_EXPRESSION "\"godot_linear_velocity\".*\"godot_angular_velocity\".*\"godot_yaw\""
+		)
+
+		add_test(NAME torcs_bridge_harness_retained_deterministic_csv
+			COMMAND ${CMAKE_COMMAND}
+				-DTORCS_BRIDGE_HARNESS=$<TARGET_FILE:torcs_bridge_harness>
+				-DTORCS_BRIDGE_HARNESS_ARGS=--backend\;retained
+				-DTORCS_BRIDGE_OUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/harness-retained-determinism
+				-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompareHarnessRuns.cmake
+		)
 	endif()
 endif()
