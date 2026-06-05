@@ -197,7 +197,9 @@ focused on bridge-owned adapter code.
 
 The native CMake now includes a retained-core preflight. It reports missing
 PLIB headers/libraries by default and fails early only when
-`TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` is explicitly requested.
+`TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON` is explicitly requested. It checks the
+repo-local `.cache/plib-1.8.5` source install before platform and system PLIB
+paths.
 
 When the preflight passes, `torcs_retained_core` compiles
 `TorcsRetainedAdapter` plus the retained TORCS source subset from `tgf`,
@@ -213,16 +215,16 @@ substeps, updates `tSituation` time, and refreshes the bridge car snapshot from
 `tCarElt`.
 
 When retained dependencies are enabled and the PLIB `sg` link probe passes,
-CMake also builds `torcs_retained_smoke` and registers a retained-only CTest.
-The smoke test links the retained adapter executable path, loads `wheel-2`,
-checks positive track length/width, verifies copied debug points, checks finite
+CMake also builds `torcs_retained_smoke` and retained harness CTests. The smoke
+test links the retained adapter executable path, loads `wheel-2`, checks
+positive track length/width, verifies copied debug points, checks finite
 simulator car pose/wheel state, checks `car1-trb1` initial fuel from the merged
-car/category handle, verifies a retained step advances ten simulation substeps,
-and confirms shutdown unloads the adapter. Scratch archives remain useful only
-for static `torcs_retained_core` compile checks.
+car/category handle, verifies retained throttle/brake/steering behavior and
+deterministic repeated snapshots, and confirms shutdown unloads the adapter.
+Scratch archives remain useful only for static `torcs_retained_core` compile
+checks.
 
 ## Next Prototype Task
 
-Validate `torcs_retained_smoke` with a real PLIB install, then route the public
-runtime or GDExtension binding through `TorcsRetainedAdapter` while keeping the
-current snapshot/input DTO boundary stable.
+Route the public runtime or GDExtension binding through `TorcsRetainedAdapter`
+while keeping the current snapshot/input DTO boundary stable.
