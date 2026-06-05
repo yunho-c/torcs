@@ -376,4 +376,24 @@ if(TORCS_BRIDGE_ENABLE_GDEXTENSION)
 		${TORCS_BRIDGE_GODOT_BIN_DIR}/torcs_gdextension.gdextension
 		COPYONLY
 	)
+
+	find_package(Python3 COMPONENTS Interpreter QUIET)
+	find_program(TORCS_BRIDGE_GODOT_EXECUTABLE
+		NAMES godot godot4
+		DOC "Godot executable for native bridge parity tests."
+	)
+
+	if(Python3_Interpreter_FOUND AND TORCS_BRIDGE_GODOT_EXECUTABLE)
+		add_test(NAME torcs_bridge_native_retained_parity
+			COMMAND ${CMAKE_COMMAND}
+				-DTORCS_BRIDGE_HARNESS=$<TARGET_FILE:torcs_bridge_harness>
+				-DTORCS_BRIDGE_GODOT_EXECUTABLE=${TORCS_BRIDGE_GODOT_EXECUTABLE}
+				-DTORCS_BRIDGE_GODOT_PROJECT_DIR=${TORCS_BRIDGE_GODOT_PROJECT_DIR}
+				-DTORCS_BRIDGE_OUTPUT_DIR=${CMAKE_CURRENT_BINARY_DIR}/native-retained-parity
+				-DTORCS_BRIDGE_PYTHON=${Python3_EXECUTABLE}
+				-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompareGodotNativeHarness.cmake
+		)
+	else()
+		message(STATUS "GDExtension parity CTest disabled: Python3 or Godot executable not found.")
+	endif()
 endif()
