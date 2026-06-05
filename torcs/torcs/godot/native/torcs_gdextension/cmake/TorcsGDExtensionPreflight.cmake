@@ -3,7 +3,7 @@ set(TORCS_BRIDGE_GDEXTENSION_MISSING "")
 set(TORCS_BRIDGE_GODOT_CPP_ROOT "" CACHE PATH "Root directory of a Godot 4.6-compatible godot-cpp build/install.")
 
 find_path(TORCS_BRIDGE_GODOT_CPP_INCLUDE_DIR
-	NAMES godot_cpp/godot.hpp godot_cpp/classes/ref_counted.hpp
+	NAMES godot_cpp/godot.hpp
 	HINTS
 		${TORCS_BRIDGE_GODOT_CPP_ROOT}
 		${TORCS_BRIDGE_GODOT_CPP_ROOT}/include
