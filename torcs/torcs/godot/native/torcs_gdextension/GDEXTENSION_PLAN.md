@@ -13,11 +13,16 @@ reloads, or export packaging fail.
 - CMake now has a `TORCS_BRIDGE_ENABLE_GDEXTENSION` preflight option. Default
   stub builds continue without `godot-cpp`; explicit GDExtension enable fails
   early until the include, generated include, and library paths are provided.
+- `TorcsBridgeNative` source and registration code exist under `src/godot/`.
+  The target is added only when `TORCS_BRIDGE_ENABLE_GDEXTENSION=ON`,
+  `godot-cpp` is available, and retained-core simuv2 linkage is enabled.
+- The `.gdextension` descriptor is generated into `godot/bin` only during an
+  enabled native build so fallback-only Godot startup does not load a missing
+  library.
 
-Do not add a non-compiling `.gdextension` resource or source file until the
-Godot C++ binding dependency is available. A `.gdextension` file that points to
-a missing library makes project startup noisier and weakens the current smoke
-scene fallback.
+Do not commit generated `godot/bin` native outputs. A committed `.gdextension`
+file that points to a missing library makes project startup noisier and weakens
+the current smoke scene fallback.
 
 ## Preferred Binding Dependency
 
@@ -52,10 +57,10 @@ torcs_gdextension
   Thin Godot binding linked to torcs_bridge_core and godot-cpp.
 ```
 
-Initial Godot classes:
+Initial Godot class:
 
-- `TorcsRuntimeExtension`: wraps `TorcsRuntime`.
-- `TorcsRaceExtension`: wraps `TorcsRace`.
+- `TorcsBridgeNative`: wraps `TorcsRetainedAdapter` for the one-car retained
+  simuv2 path.
 
 Initial methods:
 
@@ -70,24 +75,27 @@ The returned snapshot should match the current fallback dictionary keys so
 `scripts/bridge_smoke.gd` can switch from fallback to native with minimal
 changes.
 
-## Files To Add Once Dependency Exists
+## Native Files
 
 ```text
 native/torcs_gdextension/
   src/godot/
-    torcs_runtime_extension.cpp
-    torcs_runtime_extension.h
-    torcs_race_extension.cpp
-    torcs_race_extension.h
+    torcs_bridge_native.cpp
+    torcs_bridge_native.h
     register_types.cpp
     register_types.h
-  bin/torcs_gdextension.gdextension
+    torcs_gdextension.gdextension.in
+  cmake/
+    CompareGodotNativeHarness.cmake
+    compare_bridge_parity.py
+scripts/
+  bridge_native_capture.gd
 ```
 
-The `.gdextension` file should set:
+The generated `.gdextension` file sets:
 
 - `entry_symbol` to the registration function from `register_types.cpp`.
-- `compatibility_minimum` to the minimum supported Godot 4.x version.
+- `compatibility_minimum` to Godot 4.6.
 - per-platform library paths for macOS, Linux, and Windows.
 - `reloadable = true` during development.
 
@@ -100,4 +108,6 @@ The `.gdextension` file should set:
 - The Godot smoke scene can choose native binding if available and fallback
   otherwise.
 - Native snapshots from Godot match harness snapshots for the same scripted
-  input and sample period.
+  input and sample period. The parity check compares time, substeps,
+  TORCS/Godot position, TORCS/Godot yaw, speed, RPM, gear, and controls with
+  documented tolerances in `README.md`.

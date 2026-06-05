@@ -22,6 +22,9 @@ gates.
 - `torcs_retained_smoke`: retained-core-only smoke executable that loads
   `wheel-2` through `TorcsRetainedAdapter` when retained dependencies are
   enabled.
+- `torcs_gdextension`: opt-in Godot 4.6-compatible GDExtension library, built
+  only when `TORCS_BRIDGE_ENABLE_GDEXTENSION=ON`, `godot-cpp` is supplied, and
+  the retained simuv2 backend is linkable.
 
 CTest also runs quick harness CLI smoke checks for `--help`, CSV output,
 deterministic repeat-run CSV output, JSON output, bounded sample duration, and
@@ -76,17 +79,31 @@ smoke and retained harness targets disabled if the PLIB files are present but
 the `sg` link probe fails.
 
 CMake also runs a GDExtension dependency preflight. On systems without
-`godot-cpp`, the current harness and tests still build, but the future
-GDExtension target stays disabled. To require the binding dependency check:
+`godot-cpp`, the current harness and tests still build, but the GDExtension
+target stays disabled. To build the native Godot bridge, use official
+`godot-cpp` headers/library compatible with Godot 4.6.x and enable both the
+retained backend and the GDExtension target:
 
 ```bash
-cmake -S torcs/torcs/godot/native/torcs_gdextension -B /private/tmp/torcs-bridge-build -DTORCS_BRIDGE_ENABLE_GDEXTENSION=ON
+cmake -S torcs/torcs/godot/native/torcs_gdextension -B /private/tmp/torcs-bridge-native -DTORCS_BRIDGE_ENABLE_RETAINED_CORE=ON -DTORCS_BRIDGE_ENABLE_GDEXTENSION=ON -DTORCS_BRIDGE_GODOT_CPP_ROOT=/path/to/godot-cpp
+cmake --build /private/tmp/torcs-bridge-native
+ctest --test-dir /private/tmp/torcs-bridge-native --output-on-failure
 ```
 
 If `godot-cpp` is installed or built in a nonstandard location, pass
+`TORCS_BRIDGE_GODOT_CPP_ROOT` or the explicit
 `TORCS_BRIDGE_GODOT_CPP_INCLUDE_DIR`,
 `TORCS_BRIDGE_GODOT_CPP_GEN_INCLUDE_DIR`, and
-`TORCS_BRIDGE_GODOT_CPP_LIBRARY`.
+`TORCS_BRIDGE_GODOT_CPP_LIBRARY`. The source tree does not vendor generated
+`godot-cpp` artifacts. When the native target is enabled, CMake writes
+`godot/bin/torcs_gdextension.gdextension` and the native library into the Godot
+project `bin` directory. The descriptor is generated during the native build so
+default fallback-only Godot startup does not try to load a missing library.
+
+`TorcsBridgeNative` is the initial GDExtension class. It exposes the same
+`initialize`, `load`, `set_human_input`, `step`, `get_snapshot`, and `shutdown`
+methods as `scripts/torcs_bridge_fallback.gd`, returning the same dictionary
+keys with Godot `Vector3` values for vector fields.
 
 Run a short harness sample:
 
@@ -117,13 +134,28 @@ Each `step(seconds)` call consumes at most 50 fixed 0.002s substeps. Extra time
 stays queued in the accumulator so a single slow Godot frame cannot run an
 unbounded catch-up loop.
 
-The current Godot scene still uses the GDScript fallback and generated
-placeholder motion. The native harness now has a retained backend entry point
-for environments with real PLIB, and the next binding milestone is choosing the
-smallest GDExtension surface to route scene logic through `TorcsRetainedAdapter`.
+The Godot smoke scene tries `TorcsBridgeNative` first via `ClassDB` and falls
+back to `scripts/torcs_bridge_fallback.gd` when the native class is unavailable
+or cannot load. It logs the active backend as `native` or `fallback`.
+
+Native-vs-retained parity is registered as CTest
+`torcs_bridge_native_retained_parity` only in native-enabled builds where Godot
+and Python are available. It runs:
+
+```bash
+torcs_bridge_harness --backend retained --seconds 0.2 --sample-seconds 0.02 --format json
+HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --script res://scripts/bridge_native_capture.gd -- --seconds 0.2 --sample-seconds 0.02
+```
+
+The comparator checks every sample for time, substeps, TORCS/Godot position,
+TORCS/Godot yaw, speed, RPM, gear, and controls. Default tolerances are
+`1e-6` seconds, `1e-4` position/speed, `1e-5` yaw, `1e-2` RPM, and `1e-6`
+controls. If native Godot output diverges, treat the retained harness JSON as
+the source of truth and compare the generated parity files under the CTest
+`native-retained-parity` output directory.
 
 See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
-thin binding shape to add once `godot-cpp` is available.
+thin binding shape.
 
 See `TORCS_CORE_SURVEY.md` for the retained TORCS track/sim integration path
 and the recommended direct-call adapter before linking the full race engine.

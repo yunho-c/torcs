@@ -16,7 +16,7 @@ Directory layout:
 - `addons/torcs_importers/`: future editor import plugins.
 - `assets/`: Godot-native or converted assets.
 - `native/torcs_gdextension/`: shared native bridge, command-line harness, and
-  future GDExtension library.
+  opt-in GDExtension library.
 - `scenes/`: Godot scenes.
 - `scripts/`: GDScript runtime helpers.
 
@@ -104,11 +104,22 @@ HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --s
 HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --quit-after 3
 ```
 
-The smoke scene currently uses `scripts/torcs_bridge_fallback.gd`, a GDScript
-fallback that mirrors the bridge DTOs and fixed-step behavior until a native
-GDExtension binding is added. It is separate from both harness backends: the
-stub harness verifies dependency-free DTO behavior, the retained harness
-verifies native `simuv2` stepping when PLIB is available, and the fallback scene
-keeps Godot scene logic stable while those native paths mature. The scene also
-renders the bridge snapshot's track debug centerline and road borders so future
-retained `tTrackSeg` output can be checked against Godot coordinates early.
+The smoke scene tries the native `TorcsBridgeNative` GDExtension first when it
+is registered, then falls back to `scripts/torcs_bridge_fallback.gd`. The active
+backend is logged as `native` or `fallback`; no committed `.gdextension` file is
+required for fallback-only startup. The stub harness verifies dependency-free
+DTO behavior, the retained harness verifies native `simuv2` stepping when PLIB
+is available, and the fallback scene keeps Godot scene logic stable when the
+native extension is not built. The scene also renders the bridge snapshot's
+track debug centerline and road borders so retained `tTrackSeg` output can be
+checked against Godot coordinates early.
+
+Native parity capture is available in native-enabled builds:
+
+```bash
+HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --script res://scripts/bridge_native_capture.gd -- --seconds 0.2 --sample-seconds 0.02 --output /private/tmp/torcs-godot-native.json
+```
+
+Without the built extension, this script exits with an explicit
+`TorcsBridgeNative is not registered` error; the fallback smoke checks above
+remain the expected local verification path.
