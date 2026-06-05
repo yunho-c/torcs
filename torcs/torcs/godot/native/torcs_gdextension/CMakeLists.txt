@@ -41,10 +41,14 @@ add_executable(torcs_bridge_harness
 	src/torcs_bridge_harness.cpp
 )
 
-target_link_libraries(torcs_bridge_harness
-	PRIVATE
-		torcs_bridge_core
-)
+if(NOT (TORCS_BRIDGE_ENABLE_RETAINED_CORE
+	AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE
+	AND TORCS_BRIDGE_RETAINED_CORE_LINKABLE))
+	target_link_libraries(torcs_bridge_harness
+		PRIVATE
+			torcs_bridge_core
+	)
+endif()
 
 target_compile_definitions(torcs_bridge_harness
 	PRIVATE
@@ -246,9 +250,8 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 	endif()
 
 	target_link_libraries(torcs_retained_core
-		PUBLIC
-			torcs_bridge_core
 		PRIVATE
+			torcs_bridge_core
 			${TORCS_BRIDGE_PLIB_SG_LIBRARY}
 			${TORCS_BRIDGE_PLIB_UL_LIBRARY}
 	)
