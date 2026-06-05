@@ -32,24 +32,52 @@ cmake --build /private/tmp/torcs-bridge-build
 ctest --test-dir /private/tmp/torcs-bridge-build --output-on-failure
 ```
 
-The current native bridge is a deterministic stub. It does not yet load TORCS
-`simuv2`, the track module, or car XML into the simulation core.
+The default native bridge build is dependency-free. Its harness uses a
+deterministic stub backend so DTO shape, fixed-step behavior, CSV/JSON output,
+and repeatability can be tested without PLIB, Godot, or legacy TORCS module
+loading.
 
-Run the harness:
+Run the stub harness:
 
 ```bash
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 10 --output /private/tmp/torcs-bridge.csv
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 10 --format json --output /private/tmp/torcs-bridge.json
+/private/tmp/torcs-bridge-build/torcs_bridge_harness --backend stub --seconds 10 --output /private/tmp/torcs-bridge.csv
 ```
 
 The harness emits CSV or JSON snapshots with time, substep count, TORCS/Godot
 positions, TORCS/Godot linear and angular velocity, TORCS/Godot yaw, speed, RPM,
 gear, input values, wheel state, damage, skid, and track debug geometry. It also
 accepts `--track-xml`,
-`--car-xml`, `--car-id`, and `--laps` so future retained-core runs can use the
-same standalone harness for different race configurations. CTest runs the
+`--car-xml`, `--car-id`, and `--laps` so stub and retained-core runs use the
+same standalone schema for different race configurations. CTest runs the stub
 harness twice with the same scripted input and compares the CSV outputs to keep
 repeatability covered.
+
+## Retained Simuv2 Harness
+
+The retained path is enabled only when CMake can find PLIB headers, `sg`, and
+`ul` libraries, and can link required `sg` symbols such as `sgMakeCoordMat4`:
+
+```bash
+cmake -S torcs/torcs/godot/native/torcs_gdextension -B /private/tmp/torcs-bridge-retained -DTORCS_BRIDGE_ENABLE_RETAINED_CORE=ON
+cmake --build /private/tmp/torcs-bridge-retained
+ctest --test-dir /private/tmp/torcs-bridge-retained --output-on-failure
+```
+
+When those checks pass, the same harness can run through retained TORCS
+`TrackBuildv1` plus `simuv2` for `wheel-2` and `car1-trb1`:
+
+```bash
+/private/tmp/torcs-bridge-retained/torcs_bridge_harness --backend retained --seconds 10 --output /private/tmp/torcs-retained.csv
+/private/tmp/torcs-bridge-retained/torcs_bridge_harness --backend retained --seconds 10 --format json --output /private/tmp/torcs-retained.json
+```
+
+Retained CTest coverage is registered behind the same linkability gate as
+`torcs_retained_smoke`. It checks CSV/JSON harness output, repeated-run CSV
+determinism, runtime track/car loading, throttle, brake, steering, and retained
+snapshot determinism. If `--backend retained` is requested in a build without
+that gate, the harness exits with an explicit unavailable-backend error.
 
 ## Godot Smoke Scene
 
@@ -76,8 +104,11 @@ HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --s
 HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --quit-after 3
 ```
 
-The smoke scene currently uses `scripts/torcs_bridge_fallback.gd`, which mirrors
-the native stub's DTOs and fixed-step behavior until a real GDExtension binding
-is added. It also renders the bridge snapshot's track debug centerline and road
-borders so future retained `tTrackSeg` output can be checked against Godot
-coordinates early.
+The smoke scene currently uses `scripts/torcs_bridge_fallback.gd`, a GDScript
+fallback that mirrors the bridge DTOs and fixed-step behavior until a native
+GDExtension binding is added. It is separate from both harness backends: the
+stub harness verifies dependency-free DTO behavior, the retained harness
+verifies native `simuv2` stepping when PLIB is available, and the fallback scene
+keeps Godot scene logic stable while those native paths mature. The scene also
+renders the bridge snapshot's track debug centerline and road borders so future
+retained `tTrackSeg` output can be checked against Godot coordinates early.

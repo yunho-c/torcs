@@ -8,13 +8,16 @@ This native subtree will host two targets that share the same bridge core:
   TORCS core through a Godot-friendly API.
 
 The first implementation keeps TORCS structs internal and exports snapshots,
-input values, and lifecycle methods. The bridge should avoid legacy graphics,
-audio, GLUT, PLIB, SSG, and `tgfclient` dependencies.
+input values, and lifecycle methods. The dependency-free bridge core avoids
+legacy graphics, audio, GLUT, PLIB, SSG, and `tgfclient` dependencies; retained
+prototype targets add the TORCS track/simuv2 and PLIB dependencies behind CMake
+gates.
 
 ## Current Targets
 
 - `torcs_bridge_core`: static C++17 DTO/lifecycle/fixed-step bridge core.
-- `torcs_bridge_harness`: command-line deterministic CSV snapshot harness.
+- `torcs_bridge_harness`: command-line deterministic CSV/JSON snapshot harness
+  with `--backend stub|retained`.
 - `torcs_bridge_tests`: dependency-free CTest regression checks.
 - `torcs_retained_smoke`: retained-core-only smoke executable that loads
   `wheel-2` through `TorcsRetainedAdapter` when retained dependencies are
@@ -61,11 +64,15 @@ bounded `SimUpdate` substeps, and refreshes the bridge snapshot from `tCarElt`.
 It is not used by the current smoke scene.
 
 When PLIB can also link required `sg` symbols, the retained-core CTest set
-includes `torcs_retained_smoke`, which links the retained adapter executable
-path and verifies `wheel-2` track loading at runtime plus `car1-trb1`
-simulator-backed setup and stepping. Empty scratch archives are only enough for
-static `torcs_retained_core` compile checks, so CMake leaves the smoke target
-disabled if the PLIB files are present but the `sg` link probe fails.
+includes `torcs_retained_smoke` and retained harness tests. The smoke links the
+retained adapter executable path and verifies `wheel-2` track loading at runtime
+plus `car1-trb1` simulator-backed setup, throttle acceleration, braking after
+acceleration, steering/yaw movement, and deterministic repeated snapshots. The
+harness tests run `--backend retained` through the same CSV/JSON schema as the
+stub backend and byte-compare repeated CSV runs. Empty scratch archives are only
+enough for static `torcs_retained_core` compile checks, so CMake leaves the
+smoke and retained harness targets disabled if the PLIB files are present but
+the `sg` link probe fails.
 
 CMake also runs a GDExtension dependency preflight. On systems without
 `godot-cpp`, the current harness and tests still build, but the future
@@ -84,9 +91,15 @@ Run a short harness sample:
 
 ```bash
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04
+/private/tmp/torcs-bridge-build/torcs_bridge_harness --backend stub --seconds 0.04
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04 --format json
 /private/tmp/torcs-bridge-build/torcs_bridge_harness --seconds 0.04 --track-xml data/tracks/road/wheel-2/wheel-2.xml --car-xml data/cars/models/car1-trb1/car1-trb1.xml --car-id car1-trb1 --laps 0
 ```
+
+In a retained-linkable build, add `--backend retained` to run the same harness
+through retained TORCS track loading and `simuv2` stepping. In dependency-free
+or retained-unlinkable builds, requesting `--backend retained` exits with an
+explicit unavailable-backend error instead of silently falling back to the stub.
 
 Snapshots include car transform, TORCS/Godot linear and angular velocity,
 TORCS/Godot yaw, controls, wheel state, and a `TorcsBridgeTrackSnapshot` with
@@ -103,10 +116,10 @@ Each `step(seconds)` call consumes at most 50 fixed 0.002s substeps. Extra time
 stays queued in the accumulator so a single slow Godot frame cannot run an
 unbounded catch-up loop.
 
-The current public bridge intentionally uses generated placeholder motion. The
-next retained-core milestone is validating retained `SimUpdate` behavior with a
-real PLIB install, then choosing the smallest binding point to route the public
-runtime or GDExtension through `TorcsRetainedAdapter`.
+The current Godot scene still uses the GDScript fallback and generated
+placeholder motion. The native harness now has a retained backend entry point
+for environments with real PLIB, and the next binding milestone is choosing the
+smallest GDExtension surface to route scene logic through `TorcsRetainedAdapter`.
 
 See `GDEXTENSION_PLAN.md` for the Godot C++ binding dependency plan and the
 thin binding shape to add once `godot-cpp` is available.
