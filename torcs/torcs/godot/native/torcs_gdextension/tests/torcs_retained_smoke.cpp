@@ -18,9 +18,11 @@
 
 #include "torcs_retained_adapter.h"
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <string>
+#include <vector>
 
 static int
 fail(const std::string& message)
@@ -29,28 +31,115 @@ fail(const std::string& message)
 	return 1;
 }
 
-int
-main()
+static TorcsBridgeRuntimeConfig
+defaultRuntimeConfig()
 {
-	TorcsRetainedAdapter adapter;
-	if (!adapter.initialize({
+	return {
 		TORCS_BRIDGE_DEFAULT_DATA_ROOT,
 		TORCS_BRIDGE_DEFAULT_LOCAL_ROOT,
 		TORCS_BRIDGE_DEFAULT_LIBRARY_ROOT
-	})) {
-		return fail("retained adapter initializes");
-	}
+	};
+}
 
-	if (!adapter.loadOneCarFreeDrive({
+static TorcsBridgeRaceConfig
+defaultRaceConfig()
+{
+	return {
 		"data/tracks/road/wheel-2/wheel-2.xml",
 		"data/cars/models/car1-trb1/car1-trb1.xml",
 		"car1-trb1",
 		0
-	})) {
+	};
+}
+
+static bool
+loadDefaultRace(TorcsRetainedAdapter* adapter)
+{
+	return adapter->initialize(defaultRuntimeConfig())
+		&& adapter->loadOneCarFreeDrive(defaultRaceConfig());
+}
+
+static TorcsBridgeInputState
+makeInput(double steer, double throttle, double brake)
+{
+	TorcsBridgeInputState input{};
+	input.steer = steer;
+	input.throttle = throttle;
+	input.brake = brake;
+	input.gear = 1;
+	input.brakeBalance = 0.5;
+	return input;
+}
+
+static TorcsBridgeSnapshot
+advance(TorcsRetainedAdapter* adapter, const TorcsBridgeInputState& input, double seconds)
+{
+	TorcsBridgeSnapshot snapshot = adapter->getSnapshot();
+	adapter->setHumanInput(input);
+	for (double elapsed = 0.0; elapsed < seconds;) {
+		const double stepSeconds = std::min(TORCS_BRIDGE_ROBOT_STEP_SECONDS, seconds - elapsed);
+		snapshot = adapter->step(stepSeconds);
+		elapsed += stepSeconds;
+	}
+	return snapshot;
+}
+
+static bool
+nearlyEqual(double left, double right)
+{
+	return std::fabs(left - right) <= 1e-7;
+}
+
+static bool
+compareSnapshots(const TorcsBridgeSnapshot& left, const TorcsBridgeSnapshot& right)
+{
+	if (!nearlyEqual(left.raceTime, right.raceTime)
+		|| left.completedSubsteps != right.completedSubsteps
+		|| left.cars.size() != right.cars.size()) {
+		return false;
+	}
+
+	if (left.cars.empty()) {
+		return true;
+	}
+
+	const TorcsBridgeCarSnapshot& leftCar = left.cars[0];
+	const TorcsBridgeCarSnapshot& rightCar = right.cars[0];
+	return nearlyEqual(leftCar.torcsPosition.x, rightCar.torcsPosition.x)
+		&& nearlyEqual(leftCar.torcsPosition.y, rightCar.torcsPosition.y)
+		&& nearlyEqual(leftCar.torcsPosition.z, rightCar.torcsPosition.z)
+		&& nearlyEqual(leftCar.torcsLinearVelocity.x, rightCar.torcsLinearVelocity.x)
+		&& nearlyEqual(leftCar.torcsLinearVelocity.y, rightCar.torcsLinearVelocity.y)
+		&& nearlyEqual(leftCar.yaw, rightCar.yaw)
+		&& nearlyEqual(leftCar.speed, rightCar.speed)
+		&& leftCar.gear == rightCar.gear;
+}
+
+static bool
+runDeterministicSequence(std::vector<TorcsBridgeSnapshot>* samples)
+{
+	TorcsRetainedAdapter adapter;
+	if (!loadDefaultRace(&adapter)) {
+		return false;
+	}
+
+	samples->push_back(advance(&adapter, makeInput(0.0, 0.85, 0.0), 0.5));
+	samples->push_back(advance(&adapter, makeInput(0.35, 0.85, 0.0), 0.5));
+	samples->push_back(advance(&adapter, makeInput(-0.20, 0.65, 0.0), 0.5));
+	samples->push_back(advance(&adapter, makeInput(0.0, 0.0, 0.45), 0.5));
+	adapter.shutdown();
+	return true;
+}
+
+int
+main()
+{
+	TorcsRetainedAdapter adapter;
+	if (!loadDefaultRace(&adapter)) {
 		return fail("retained adapter loads wheel-2");
 	}
 
-	const TorcsBridgeSnapshot& snapshot = adapter.getSnapshot();
+	const TorcsBridgeSnapshot snapshot = adapter.getSnapshot();
 	if (!adapter.isLoaded()) {
 		return fail("retained adapter reports loaded");
 	}
@@ -98,9 +187,53 @@ main()
 		return fail("retained step refreshes finite car snapshot");
 	}
 
+	const TorcsBridgeSnapshot acceleratedSnapshot = advance(&adapter, makeInput(0.0, 0.85, 0.0), 1.0);
+	if (acceleratedSnapshot.cars.empty()
+		|| acceleratedSnapshot.cars[0].speed <= steppedSnapshot.cars[0].speed + 0.1) {
+		return fail("retained throttle increases speed");
+	}
+
+	const TorcsBridgeSnapshot brakedSnapshot = advance(&adapter, makeInput(0.0, 0.0, 0.65), 1.0);
+	if (brakedSnapshot.cars.empty()
+		|| brakedSnapshot.cars[0].speed >= acceleratedSnapshot.cars[0].speed - 0.1) {
+		return fail("retained brake reduces speed after acceleration");
+	}
+
 	adapter.shutdown();
 	if (adapter.isLoaded()) {
 		return fail("retained adapter unloads on shutdown");
+	}
+
+	TorcsRetainedAdapter steeringAdapter;
+	if (!loadDefaultRace(&steeringAdapter)) {
+		return fail("retained steering adapter loads wheel-2");
+	}
+	const TorcsBridgeSnapshot steeringStart = steeringAdapter.getSnapshot();
+	const TorcsBridgeSnapshot steeringSnapshot = advance(&steeringAdapter, makeInput(0.45, 0.85, 0.0), 1.5);
+	if (steeringSnapshot.cars.empty() || steeringStart.cars.empty()) {
+		return fail("retained steering snapshots are present");
+	}
+	const TorcsBridgeCarSnapshot& steeringStartCar = steeringStart.cars[0];
+	const TorcsBridgeCarSnapshot& steeringCar = steeringSnapshot.cars[0];
+	const double yawDelta = std::fabs(steeringCar.yaw - steeringStartCar.yaw);
+	const double lateralDelta = std::fabs(steeringCar.torcsPosition.y - steeringStartCar.torcsPosition.y);
+	if (yawDelta <= 1e-4 && lateralDelta <= 1e-3) {
+		return fail("retained steering changes yaw or track position");
+	}
+	steeringAdapter.shutdown();
+
+	std::vector<TorcsBridgeSnapshot> firstRun;
+	std::vector<TorcsBridgeSnapshot> secondRun;
+	if (!runDeterministicSequence(&firstRun) || !runDeterministicSequence(&secondRun)) {
+		return fail("retained deterministic sequence loads");
+	}
+	if (firstRun.size() != secondRun.size()) {
+		return fail("retained deterministic sequence sample count matches");
+	}
+	for (size_t i = 0; i < firstRun.size(); i++) {
+		if (!compareSnapshots(firstRun[i], secondRun[i])) {
+			return fail("retained repeated runs are deterministic");
+		}
 	}
 
 	return 0;
