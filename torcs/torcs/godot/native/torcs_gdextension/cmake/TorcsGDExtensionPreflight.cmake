@@ -1,18 +1,30 @@
 set(TORCS_BRIDGE_GDEXTENSION_AVAILABLE OFF)
 set(TORCS_BRIDGE_GDEXTENSION_MISSING "")
+set(TORCS_BRIDGE_GODOT_CPP_ROOT "" CACHE PATH "Root directory of a Godot 4.6-compatible godot-cpp build/install.")
 
 find_path(TORCS_BRIDGE_GODOT_CPP_INCLUDE_DIR
 	NAMES godot_cpp/godot.hpp godot_cpp/classes/ref_counted.hpp
+	HINTS
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}/include
 	DOC "Directory containing godot-cpp public headers."
 )
 
 find_path(TORCS_BRIDGE_GODOT_CPP_GEN_INCLUDE_DIR
 	NAMES godot_cpp/classes/ref_counted.hpp
+	HINTS
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}/gen/include
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}/include
 	DOC "Directory containing generated godot-cpp class headers."
 )
 
 find_library(TORCS_BRIDGE_GODOT_CPP_LIBRARY
 	NAMES godot-cpp libgodot-cpp
+	HINTS
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}/bin
+		${TORCS_BRIDGE_GODOT_CPP_ROOT}/lib
 	DOC "Built godot-cpp binding library."
 )
 

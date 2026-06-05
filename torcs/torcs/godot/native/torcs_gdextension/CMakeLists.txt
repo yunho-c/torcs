@@ -6,6 +6,7 @@ include(CTest)
 include(CheckSymbolExists)
 
 set(TORCS_BRIDGE_TORCS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
+set(TORCS_BRIDGE_GODOT_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../..")
 if(WIN32)
 	set(TORCS_BRIDGE_OS_INCLUDE_DIR "${TORCS_BRIDGE_TORCS_ROOT}/src/windows")
 else()
@@ -30,6 +31,8 @@ target_include_directories(torcs_bridge_core
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+set_target_properties(torcs_bridge_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(MSVC)
 	target_compile_options(torcs_bridge_core PRIVATE /W4)
@@ -228,6 +231,8 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 			${CMAKE_CURRENT_SOURCE_DIR}/include
 	)
 
+	set_target_properties(torcs_retained_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 	target_include_directories(torcs_retained_core
 		SYSTEM PRIVATE
 			${TORCS_BRIDGE_TORCS_ROOT}
@@ -319,4 +324,56 @@ if(TORCS_BRIDGE_ENABLE_RETAINED_CORE AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE)
 				-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/CompareHarnessRuns.cmake
 		)
 	endif()
+endif()
+
+if(TORCS_BRIDGE_ENABLE_GDEXTENSION)
+	if(NOT (TORCS_BRIDGE_ENABLE_RETAINED_CORE
+		AND TORCS_BRIDGE_RETAINED_CORE_AVAILABLE
+		AND TORCS_BRIDGE_RETAINED_CORE_LINKABLE))
+		message(FATAL_ERROR
+			"TORCS_BRIDGE_ENABLE_GDEXTENSION is ON, but the native Godot bridge "
+			"requires TORCS_BRIDGE_ENABLE_RETAINED_CORE=ON with a linkable retained "
+			"simuv2 backend. Configure retained-core dependencies first; the PLIB sg "
+			"link probe must pass."
+		)
+	endif()
+
+	add_library(torcs_gdextension SHARED
+		src/godot/register_types.cpp
+		src/godot/torcs_bridge_native.cpp
+	)
+
+	target_include_directories(torcs_gdextension
+		PRIVATE
+			${CMAKE_CURRENT_SOURCE_DIR}/src/godot
+			${TORCS_BRIDGE_GODOT_CPP_INCLUDE_DIR}
+			${TORCS_BRIDGE_GODOT_CPP_GEN_INCLUDE_DIR}
+	)
+
+	target_link_libraries(torcs_gdextension
+		PRIVATE
+			torcs_retained_core
+			${TORCS_BRIDGE_GODOT_CPP_LIBRARY}
+	)
+
+	set(TORCS_BRIDGE_GODOT_BIN_DIR "${TORCS_BRIDGE_GODOT_PROJECT_DIR}/bin")
+	file(MAKE_DIRECTORY "${TORCS_BRIDGE_GODOT_BIN_DIR}")
+	set_target_properties(torcs_gdextension PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY "${TORCS_BRIDGE_GODOT_BIN_DIR}"
+		RUNTIME_OUTPUT_DIRECTORY "${TORCS_BRIDGE_GODOT_BIN_DIR}"
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+		OUTPUT_NAME "torcs_gdextension"
+	)
+
+	if(MSVC)
+		target_compile_options(torcs_gdextension PRIVATE /W4)
+	else()
+		target_compile_options(torcs_gdextension PRIVATE -Wall -Wextra -Wpedantic)
+	endif()
+
+	configure_file(
+		${CMAKE_CURRENT_SOURCE_DIR}/src/godot/torcs_gdextension.gdextension.in
+		${TORCS_BRIDGE_GODOT_BIN_DIR}/torcs_gdextension.gdextension
+		COPYONLY
+	)
 endif()
