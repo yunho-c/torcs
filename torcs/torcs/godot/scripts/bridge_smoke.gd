@@ -7,7 +7,8 @@ const TorcsBridgeFallbackScript := preload("res://scripts/torcs_bridge_fallback.
 @onready var _telemetry: Label = $CanvasLayer/Telemetry
 @onready var _track_debug: Node3D = $TrackDebug
 
-var _bridge = TorcsBridgeFallbackScript.new()
+var _bridge = null
+var _bridge_backend := ""
 var _snapshot: Dictionary = {}
 var _track_debug_built := false
 var _scripted_drive := false
@@ -21,7 +22,8 @@ func _ready() -> void:
 	_load_race()
 
 func _exit_tree() -> void:
-	_bridge.shutdown()
+	if _bridge != null:
+		_bridge.shutdown()
 
 func _physics_process(delta: float) -> void:
 	if _scripted_drive:
@@ -39,17 +41,38 @@ func _load_race() -> void:
 
 	var data_root := ProjectSettings.globalize_path("res://../data")
 	var local_root := ProjectSettings.globalize_path("res://..")
-	var loaded: bool = _bridge.initialize(data_root, local_root, local_root)
-	if loaded:
-		loaded = _bridge.load({
-			"track_xml": "data/tracks/road/wheel-2/wheel-2.xml",
-			"car_xml": "data/cars/models/car1-trb1/car1-trb1.xml",
-			"car_id": "car1-trb1",
-			"laps": 0
-		})
+	var race_config := {
+		"track_xml": "data/tracks/road/wheel-2/wheel-2.xml",
+		"car_xml": "data/cars/models/car1-trb1/car1-trb1.xml",
+		"car_id": "car1-trb1",
+		"laps": 0
+	}
+
+	if _bridge != null:
+		_bridge.shutdown()
+
+	var loaded := false
+	for candidate in _bridge_candidates():
+		var bridge = candidate["bridge"]
+		if bridge == null:
+			continue
+
+		loaded = bridge.initialize(data_root, local_root, local_root)
+		if loaded:
+			loaded = bridge.load(race_config)
+
+		if loaded:
+			_bridge = bridge
+			_bridge_backend = candidate["name"]
+			print("TORCS bridge backend: " + _bridge_backend)
+			break
+
+		bridge.shutdown()
 
 	if not loaded:
-		push_error("Failed to initialize TORCS bridge smoke fallback.")
+		_bridge = null
+		_bridge_backend = ""
+		push_error("Failed to initialize TORCS bridge smoke backend.")
 		set_physics_process(false)
 		return
 
@@ -57,6 +80,22 @@ func _load_race() -> void:
 	_snapshot = _bridge.get_snapshot()
 	_update_scene_from_snapshot(0.0, true)
 	_rebuild_track_debug_overlay()
+
+func get_bridge_backend() -> String:
+	return _bridge_backend
+
+func _bridge_candidates() -> Array:
+	var candidates: Array = []
+	if ClassDB.class_exists("TorcsBridgeNative"):
+		candidates.append({
+			"name": "native",
+			"bridge": ClassDB.instantiate("TorcsBridgeNative")
+		})
+	candidates.append({
+		"name": "fallback",
+		"bridge": TorcsBridgeFallbackScript.new()
+	})
+	return candidates
 
 func _scripted_input(time: float) -> Dictionary:
 	var input := {

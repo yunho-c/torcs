@@ -23,11 +23,13 @@ func _run() -> void:
 	var road := scene.get_node_or_null("Road") as Node3D
 	var track_debug := scene.get_node_or_null("TrackDebug") as Node3D
 	var telemetry := scene.get_node_or_null("CanvasLayer/Telemetry") as Label
+	var backend: String = scene.call("get_bridge_backend")
 
 	_expect(car != null, "scene has car node")
 	_expect(road != null, "scene has road node")
 	_expect(track_debug != null, "scene has track debug node")
 	_expect(telemetry != null, "scene has telemetry label")
+	_expect(backend == "native" or backend == "fallback", "scene reports active bridge backend")
 
 	if car != null:
 		_expect(car.position.x > 0.0, "headless scripted smoke moves car")
