@@ -143,18 +143,9 @@ func _scripted_input(time: float) -> Dictionary:
 func _interactive_input() -> Dictionary:
 	_update_gear_input()
 
-	var steer := _keyboard_axis(KEY_A, KEY_LEFT, KEY_D, KEY_RIGHT)
-	var throttle := 1.0 if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP) else 0.0
-	var brake := 1.0 if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN) else 0.0
-
-	var joypads := Input.get_connected_joypads()
-	if not joypads.is_empty():
-		var joypad: int = joypads[0]
-		var joy_steer := Input.get_joy_axis(joypad, JOY_AXIS_LEFT_X)
-		if absf(joy_steer) > 0.1:
-			steer = joy_steer
-		throttle = maxf(throttle, _normalized_trigger(Input.get_joy_axis(joypad, JOY_AXIS_TRIGGER_RIGHT)))
-		brake = maxf(brake, _normalized_trigger(Input.get_joy_axis(joypad, JOY_AXIS_TRIGGER_LEFT)))
+	var steer := Input.get_axis("torcs_steer_left", "torcs_steer_right")
+	var throttle := Input.get_action_strength("torcs_throttle")
+	var brake := Input.get_action_strength("torcs_brake")
 
 	return {
 		"steer": steer,
@@ -162,37 +153,24 @@ func _interactive_input() -> Dictionary:
 		"brake": brake,
 		"clutch": 0.0,
 		"gear": _gear,
-		"lights": Input.is_key_pressed(KEY_L),
+		"lights": Input.is_action_pressed("torcs_lights"),
 		"pit_request": false,
 		"brake_balance": 0.55
 	}
 
-func _keyboard_axis(negative_key: Key, negative_alt_key: Key, positive_key: Key, positive_alt_key: Key) -> float:
-	var value := 0.0
-	if Input.is_key_pressed(negative_key) or Input.is_key_pressed(negative_alt_key):
-		value -= 1.0
-	if Input.is_key_pressed(positive_key) or Input.is_key_pressed(positive_alt_key):
-		value += 1.0
-	return value
-
-func _normalized_trigger(value: float) -> float:
-	if value < -0.05:
-		return clampf((value + 1.0) * 0.5, 0.0, 1.0)
-	return clampf(value, 0.0, 1.0)
-
 func _update_gear_input() -> void:
-	var shift_up_now := Input.is_key_pressed(KEY_E) or Input.is_key_pressed(KEY_PAGEUP)
+	var shift_up_now := Input.is_action_pressed("torcs_shift_up")
 	if shift_up_now and not _shift_up_pressed:
 		_gear = mini(_gear + 1, 6)
 	_shift_up_pressed = shift_up_now
 
-	var shift_down_now := Input.is_key_pressed(KEY_Q) or Input.is_key_pressed(KEY_PAGEDOWN)
+	var shift_down_now := Input.is_action_pressed("torcs_shift_down")
 	if shift_down_now and not _shift_down_pressed:
 		_gear = maxi(_gear - 1, -1)
 	_shift_down_pressed = shift_down_now
 
 func _handle_reset_input() -> void:
-	var reset_now := Input.is_key_pressed(KEY_R)
+	var reset_now := Input.is_action_pressed("torcs_reset")
 	if reset_now and not _reset_pressed:
 		_bridge.shutdown()
 		_load_race()

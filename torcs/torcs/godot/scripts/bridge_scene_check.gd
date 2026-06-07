@@ -30,6 +30,16 @@ func _run() -> void:
 	_expect(track_debug != null, "scene has track debug node")
 	_expect(telemetry != null, "scene has telemetry label")
 	_expect(backend == "native" or backend == "fallback", "scene reports active bridge backend")
+	for action in [
+		"torcs_steer_left",
+		"torcs_steer_right",
+		"torcs_throttle",
+		"torcs_brake",
+		"torcs_shift_up",
+		"torcs_shift_down",
+		"torcs_reset"
+	]:
+		_expect(InputMap.has_action(action), "project input action exists: " + action)
 
 	if car != null:
 		_expect(car.position.x > 0.0, "headless scripted smoke moves car")
