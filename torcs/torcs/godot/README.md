@@ -112,8 +112,8 @@ torcs/torcs/godot/verify_phase3.sh
 
 By default this configures a retained bridge build under
 `/private/tmp/torcs-bridge-phase3-verify`, runs CTest, runs Godot check-only,
-the fallback contract check, the scene acceptance check, and a 60-second
-headless scene smoke. Set `TORCS_BRIDGE_PHASE3_SMOKE_SECONDS` to shorten local
+the fallback contract check, the scene acceptance check, and a 3,600-frame
+headless scene smoke. Set `TORCS_BRIDGE_PHASE3_SMOKE_FRAMES` to shorten local
 iterations. To require the GDExtension target, set
 `TORCS_BRIDGE_VERIFY_GDEXTENSION=ON` and provide the godot-cpp CMake variables
 documented in `native/torcs_gdextension/README.md`; generated Godot `bin`

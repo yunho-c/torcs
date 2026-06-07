@@ -7,7 +7,7 @@ NATIVE_SOURCE="$REPO_ROOT/torcs/torcs/godot/native/torcs_gdextension"
 BUILD_ROOT="${TORCS_BRIDGE_VERIFY_BUILD_ROOT:-/private/tmp/torcs-bridge-phase3-verify}"
 BUILD_DIR="$BUILD_ROOT/retained"
 GODOT_HOME="${TORCS_BRIDGE_GODOT_HOME:-/private/tmp/torcs-godot-home}"
-SMOKE_SECONDS="${TORCS_BRIDGE_PHASE3_SMOKE_SECONDS:-60}"
+SMOKE_FRAMES="${TORCS_BRIDGE_PHASE3_SMOKE_FRAMES:-3600}"
 
 cmake_args=(
 	-S "$NATIVE_SOURCE"
@@ -37,4 +37,4 @@ ctest --test-dir "$BUILD_DIR" --output-on-failure
 HOME="$GODOT_HOME" godot --headless --path "$REPO_ROOT/torcs/torcs/godot" --check-only --script res://scripts/bridge_smoke.gd
 HOME="$GODOT_HOME" godot --headless --path "$REPO_ROOT/torcs/torcs/godot" --script res://scripts/bridge_smoke_check.gd
 HOME="$GODOT_HOME" godot --headless --path "$REPO_ROOT/torcs/torcs/godot" --script res://scripts/bridge_scene_check.gd
-HOME="$GODOT_HOME" godot --headless --path "$REPO_ROOT/torcs/torcs/godot" --quit-after "$SMOKE_SECONDS"
+HOME="$GODOT_HOME" godot --headless --path "$REPO_ROOT/torcs/torcs/godot" --script res://scripts/bridge_frame_smoke.gd -- --frames "$SMOKE_FRAMES"
