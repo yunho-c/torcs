@@ -15,6 +15,14 @@ cmake_args=(
 	-DTORCS_BRIDGE_ENABLE_RETAINED_CORE=ON
 )
 
+append_cmake_env_arg() {
+	local name="$1"
+	local value="${!name:-}"
+	if [[ -n "$value" ]]; then
+		cmake_args+=("-D${name}=${value}")
+	fi
+}
+
 if [[ "${TORCS_BRIDGE_VERIFY_GDEXTENSION:-auto}" == "ON" ]]; then
 	cmake_args+=(-DTORCS_BRIDGE_ENABLE_GDEXTENSION=ON)
 elif [[ "${TORCS_BRIDGE_VERIFY_GDEXTENSION:-auto}" == "auto" ]]; then
@@ -27,6 +35,11 @@ elif [[ "${TORCS_BRIDGE_VERIFY_GDEXTENSION:-auto}" == "auto" ]]; then
 		echo "Skipping GDExtension target: set TORCS_BRIDGE_VERIFY_GDEXTENSION=ON and godot-cpp paths to require it."
 	fi
 fi
+
+append_cmake_env_arg TORCS_BRIDGE_GODOT_CPP_ROOT
+append_cmake_env_arg TORCS_BRIDGE_GODOT_CPP_INCLUDE_DIR
+append_cmake_env_arg TORCS_BRIDGE_GODOT_CPP_GEN_INCLUDE_DIR
+append_cmake_env_arg TORCS_BRIDGE_GODOT_CPP_LIBRARY
 
 mkdir -p "$BUILD_ROOT" "$GODOT_HOME"
 
