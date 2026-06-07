@@ -2,6 +2,7 @@ extends SceneTree
 
 const SIM_STEP_SECONDS := 0.002
 const ROBOT_STEP_SECONDS := 0.02
+const TORCS_GDEXTENSION_PATH := "res://bin/torcs_gdextension.gdextension"
 
 var _exit_code := 0
 
@@ -14,6 +15,7 @@ func _run() -> void:
 		quit(_exit_code)
 		return
 
+	_ensure_native_bridge_loaded()
 	if not ClassDB.class_exists("TorcsBridgeNative"):
 		push_error("TorcsBridgeNative is not registered. Build and load torcs_gdextension first.")
 		quit(2)
@@ -72,6 +74,13 @@ func _run() -> void:
 		file.store_string(json + "\n")
 
 	quit(_exit_code)
+
+func _ensure_native_bridge_loaded() -> void:
+	if ClassDB.class_exists("TorcsBridgeNative"):
+		return
+
+	if ResourceLoader.exists(TORCS_GDEXTENSION_PATH):
+		ResourceLoader.load(TORCS_GDEXTENSION_PATH)
 
 func _parse_options() -> Dictionary:
 	var options := {

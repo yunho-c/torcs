@@ -1,6 +1,7 @@
 extends Node3D
 
 const TorcsBridgeFallbackScript := preload("res://scripts/torcs_bridge_fallback.gd")
+const TORCS_GDEXTENSION_PATH := "res://bin/torcs_gdextension.gdextension"
 
 @onready var _car: Node3D = $Car
 @onready var _camera: Camera3D = $Camera3D
@@ -86,6 +87,7 @@ func get_bridge_backend() -> String:
 
 func _bridge_candidates() -> Array:
 	var candidates: Array = []
+	_ensure_native_bridge_loaded()
 	if ClassDB.class_exists("TorcsBridgeNative"):
 		candidates.append({
 			"name": "native",
@@ -96,6 +98,13 @@ func _bridge_candidates() -> Array:
 		"bridge": TorcsBridgeFallbackScript.new()
 	})
 	return candidates
+
+func _ensure_native_bridge_loaded() -> void:
+	if ClassDB.class_exists("TorcsBridgeNative"):
+		return
+
+	if ResourceLoader.exists(TORCS_GDEXTENSION_PATH):
+		ResourceLoader.load(TORCS_GDEXTENSION_PATH)
 
 func _scripted_input(time: float) -> Dictionary:
 	var input := {

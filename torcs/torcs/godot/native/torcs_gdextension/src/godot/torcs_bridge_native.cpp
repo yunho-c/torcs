@@ -220,12 +220,12 @@ toGodotSnapshot(const TorcsBridgeSnapshot& snapshot)
 void
 TorcsBridgeNative::_bind_methods()
 {
-	godot::ClassDB::bind_method(D_METHOD("initialize", "data_root", "local_root", "library_root"), &TorcsBridgeNative::initialize);
-	godot::ClassDB::bind_method(D_METHOD("shutdown"), &TorcsBridgeNative::shutdown);
-	godot::ClassDB::bind_method(D_METHOD("load", "config"), &TorcsBridgeNative::load);
-	godot::ClassDB::bind_method(D_METHOD("set_human_input", "car_index", "input"), &TorcsBridgeNative::set_human_input);
-	godot::ClassDB::bind_method(D_METHOD("step", "seconds"), &TorcsBridgeNative::step);
-	godot::ClassDB::bind_method(D_METHOD("get_snapshot"), &TorcsBridgeNative::get_snapshot);
+	godot::ClassDB::bind_method(godot::D_METHOD("initialize", "data_root", "local_root", "library_root"), &TorcsBridgeNative::initialize);
+	godot::ClassDB::bind_method(godot::D_METHOD("shutdown"), &TorcsBridgeNative::shutdown);
+	godot::ClassDB::bind_method(godot::D_METHOD("load", "config"), &TorcsBridgeNative::load);
+	godot::ClassDB::bind_method(godot::D_METHOD("set_human_input", "car_index", "input"), &TorcsBridgeNative::set_human_input);
+	godot::ClassDB::bind_method(godot::D_METHOD("step", "seconds"), &TorcsBridgeNative::step);
+	godot::ClassDB::bind_method(godot::D_METHOD("get_snapshot"), &TorcsBridgeNative::get_snapshot);
 }
 
 TorcsBridgeNative::~TorcsBridgeNative()
