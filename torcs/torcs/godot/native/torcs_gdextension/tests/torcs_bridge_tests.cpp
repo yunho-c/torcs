@@ -210,12 +210,25 @@ testTrackDebugSnapshot()
 	const TorcsBridgeSnapshot& snapshot = race.getSnapshot();
 	expectTrue(!snapshot.track.debugPoints.empty(), "track snapshot includes debug points");
 	expectNear(snapshot.track.width, 10.0, 0.0, "track snapshot stores debug width");
+	expectTrue(snapshot.track.debugPoints[0].segmentId == 0, "track debug point stores segment id");
+	expectTrue(snapshot.track.debugPoints[0].surfaceName == "asphalt", "track debug point stores surface name");
+	expectTrue(snapshot.track.debugPoints[0].startLine, "track debug point marks start line");
 	expectNear(snapshot.track.debugPoints[0].godotCenter.y, snapshot.track.debugPoints[0].torcsCenter.z, 0.0,
 		"track center maps Godot Y from TORCS Z");
 	expectNear(snapshot.track.debugPoints[0].godotLeftBorder.z, snapshot.track.debugPoints[0].torcsLeftBorder.y, 0.0,
 		"track left border maps Godot Z from TORCS Y");
 	expectNear(snapshot.track.debugPoints.back().torcsCenter.x, 120.0, 0.0,
 		"track debug points cover placeholder length");
+	expectTrue(snapshot.track.debugPoints.back().finishLine, "track debug point marks finish line");
+	expectTrue(snapshot.cars[0].trackPosition.segmentId == 0, "car snapshot stores track-local segment");
+	expectNear(snapshot.cars[0].trackPosition.toMiddle, 0.0, 0.0, "car starts on track center");
+	expectTrue(snapshot.cars[0].trackPosition.surfaceName == "asphalt", "car snapshot stores surface name");
+	expectTrue(snapshot.cars[0].wheels[0].hasContact, "wheel snapshot marks contact");
+	expectTrue(snapshot.cars[0].wheels[0].surfaceName == "asphalt", "wheel snapshot stores surface name");
+	expectNear(snapshot.cars[0].wheels[0].godotContactPoint.y,
+		snapshot.cars[0].wheels[0].torcsContactPoint.z,
+		0.0,
+		"wheel contact maps Godot Y from TORCS Z");
 }
 
 static void

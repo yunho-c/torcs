@@ -177,6 +177,13 @@ func _track_to_json(track: Dictionary) -> Dictionary:
 	var debug_points: Array = []
 	for point in track.get("debug_points", []):
 		debug_points.append({
+			"segment_id": int(point.get("segment_id", -1)),
+			"segment_name": point.get("segment_name", ""),
+			"distance_from_start": float(point.get("distance_from_start", 0.0)),
+			"surface_id": int(point.get("surface_id", -1)),
+			"surface_name": point.get("surface_name", ""),
+			"start_line": bool(point.get("start_line", false)),
+			"finish_line": bool(point.get("finish_line", false)),
 			"torcs_center": _vec3_to_json(point["torcs_center"]),
 			"godot_center": _vec3_to_json(point["godot_center"]),
 			"torcs_left_border": _vec3_to_json(point["torcs_left_border"]),
@@ -200,7 +207,13 @@ func _car_to_json(car: Dictionary) -> Dictionary:
 			"slip_side": float(wheel.get("slip_side", 0.0)),
 			"slip_accel": float(wheel.get("slip_accel", 0.0)),
 			"skid": float(wheel.get("skid", 0.0)),
-			"surface_id": int(wheel.get("surface_id", 0))
+			"surface_id": int(wheel.get("surface_id", 0)),
+			"surface_name": wheel.get("surface_name", ""),
+			"has_contact": bool(wheel.get("has_contact", false)),
+			"torcs_contact_point": _vec3_to_json(wheel.get("torcs_contact_point", Vector3.ZERO)),
+			"godot_contact_point": _vec3_to_json(wheel.get("godot_contact_point", Vector3.ZERO)),
+			"torcs_surface_normal": _vec3_to_json(wheel.get("torcs_surface_normal", Vector3.ZERO)),
+			"godot_surface_normal": _vec3_to_json(wheel.get("godot_surface_normal", Vector3.ZERO))
 		})
 
 	return {
@@ -222,7 +235,23 @@ func _car_to_json(car: Dictionary) -> Dictionary:
 		"skid": float(car.get("skid", 0.0)),
 		"collision": bool(car.get("collision", false)),
 		"input": _input_to_json(car.get("input", {})),
+		"track_position": _track_position_to_json(car.get("track_position", {})),
 		"wheels": wheels
+	}
+
+func _track_position_to_json(position: Dictionary) -> Dictionary:
+	return {
+		"segment_id": int(position.get("segment_id", -1)),
+		"segment_name": position.get("segment_name", ""),
+		"distance_from_start": float(position.get("distance_from_start", 0.0)),
+		"to_start": float(position.get("to_start", 0.0)),
+		"to_right": float(position.get("to_right", 0.0)),
+		"to_middle": float(position.get("to_middle", 0.0)),
+		"to_left": float(position.get("to_left", 0.0)),
+		"surface_id": int(position.get("surface_id", -1)),
+		"surface_name": position.get("surface_name", ""),
+		"start_line": bool(position.get("start_line", false)),
+		"finish_line": bool(position.get("finish_line", false))
 	}
 
 func _input_to_json(input: Dictionary) -> Dictionary:

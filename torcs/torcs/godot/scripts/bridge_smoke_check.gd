@@ -26,6 +26,13 @@ func _check_fallback_snapshot() -> void:
 	_expect(snapshot.get("cars", []).size() == 1, "snapshot has one car")
 	_expect(track.get("debug_points", []).size() == 13, "track has debug points")
 	_expect(is_equal_approx(float(track.get("width", 0.0)), 10.0), "track width is stable")
+	var debug_points: Array = track.get("debug_points", [])
+	var first_debug_point: Dictionary = debug_points[0]
+	var last_debug_point: Dictionary = debug_points[debug_points.size() - 1]
+	_expect(int(first_debug_point.get("segment_id", -1)) == 0, "track debug point has segment id")
+	_expect(first_debug_point.get("surface_name", "") == "asphalt", "track debug point has surface name")
+	_expect(bool(first_debug_point.get("start_line", false)), "track debug point marks start line")
+	_expect(bool(last_debug_point.get("finish_line", false)), "track debug point marks finish line")
 
 	bridge.set_human_input(0, {
 		"steer": 0.25,
@@ -44,6 +51,7 @@ func _check_fallback_snapshot() -> void:
 	_expect(float(snapshot["race_time"]) > 0.0, "race time advances")
 	_expect(float(car["speed"]) > 0.0, "car accelerates")
 	_expect(car["wheels"].size() == 4, "car has four wheel snapshots")
+	_expect(car.has("track_position"), "car has track-local position")
 
 	var torcs_position: Vector3 = car["torcs_position"]
 	var godot_position: Vector3 = car["godot_position"]
@@ -61,6 +69,16 @@ func _check_fallback_snapshot() -> void:
 		is_equal_approx(float(car["godot_yaw"]), TorcsBridgeFallbackScript.torcs_to_godot_yaw(float(car["yaw"]))),
 		"Godot yaw maps from TORCS yaw"
 	)
+	var track_position: Dictionary = car["track_position"]
+	_expect(int(track_position.get("segment_id", -1)) == 0, "track-local segment follows car")
+	_expect(is_equal_approx(float(track_position.get("to_middle", 999.0)), torcs_position.y), "track-local middle offset follows car Y")
+	_expect(track_position.get("surface_name", "") == "asphalt", "track-local surface name is exposed")
+	var first_wheel: Dictionary = car["wheels"][0]
+	_expect(bool(first_wheel.get("has_contact", false)), "wheel exposes contact flag")
+	_expect(first_wheel.get("surface_name", "") == "asphalt", "wheel exposes surface name")
+	var torcs_contact_point: Vector3 = first_wheel["torcs_contact_point"]
+	var godot_contact_point: Vector3 = first_wheel["godot_contact_point"]
+	_expect(is_equal_approx(godot_contact_point.y, torcs_contact_point.z), "wheel contact maps Godot Y from TORCS Z")
 
 	snapshot = bridge.step(1.0)
 	_expect(

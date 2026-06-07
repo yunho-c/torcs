@@ -493,7 +493,19 @@ writeJsonTrack(std::ostream& out, const TorcsBridgeTrackSnapshot& track)
 		if (i != 0) {
 			out << ',';
 		}
-		out << "{\"torcs_center\":";
+		out
+			<< "{\"segment_id\":" << point.segmentId
+			<< ",\"segment_name\":";
+		writeJsonString(out, point.segmentName);
+		out
+			<< ",\"distance_from_start\":" << point.distanceFromStart
+			<< ",\"surface_id\":" << point.surfaceId
+			<< ",\"surface_name\":";
+		writeJsonString(out, point.surfaceName);
+		out
+			<< ",\"start_line\":" << (point.startLine ? "true" : "false")
+			<< ",\"finish_line\":" << (point.finishLine ? "true" : "false")
+			<< ",\"torcs_center\":";
 		writeJsonVec3(out, point.torcsCenter);
 		out << ",\"godot_center\":";
 		writeJsonVec3(out, point.godotCenter);
@@ -512,6 +524,28 @@ writeJsonTrack(std::ostream& out, const TorcsBridgeTrackSnapshot& track)
 }
 
 static void
+writeJsonTrackLocalPosition(std::ostream& out, const TorcsBridgeTrackLocalPosition& position)
+{
+	out
+		<< "{\"segment_id\":" << position.segmentId
+		<< ",\"segment_name\":";
+	writeJsonString(out, position.segmentName);
+	out
+		<< ",\"distance_from_start\":" << position.distanceFromStart
+		<< ",\"to_start\":" << position.toStart
+		<< ",\"to_right\":" << position.toRight
+		<< ",\"to_middle\":" << position.toMiddle
+		<< ",\"to_left\":" << position.toLeft
+		<< ",\"surface_id\":" << position.surfaceId
+		<< ",\"surface_name\":";
+	writeJsonString(out, position.surfaceName);
+	out
+		<< ",\"start_line\":" << (position.startLine ? "true" : "false")
+		<< ",\"finish_line\":" << (position.finishLine ? "true" : "false")
+		<< '}';
+}
+
+static void
 writeJsonWheel(std::ostream& out, const TorcsBridgeWheelSnapshot& wheel)
 {
 	out
@@ -521,7 +555,19 @@ writeJsonWheel(std::ostream& out, const TorcsBridgeWheelSnapshot& wheel)
 		<< ",\"slip_accel\":" << wheel.slipAccel
 		<< ",\"skid\":" << wheel.skid
 		<< ",\"surface_id\":" << wheel.surfaceId
-		<< '}';
+		<< ",\"surface_name\":";
+	writeJsonString(out, wheel.surfaceName);
+	out
+		<< ",\"has_contact\":" << (wheel.hasContact ? "true" : "false")
+		<< ",\"torcs_contact_point\":";
+	writeJsonVec3(out, wheel.torcsContactPoint);
+	out << ",\"godot_contact_point\":";
+	writeJsonVec3(out, wheel.godotContactPoint);
+	out << ",\"torcs_surface_normal\":";
+	writeJsonVec3(out, wheel.torcsSurfaceNormal);
+	out << ",\"godot_surface_normal\":";
+	writeJsonVec3(out, wheel.godotSurfaceNormal);
+	out << '}';
 }
 
 static void
@@ -555,6 +601,8 @@ writeJsonCar(std::ostream& out, const TorcsBridgeCarSnapshot& car)
 		<< ",\"collision\":" << (car.collision ? "true" : "false")
 		<< ",\"input\":";
 	writeJsonInput(out, car.input);
+	out << ",\"track_position\":";
+	writeJsonTrackLocalPosition(out, car.trackPosition);
 	out << ",\"wheels\":[";
 	for (size_t i = 0; i < car.wheels.size(); i++) {
 		if (i != 0) {

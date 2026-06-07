@@ -64,9 +64,22 @@ struct TorcsBridgeWheelSnapshot {
 	double slipAccel;
 	double skid;
 	int surfaceId;
+	std::string surfaceName;
+	bool hasContact;
+	TorcsBridgeVec3 torcsContactPoint;
+	TorcsBridgeVec3 godotContactPoint;
+	TorcsBridgeVec3 torcsSurfaceNormal;
+	TorcsBridgeVec3 godotSurfaceNormal;
 };
 
 struct TorcsBridgeTrackDebugPoint {
+	int segmentId;
+	std::string segmentName;
+	double distanceFromStart;
+	int surfaceId;
+	std::string surfaceName;
+	bool startLine;
+	bool finishLine;
 	TorcsBridgeVec3 torcsCenter;
 	TorcsBridgeVec3 godotCenter;
 	TorcsBridgeVec3 torcsLeftBorder;
@@ -80,6 +93,20 @@ struct TorcsBridgeTrackSnapshot {
 	double length;
 	double width;
 	std::vector<TorcsBridgeTrackDebugPoint> debugPoints;
+};
+
+struct TorcsBridgeTrackLocalPosition {
+	int segmentId;
+	std::string segmentName;
+	double distanceFromStart;
+	double toStart;
+	double toRight;
+	double toMiddle;
+	double toLeft;
+	int surfaceId;
+	std::string surfaceName;
+	bool startLine;
+	bool finishLine;
 };
 
 struct TorcsBridgeCarSnapshot {
@@ -101,6 +128,7 @@ struct TorcsBridgeCarSnapshot {
 	double skid;
 	bool collision;
 	TorcsBridgeInputState input;
+	TorcsBridgeTrackLocalPosition trackPosition;
 	std::array<TorcsBridgeWheelSnapshot, 4> wheels;
 };
 

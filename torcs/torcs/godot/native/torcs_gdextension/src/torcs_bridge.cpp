@@ -48,6 +48,42 @@ defaultInput()
 	return input;
 }
 
+static TorcsBridgeTrackLocalPosition
+makePlaceholderTrackPosition(const TorcsBridgeVec3& torcsPosition)
+{
+	const double trackLength = 120.0;
+	const double trackWidth = 10.0;
+	const double distanceFromStart = clampDouble(torcsPosition.x, 0.0, trackLength, 0.0);
+	const int segmentId = std::max(0, std::min(static_cast<int>(distanceFromStart / 10.0), 11));
+	TorcsBridgeTrackLocalPosition position{};
+	position.segmentId = segmentId;
+	position.segmentName = "debug-segment-" + std::to_string(segmentId);
+	position.distanceFromStart = distanceFromStart;
+	position.toStart = distanceFromStart - static_cast<double>(segmentId) * 10.0;
+	position.toMiddle = torcsPosition.y;
+	position.toRight = torcsPosition.y + trackWidth * 0.5;
+	position.toLeft = trackWidth * 0.5 - torcsPosition.y;
+	position.surfaceId = 0;
+	position.surfaceName = "asphalt";
+	position.startLine = segmentId == 0;
+	position.finishLine = distanceFromStart >= trackLength;
+	return position;
+}
+
+static TorcsBridgeWheelSnapshot
+makePlaceholderWheelSnapshot(const TorcsBridgeVec3& torcsContactPoint)
+{
+	TorcsBridgeWheelSnapshot wheel{};
+	wheel.surfaceId = 0;
+	wheel.surfaceName = "asphalt";
+	wheel.hasContact = true;
+	wheel.torcsContactPoint = torcsContactPoint;
+	wheel.godotContactPoint = TorcsBridgeTorcsToGodotPosition(wheel.torcsContactPoint);
+	wheel.torcsSurfaceNormal = { 0.0, 0.0, 1.0 };
+	wheel.godotSurfaceNormal = TorcsBridgeTorcsToGodotPosition(wheel.torcsSurfaceNormal);
+	return wheel;
+}
+
 static TorcsBridgeCarSnapshot
 defaultCarSnapshot(const TorcsBridgeRaceConfig& config)
 {
@@ -59,6 +95,10 @@ defaultCarSnapshot(const TorcsBridgeRaceConfig& config)
 	car.gear = 1;
 	car.fuel = 1.0;
 	car.input = defaultInput();
+	car.trackPosition = makePlaceholderTrackPosition(car.torcsPosition);
+	for (TorcsBridgeWheelSnapshot& wheel : car.wheels) {
+		wheel = makePlaceholderWheelSnapshot(car.torcsPosition);
+	}
 	return car;
 }
 
@@ -73,6 +113,13 @@ defaultTrackSnapshot(const TorcsBridgeRaceConfig& config)
 	for (int i = 0; i <= 12; i++) {
 		const double x = static_cast<double>(i) * 10.0;
 		TorcsBridgeTrackDebugPoint point{};
+		point.segmentId = std::min(i, 11);
+		point.segmentName = "debug-segment-" + std::to_string(point.segmentId);
+		point.distanceFromStart = x;
+		point.surfaceId = 0;
+		point.surfaceName = "asphalt";
+		point.startLine = i == 0;
+		point.finishLine = i == 12;
 		point.torcsCenter = { x, 0.0, 0.0 };
 		point.torcsLeftBorder = { x, track.width * 0.5, 0.0 };
 		point.torcsRightBorder = { x, -track.width * 0.5, 0.0 };
@@ -252,15 +299,34 @@ TorcsRace::stepOneSubstep()
 	car.torcsPosition.x += car.torcsLinearVelocity.x * dt;
 	car.torcsPosition.y += car.torcsLinearVelocity.y * dt;
 	car.godotPosition = TorcsBridgeTorcsToGodotPosition(car.torcsPosition);
+	car.trackPosition = makePlaceholderTrackPosition(car.torcsPosition);
 	car.skid = std::abs(humanInput.steer) * car.speed * 0.02;
 
-	for (TorcsBridgeWheelSnapshot& wheel : car.wheels) {
+	static constexpr double wheelForwardOffsets[4] = { 1.3, 1.3, -1.3, -1.3 };
+	static constexpr double wheelSideOffsets[4] = { -0.85, 0.85, -0.85, 0.85 };
+	const double yawCos = std::cos(car.yaw);
+	const double yawSin = std::sin(car.yaw);
+	for (size_t i = 0; i < car.wheels.size(); i++) {
+		TorcsBridgeWheelSnapshot& wheel = car.wheels[i];
+		const double forwardOffset = wheelForwardOffsets[i];
+		const double sideOffset = wheelSideOffsets[i];
+		const TorcsBridgeVec3 contactPoint{
+			car.torcsPosition.x + yawCos * forwardOffset - yawSin * sideOffset,
+			car.torcsPosition.y + yawSin * forwardOffset + yawCos * sideOffset,
+			0.0
+		};
 		wheel.spinVelocity = car.speed / 0.33;
 		wheel.rideHeight = 0.12;
 		wheel.slipSide = std::abs(humanInput.steer) * car.speed * 0.01;
 		wheel.slipAccel = std::abs(longitudinalAccel) * 0.05;
 		wheel.skid = car.skid;
 		wheel.surfaceId = 0;
+		wheel.surfaceName = "asphalt";
+		wheel.hasContact = true;
+		wheel.torcsContactPoint = contactPoint;
+		wheel.godotContactPoint = TorcsBridgeTorcsToGodotPosition(wheel.torcsContactPoint);
+		wheel.torcsSurfaceNormal = { 0.0, 0.0, 1.0 };
+		wheel.godotSurfaceNormal = TorcsBridgeTorcsToGodotPosition(wheel.torcsSurfaceNormal);
 	}
 
 	snapshot.raceTime += dt;

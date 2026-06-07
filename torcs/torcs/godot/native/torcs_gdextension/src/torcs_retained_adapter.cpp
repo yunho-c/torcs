@@ -165,10 +165,87 @@ midpoint(const t3Dd& left, const t3Dd& right)
 	};
 }
 
+static double
+segmentLocalDistance(const tTrackSeg* seg, double toStart)
+{
+	if (seg == nullptr) {
+		return 0.0;
+	}
+
+	if (seg->type == TR_STR) {
+		return toStart;
+	}
+
+	return toStart * seg->radius;
+}
+
+static double
+distanceFromStart(const tTrkLocPos& position)
+{
+	if (position.seg == nullptr) {
+		return 0.0;
+	}
+
+	return position.seg->lgfromstart + segmentLocalDistance(position.seg, position.toStart);
+}
+
+static const char*
+surfaceName(const tTrackSurface* surface)
+{
+	return surface != nullptr && surface->material != nullptr ? surface->material : "";
+}
+
+static int
+surfaceId(const tTrack* track, const tTrackSurface* surface)
+{
+	int id = 0;
+	for (const tTrackSurface* current = track != nullptr ? track->surfaces : nullptr;
+		current != nullptr;
+		current = current->next, id++) {
+		if (current == surface) {
+			return id;
+		}
+	}
+
+	return surface != nullptr ? id : -1;
+}
+
+static TorcsBridgeTrackLocalPosition
+makeTrackLocalPosition(const tTrack* track, const tTrkLocPos& position)
+{
+	TorcsBridgeTrackLocalPosition local{};
+	const tTrackSeg* seg = position.seg;
+	const tTrackSurface* surface = seg != nullptr ? seg->surface : nullptr;
+	local.segmentId = seg != nullptr ? seg->id : -1;
+	local.segmentName = seg != nullptr && seg->name != nullptr ? seg->name : "";
+	local.distanceFromStart = distanceFromStart(position);
+	local.toStart = position.toStart;
+	local.toRight = position.toRight;
+	local.toMiddle = position.toMiddle;
+	local.toLeft = position.toLeft;
+	local.surfaceId = surfaceId(track, surface);
+	local.surfaceName = surfaceName(surface);
+	local.startLine = seg != nullptr && (seg->raceInfo & TR_START) != 0;
+	local.finishLine = seg != nullptr && (seg->raceInfo & TR_LAST) != 0;
+	return local;
+}
+
 static void
-appendTrackDebugPoint(TorcsBridgeTrackSnapshot* snapshot, const t3Dd& left, const t3Dd& right)
+appendTrackDebugPoint(TorcsBridgeTrackSnapshot* snapshot, const tTrack* track, const tTrackSeg* seg, bool endPoint)
 {
 	TorcsBridgeTrackDebugPoint point{};
+	const tTrackSurface* surface = seg != nullptr ? seg->surface : nullptr;
+	point.segmentId = seg != nullptr ? seg->id : -1;
+	point.segmentName = seg != nullptr && seg->name != nullptr ? seg->name : "";
+	point.distanceFromStart = seg != nullptr
+		? seg->lgfromstart + (endPoint ? seg->length : 0.0)
+		: 0.0;
+	point.surfaceId = surfaceId(track, surface);
+	point.surfaceName = surfaceName(surface);
+	point.startLine = seg != nullptr && (seg->raceInfo & TR_START) != 0 && !endPoint;
+	point.finishLine = seg != nullptr && (seg->raceInfo & TR_LAST) != 0 && endPoint;
+	const t3Dd& left = seg->vertex[endPoint ? TR_EL : TR_SL];
+	const t3Dd& right = seg->vertex[endPoint ? TR_ER : TR_SR];
 	point.torcsCenter = midpoint(left, right);
 	point.torcsLeftBorder = makeBridgeVec3(left);
 	point.torcsRightBorder = makeBridgeVec3(right);
@@ -197,21 +274,42 @@ makeTrackSnapshot(const tTrack* track, const TorcsBridgeRaceConfig& raceConfig)
 
 	for (int index = 0; index < track->nseg && seg != nullptr; index++) {
 		if (index % stride == 0) {
-			appendTrackDebugPoint(&snapshot, seg->vertex[TR_SL], seg->vertex[TR_SR]);
+			appendTrackDebugPoint(&snapshot, track, seg, false);
 			lastIncluded = seg;
 		}
 		seg = seg->next;
 	}
 
 	if (lastIncluded != nullptr) {
-		appendTrackDebugPoint(&snapshot, lastIncluded->vertex[TR_EL], lastIncluded->vertex[TR_ER]);
+		appendTrackDebugPoint(&snapshot, track, lastIncluded, true);
 	}
 
 	return snapshot;
 }
 
+static TorcsBridgeVec3
+makeWheelContactPoint(const tCarElt* carElt, const tWheelState& wheel)
+{
+	const double yaw = carElt->_yaw;
+	const double yawCos = std::cos(yaw);
+	const double yawSin = std::sin(yaw);
+	TorcsBridgeVec3 point{
+		carElt->_pos_X + yawCos * wheel.relPos.x - yawSin * wheel.relPos.y,
+		carElt->_pos_Y + yawSin * wheel.relPos.x + yawCos * wheel.relPos.y,
+		carElt->_pos_Z - wheel.relPos.z
+	};
+	if (wheel.seg != nullptr) {
+		point.z = RtTrackHeightG(wheel.seg, point.x, point.y);
+	}
+	return point;
+}
+
 static TorcsBridgeCarSnapshot
-makeCarSnapshotFromCarElt(const TorcsBridgeRaceConfig& raceConfig, const TorcsBridgeInputState& input, const tCarElt* carElt)
+makeCarSnapshotFromCarElt(
+	const TorcsBridgeRaceConfig& raceConfig,
+	const TorcsBridgeInputState& input,
+	const tTrack* track,
+	const tCarElt* carElt)
 {
 	TorcsBridgeCarSnapshot car{};
 	car.id = 0;
@@ -231,15 +329,23 @@ makeCarSnapshotFromCarElt(const TorcsBridgeRaceConfig& raceConfig, const TorcsBr
 	car.damage = carElt->_dammage;
 	car.collision = carElt->priv.collision != 0 || carElt->priv.simcollision != 0;
 	car.input = input;
+	car.trackPosition = makeTrackLocalPosition(track, carElt->_trkPos);
 
 	for (int i = 0; i < 4; i++) {
 		const tWheelState& wheel = carElt->priv.wheel[i];
+		const tTrackSurface* surface = wheel.seg != nullptr ? wheel.seg->surface : nullptr;
 		car.wheels[i].spinVelocity = wheel.spinVel;
 		car.wheels[i].rideHeight = wheel.relPos.z;
 		car.wheels[i].slipSide = wheel.slipSide;
 		car.wheels[i].slipAccel = wheel.slipAccel;
 		car.wheels[i].skid = carElt->_skid[i];
-		car.wheels[i].surfaceId = 0;
+		car.wheels[i].surfaceId = surfaceId(track, surface);
+		car.wheels[i].surfaceName = surfaceName(surface);
+		car.wheels[i].hasContact = wheel.seg != nullptr;
+		car.wheels[i].torcsContactPoint = makeWheelContactPoint(carElt, wheel);
+		car.wheels[i].godotContactPoint = TorcsBridgeTorcsToGodotPosition(car.wheels[i].torcsContactPoint);
+		car.wheels[i].torcsSurfaceNormal = makeBridgeVec3(carElt->priv.normal);
+		car.wheels[i].godotSurfaceNormal = TorcsBridgeTorcsToGodotPosition(car.wheels[i].torcsSurfaceNormal);
 		car.skid = std::max(car.skid, static_cast<double>(std::fabs(carElt->_skid[i])));
 	}
 
@@ -555,7 +661,7 @@ TorcsRetainedAdapter::loadOneCarFreeDrive(const TorcsBridgeRaceConfig& config)
 	accumulator = 0.0;
 	snapshot.track = makeTrackSnapshot(static_cast<tTrack*>(track), raceConfig);
 	snapshot.raceTime = retainedRaceInfo->s->currentTime;
-	snapshot.cars.push_back(makeCarSnapshotFromCarElt(raceConfig, input, car));
+	snapshot.cars.push_back(makeCarSnapshotFromCarElt(raceConfig, input, static_cast<const tTrack*>(track), car));
 	loaded = true;
 
 	return true;
@@ -595,7 +701,7 @@ TorcsRetainedAdapter::step(double seconds)
 
 	snapshot.raceTime = retainedRaceInfo->s->currentTime;
 	if (!snapshot.cars.empty()) {
-		snapshot.cars[0] = makeCarSnapshotFromCarElt(raceConfig, input, car);
+		snapshot.cars[0] = makeCarSnapshotFromCarElt(raceConfig, input, static_cast<const tTrack*>(track), car);
 	}
 
 	return snapshot;

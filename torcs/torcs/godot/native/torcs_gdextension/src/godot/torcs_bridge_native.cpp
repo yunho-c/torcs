@@ -138,6 +138,12 @@ toGodotWheel(const TorcsBridgeWheelSnapshot& wheel)
 	dictionary["slip_accel"] = wheel.slipAccel;
 	dictionary["skid"] = wheel.skid;
 	dictionary["surface_id"] = wheel.surfaceId;
+	dictionary["surface_name"] = String(wheel.surfaceName.c_str());
+	dictionary["has_contact"] = wheel.hasContact;
+	dictionary["torcs_contact_point"] = toGodotVec3(wheel.torcsContactPoint);
+	dictionary["godot_contact_point"] = toGodotVec3(wheel.godotContactPoint);
+	dictionary["torcs_surface_normal"] = toGodotVec3(wheel.torcsSurfaceNormal);
+	dictionary["godot_surface_normal"] = toGodotVec3(wheel.godotSurfaceNormal);
 	return dictionary;
 }
 
@@ -145,12 +151,37 @@ static Dictionary
 toGodotTrackDebugPoint(const TorcsBridgeTrackDebugPoint& point)
 {
 	Dictionary dictionary;
+	dictionary["segment_id"] = point.segmentId;
+	dictionary["segment_name"] = String(point.segmentName.c_str());
+	dictionary["distance_from_start"] = point.distanceFromStart;
+	dictionary["surface_id"] = point.surfaceId;
+	dictionary["surface_name"] = String(point.surfaceName.c_str());
+	dictionary["start_line"] = point.startLine;
+	dictionary["finish_line"] = point.finishLine;
 	dictionary["torcs_center"] = toGodotVec3(point.torcsCenter);
 	dictionary["godot_center"] = toGodotVec3(point.godotCenter);
 	dictionary["torcs_left_border"] = toGodotVec3(point.torcsLeftBorder);
 	dictionary["godot_left_border"] = toGodotVec3(point.godotLeftBorder);
 	dictionary["torcs_right_border"] = toGodotVec3(point.torcsRightBorder);
 	dictionary["godot_right_border"] = toGodotVec3(point.godotRightBorder);
+	return dictionary;
+}
+
+static Dictionary
+toGodotTrackLocalPosition(const TorcsBridgeTrackLocalPosition& position)
+{
+	Dictionary dictionary;
+	dictionary["segment_id"] = position.segmentId;
+	dictionary["segment_name"] = String(position.segmentName.c_str());
+	dictionary["distance_from_start"] = position.distanceFromStart;
+	dictionary["to_start"] = position.toStart;
+	dictionary["to_right"] = position.toRight;
+	dictionary["to_middle"] = position.toMiddle;
+	dictionary["to_left"] = position.toLeft;
+	dictionary["surface_id"] = position.surfaceId;
+	dictionary["surface_name"] = String(position.surfaceName.c_str());
+	dictionary["start_line"] = position.startLine;
+	dictionary["finish_line"] = position.finishLine;
 	return dictionary;
 }
 
@@ -197,6 +228,7 @@ toGodotCar(const TorcsBridgeCarSnapshot& car)
 	dictionary["skid"] = car.skid;
 	dictionary["collision"] = car.collision;
 	dictionary["input"] = toGodotInput(car.input);
+	dictionary["track_position"] = toGodotTrackLocalPosition(car.trackPosition);
 	dictionary["wheels"] = wheels;
 	return dictionary;
 }

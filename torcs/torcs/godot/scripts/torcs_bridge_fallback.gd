@@ -125,22 +125,48 @@ func _default_car_snapshot() -> Dictionary:
 		"skid": 0.0,
 		"collision": false,
 		"input": _default_input(),
+		"track_position": _placeholder_track_position(torcs_position),
 		"wheels": [
-			_default_wheel_snapshot(),
-			_default_wheel_snapshot(),
-			_default_wheel_snapshot(),
-			_default_wheel_snapshot()
+			_default_wheel_snapshot(torcs_position),
+			_default_wheel_snapshot(torcs_position),
+			_default_wheel_snapshot(torcs_position),
+			_default_wheel_snapshot(torcs_position)
 		]
 	}
 
-static func _default_wheel_snapshot() -> Dictionary:
+static func _default_wheel_snapshot(torcs_contact_point: Vector3) -> Dictionary:
 	return {
 		"spin_velocity": 0.0,
 		"ride_height": 0.0,
 		"slip_side": 0.0,
 		"slip_accel": 0.0,
 		"skid": 0.0,
-		"surface_id": 0
+		"surface_id": 0,
+		"surface_name": "asphalt",
+		"has_contact": true,
+		"torcs_contact_point": torcs_contact_point,
+		"godot_contact_point": torcs_to_godot_position(torcs_contact_point),
+		"torcs_surface_normal": Vector3(0.0, 0.0, 1.0),
+		"godot_surface_normal": torcs_to_godot_position(Vector3(0.0, 0.0, 1.0))
+	}
+
+static func _placeholder_track_position(torcs_position: Vector3) -> Dictionary:
+	var track_length := 120.0
+	var track_width := 10.0
+	var distance_from_start := clampf(torcs_position.x, 0.0, track_length)
+	var segment_id := clampi(int(distance_from_start / 10.0), 0, 11)
+	return {
+		"segment_id": segment_id,
+		"segment_name": "debug-segment-%d" % segment_id,
+		"distance_from_start": distance_from_start,
+		"to_start": distance_from_start - float(segment_id) * 10.0,
+		"to_right": torcs_position.y + track_width * 0.5,
+		"to_middle": torcs_position.y,
+		"to_left": track_width * 0.5 - torcs_position.y,
+		"surface_id": 0,
+		"surface_name": "asphalt",
+		"start_line": segment_id == 0,
+		"finish_line": distance_from_start >= track_length
 	}
 
 func _default_track_snapshot() -> Dictionary:
@@ -151,7 +177,15 @@ func _default_track_snapshot() -> Dictionary:
 		var torcs_center := Vector3(x, 0.0, 0.0)
 		var torcs_left_border := Vector3(x, track_width * 0.5, 0.0)
 		var torcs_right_border := Vector3(x, -track_width * 0.5, 0.0)
+		var segment_id := mini(index, 11)
 		debug_points.append({
+			"segment_id": segment_id,
+			"segment_name": "debug-segment-%d" % segment_id,
+			"distance_from_start": x,
+			"surface_id": 0,
+			"surface_name": "asphalt",
+			"start_line": index == 0,
+			"finish_line": index == 12,
 			"torcs_center": torcs_center,
 			"godot_center": torcs_to_godot_position(torcs_center),
 			"torcs_left_border": torcs_left_border,
@@ -212,14 +246,31 @@ func _step_one_substep() -> void:
 	car["godot_angular_velocity"] = torcs_to_godot_angular_velocity(torcs_angular_velocity)
 	car["torcs_position"] = torcs_position
 	car["godot_position"] = torcs_to_godot_position(torcs_position)
+	car["track_position"] = _placeholder_track_position(torcs_position)
 	car["skid"] = skid
 
-	for wheel in car["wheels"]:
+	var wheel_forward_offsets := [1.3, 1.3, -1.3, -1.3]
+	var wheel_side_offsets := [-0.85, 0.85, -0.85, 0.85]
+	for index in range(car["wheels"].size()):
+		var wheel: Dictionary = car["wheels"][index]
+		var forward_offset: float = wheel_forward_offsets[index]
+		var side_offset: float = wheel_side_offsets[index]
+		var contact_point := Vector3(
+			torcs_position.x + cos(yaw) * forward_offset - sin(yaw) * side_offset,
+			torcs_position.y + sin(yaw) * forward_offset + cos(yaw) * side_offset,
+			0.0
+		)
 		wheel["spin_velocity"] = new_speed / 0.33
 		wheel["ride_height"] = 0.12
 		wheel["slip_side"] = absf(float(_human_input["steer"])) * new_speed * 0.01
 		wheel["slip_accel"] = absf(longitudinal_accel) * 0.05
 		wheel["skid"] = skid
 		wheel["surface_id"] = 0
+		wheel["surface_name"] = "asphalt"
+		wheel["has_contact"] = true
+		wheel["torcs_contact_point"] = contact_point
+		wheel["godot_contact_point"] = torcs_to_godot_position(contact_point)
+		wheel["torcs_surface_normal"] = Vector3(0.0, 0.0, 1.0)
+		wheel["godot_surface_normal"] = torcs_to_godot_position(Vector3(0.0, 0.0, 1.0))
 
 	_snapshot["race_time"] += dt
