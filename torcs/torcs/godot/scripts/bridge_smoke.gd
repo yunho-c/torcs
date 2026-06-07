@@ -2,6 +2,7 @@ extends Node3D
 
 const TorcsBridgeFallbackScript := preload("res://scripts/torcs_bridge_fallback.gd")
 const TORCS_GDEXTENSION_PATH := "res://bin/torcs_gdextension.gdextension"
+const WHEEL_RADIUS := 0.33
 
 @onready var _car: Node3D = $Car
 @onready var _road: Node3D = $Road
@@ -19,8 +20,11 @@ var _gear := 1
 var _shift_up_pressed := false
 var _shift_down_pressed := false
 var _reset_pressed := false
+var _wheel_nodes: Array[Node3D] = []
+var _wheel_spin := [0.0, 0.0, 0.0, 0.0]
 
 func _ready() -> void:
+	_ensure_debug_vehicle_rig()
 	_scripted_drive = DisplayServer.get_name() == "headless"
 	_load_race()
 
@@ -81,6 +85,7 @@ func _load_race() -> void:
 		return
 
 	_gear = 1
+	_wheel_spin = [0.0, 0.0, 0.0, 0.0]
 	_snapshot = _bridge.get_snapshot()
 	_update_scene_from_snapshot(0.0, true)
 	_rebuild_road_mesh()
@@ -203,6 +208,7 @@ func _update_scene_from_snapshot(delta: float, snap_camera := false) -> void:
 	var forward := _forward_from_godot_yaw(godot_yaw)
 	_car.position = position
 	_car.rotation.y = godot_yaw
+	_update_debug_vehicle_rig(car, delta)
 
 	var camera_position := position - forward * 8.0 + Vector3(0.0, 4.0, 0.0)
 	if snap_camera:
@@ -219,6 +225,70 @@ func _update_scene_from_snapshot(delta: float, snap_camera := false) -> void:
 
 func _forward_from_godot_yaw(godot_yaw: float) -> Vector3:
 	return Vector3(-sin(godot_yaw), 0.0, -cos(godot_yaw))
+
+func _ensure_debug_vehicle_rig() -> void:
+	if _car.has_node("Body"):
+		return
+
+	var body_mesh := BoxMesh.new()
+	body_mesh.size = Vector3(1.9, 0.7, 4.2)
+
+	var body_material := StandardMaterial3D.new()
+	body_material.albedo_color = Color(0.9, 0.12, 0.08)
+	body_material.roughness = 0.6
+
+	var body := MeshInstance3D.new()
+	body.name = "Body"
+	body.mesh = body_mesh
+	body.material_override = body_material
+	body.position = Vector3(0.0, 0.45, 0.0)
+	_car.add_child(body)
+
+	var wheel_material := StandardMaterial3D.new()
+	wheel_material.albedo_color = Color(0.04, 0.04, 0.04)
+	wheel_material.roughness = 0.9
+
+	var wheel_names := ["FrontLeftWheel", "FrontRightWheel", "RearLeftWheel", "RearRightWheel"]
+	for wheel_name in wheel_names:
+		var wheel_root := Node3D.new()
+		wheel_root.name = wheel_name
+
+		var wheel_mesh := CylinderMesh.new()
+		wheel_mesh.top_radius = WHEEL_RADIUS
+		wheel_mesh.bottom_radius = WHEEL_RADIUS
+		wheel_mesh.height = 0.32
+		wheel_mesh.radial_segments = 16
+		wheel_mesh.rings = 1
+
+		var wheel_visual := MeshInstance3D.new()
+		wheel_visual.name = "Visual"
+		wheel_visual.mesh = wheel_mesh
+		wheel_visual.material_override = wheel_material
+		wheel_visual.rotation.z = PI * 0.5
+		wheel_root.add_child(wheel_visual)
+		_car.add_child(wheel_root)
+		_wheel_nodes.append(wheel_root)
+
+func _update_debug_vehicle_rig(car: Dictionary, delta: float) -> void:
+	if _wheel_nodes.size() != 4:
+		return
+
+	var wheels: Array = car.get("wheels", [])
+	if wheels.size() != 4:
+		return
+
+	var car_inverse := _car.global_transform.affine_inverse()
+	var steer_visual := float(car.get("input", {}).get("steer", 0.0)) * 0.45
+	for index in range(4):
+		var wheel: Dictionary = wheels[index]
+		var contact_point: Vector3 = wheel.get("godot_contact_point", _car.global_position)
+		var ride_height := maxf(float(wheel.get("ride_height", 0.0)), 0.0)
+		var wheel_world_position := contact_point + Vector3(0.0, WHEEL_RADIUS + ride_height, 0.0)
+		var wheel_node := _wheel_nodes[index]
+		wheel_node.position = car_inverse * wheel_world_position
+		_wheel_spin[index] += float(wheel.get("spin_velocity", 0.0)) * delta
+		wheel_node.rotation.x = _wheel_spin[index]
+		wheel_node.rotation.y = steer_visual if index < 2 else 0.0
 
 func _rebuild_track_debug_overlay() -> void:
 	if _track_debug_built or _snapshot.is_empty():

@@ -9,9 +9,7 @@ script = ExtResource("1_bridge")
 
 [node name="TrackDebug" type="Node3D" parent="."]
 
-[node name="Car" type="CSGBox3D" parent="."]
-size = Vector3(1.9, 0.7, 4.2)
-position = Vector3(0, 0.35, 0)
+[node name="Car" type="Node3D" parent="."]
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 12, 0)

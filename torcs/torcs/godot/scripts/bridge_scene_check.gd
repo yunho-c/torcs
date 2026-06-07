@@ -34,6 +34,11 @@ func _run() -> void:
 	if car != null:
 		_expect(car.position.x > 0.0, "headless scripted smoke moves car")
 		_expect(is_equal_approx(car.rotation.y, -PI * 0.5), "initial visual yaw faces bridge +X")
+		_expect(car.get_node_or_null("Body") is MeshInstance3D, "debug vehicle has body mesh")
+		_expect(car.get_node_or_null("FrontLeftWheel") is Node3D, "debug vehicle has front-left wheel")
+		_expect(car.get_node_or_null("FrontRightWheel") is Node3D, "debug vehicle has front-right wheel")
+		_expect(car.get_node_or_null("RearLeftWheel") is Node3D, "debug vehicle has rear-left wheel")
+		_expect(car.get_node_or_null("RearRightWheel") is Node3D, "debug vehicle has rear-right wheel")
 	if road != null:
 		_expect(road.get_child_count() == 1, "road ribbon is generated from bridge track data")
 		var road_mesh := road.get_node_or_null("GeneratedRoadRibbon") as MeshInstance3D
