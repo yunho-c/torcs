@@ -87,11 +87,11 @@ Run the current smoke scene:
 godot --path torcs/torcs/godot
 ```
 
-Windowed runs use live keyboard/gamepad input. Keyboard controls are
-W/Up throttle, S/Down brake, A/Left and D/Right steering, Q/E gear changes,
-R reset, and L lights. The first connected gamepad's left stick steers and
-triggers map to brake/throttle. Headless runs keep the deterministic scripted
-input path so smoke checks remain repeatable.
+Windowed runs use Godot input actions from `project.godot`. Defaults are W/Up
+throttle, S/Down brake, A/Left and D/Right steering, Q/E gear changes, R reset,
+and L lights, with gamepad left stick steering and trigger throttle/brake mapped
+through the same actions. Headless runs keep the deterministic scripted input
+path so smoke checks remain repeatable.
 
 In this sandboxed macOS environment, Godot cannot write to the normal user data
 directory. Use a temporary home for headless verification:
@@ -104,15 +104,33 @@ HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --s
 HOME=/private/tmp/torcs-godot-home godot --headless --path torcs/torcs/godot --quit-after 3
 ```
 
+Run the repeatable Phase 2/3 gate from the repository root:
+
+```bash
+torcs/torcs/godot/verify_phase3.sh
+```
+
+By default this configures a retained bridge build under
+`/private/tmp/torcs-bridge-phase3-verify`, runs CTest, runs Godot check-only,
+the fallback contract check, the scene acceptance check, and a 60-second
+headless scene smoke. Set `TORCS_BRIDGE_PHASE3_SMOKE_SECONDS` to shorten local
+iterations. To require the GDExtension target, set
+`TORCS_BRIDGE_VERIFY_GDEXTENSION=ON` and provide the godot-cpp CMake variables
+documented in `native/torcs_gdextension/README.md`; generated Godot `bin`
+outputs remain uncommitted.
+
 The smoke scene tries the native `TorcsBridgeNative` GDExtension first when it
 is registered, then falls back to `scripts/torcs_bridge_fallback.gd`. The active
 backend is logged as `native` or `fallback`; no committed `.gdextension` file is
-required for fallback-only startup. The stub harness verifies dependency-free
+required for fallback-only startup. A native candidate that lacks the current
+Phase 3 snapshot schema is rejected so stale ignored native artifacts do not
+silently drive the scene. The stub harness verifies dependency-free
 DTO behavior, the retained harness verifies native `simuv2` stepping when PLIB
 is available, and the fallback scene keeps Godot scene logic stable when the
 native extension is not built. The scene also renders the bridge snapshot's
-track debug centerline and road borders so retained `tTrackSeg` output can be
-checked against Godot coordinates early.
+generated road ribbon, track debug centerline, road borders, and debug vehicle
+rig so retained `tTrackSeg` output can be checked against Godot coordinates
+early.
 
 Native parity capture is available in native-enabled builds:
 
