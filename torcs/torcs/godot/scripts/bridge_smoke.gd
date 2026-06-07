@@ -69,6 +69,10 @@ func _load_race() -> void:
 		if loaded:
 			loaded = bridge.load(race_config)
 
+		if loaded and not _snapshot_has_phase3_schema(bridge.get_snapshot()):
+			push_warning("TORCS bridge backend missing Phase 3 snapshot schema: " + candidate["name"])
+			loaded = false
+
 		if loaded:
 			_bridge = bridge
 			_bridge_backend = candidate["name"]
@@ -93,6 +97,23 @@ func _load_race() -> void:
 
 func get_bridge_backend() -> String:
 	return _bridge_backend
+
+func get_debug_snapshot() -> Dictionary:
+	return _snapshot.duplicate(true)
+
+func _snapshot_has_phase3_schema(snapshot: Dictionary) -> bool:
+	var track: Dictionary = snapshot.get("track", {})
+	var debug_points: Array = track.get("debug_points", [])
+	var cars: Array = snapshot.get("cars", [])
+	if debug_points.is_empty() or cars.is_empty():
+		return false
+	if not debug_points[0].has("segment_id") or not debug_points[0].has("surface_name"):
+		return false
+	var car: Dictionary = cars[0]
+	if not car.has("track_position"):
+		return false
+	var wheels: Array = car.get("wheels", [])
+	return not wheels.is_empty() and wheels[0].has("godot_contact_point")
 
 func _bridge_candidates() -> Array:
 	var candidates: Array = []
