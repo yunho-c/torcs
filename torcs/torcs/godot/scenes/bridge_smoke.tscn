@@ -5,10 +5,7 @@
 [node name="BridgeSmoke" type="Node3D"]
 script = ExtResource("1_bridge")
 
-[node name="Road" type="CSGBox3D" parent="."]
-size = Vector3(120, 0.05, 10)
-position = Vector3(60, -0.05, 0)
-material_override = null
+[node name="Road" type="Node3D" parent="."]
 
 [node name="TrackDebug" type="Node3D" parent="."]
 

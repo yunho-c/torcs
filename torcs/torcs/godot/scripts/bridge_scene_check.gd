@@ -35,10 +35,14 @@ func _run() -> void:
 		_expect(car.position.x > 0.0, "headless scripted smoke moves car")
 		_expect(is_equal_approx(car.rotation.y, -PI * 0.5), "initial visual yaw faces bridge +X")
 	if road != null:
-		_expect(is_equal_approx(road.position.x, 60.0), "road is centered on placeholder track")
+		_expect(road.get_child_count() == 1, "road ribbon is generated from bridge track data")
+		var road_mesh := road.get_node_or_null("GeneratedRoadRibbon") as MeshInstance3D
+		_expect(road_mesh != null and road_mesh.mesh != null, "road ribbon has mesh")
 	if track_debug != null:
 		_expect(track_debug.get_child_count() >= 3, "track debug overlay is built")
 		scene.call("_load_race")
+		if road != null:
+			_expect(road.get_child_count() == 1, "road ribbon rebuild does not duplicate meshes")
 		_expect(track_debug.get_child_count() == 3, "track debug overlay rebuild does not duplicate lines")
 	if telemetry != null:
 		_expect(telemetry.text.contains("speed"), "telemetry updates from snapshot")

@@ -4,6 +4,7 @@ const TorcsBridgeFallbackScript := preload("res://scripts/torcs_bridge_fallback.
 const TORCS_GDEXTENSION_PATH := "res://bin/torcs_gdextension.gdextension"
 
 @onready var _car: Node3D = $Car
+@onready var _road: Node3D = $Road
 @onready var _camera: Camera3D = $Camera3D
 @onready var _telemetry: Label = $CanvasLayer/Telemetry
 @onready var _track_debug: Node3D = $TrackDebug
@@ -11,6 +12,7 @@ const TORCS_GDEXTENSION_PATH := "res://bin/torcs_gdextension.gdextension"
 var _bridge = null
 var _bridge_backend := ""
 var _snapshot: Dictionary = {}
+var _road_built := false
 var _track_debug_built := false
 var _scripted_drive := false
 var _gear := 1
@@ -38,6 +40,7 @@ func _physics_process(delta: float) -> void:
 	_update_scene_from_snapshot(delta)
 
 func _load_race() -> void:
+	_clear_road_mesh()
 	_clear_track_debug_overlay()
 
 	var data_root := ProjectSettings.globalize_path("res://../data")
@@ -80,6 +83,7 @@ func _load_race() -> void:
 	_gear = 1
 	_snapshot = _bridge.get_snapshot()
 	_update_scene_from_snapshot(0.0, true)
+	_rebuild_road_mesh()
 	_rebuild_track_debug_overlay()
 
 func get_bridge_backend() -> String:
@@ -229,6 +233,54 @@ func _rebuild_track_debug_overlay() -> void:
 	_add_debug_line("LeftBorder", debug_points, "godot_left_border", Color(0.95, 0.85, 0.2))
 	_add_debug_line("RightBorder", debug_points, "godot_right_border", Color(0.95, 0.85, 0.2))
 	_track_debug_built = true
+
+func _rebuild_road_mesh() -> void:
+	if _road_built or _snapshot.is_empty():
+		return
+
+	var track: Dictionary = _snapshot.get("track", {})
+	var debug_points: Array = track.get("debug_points", [])
+	if debug_points.size() < 2:
+		return
+
+	var vertices := PackedVector3Array()
+	var indices := PackedInt32Array()
+	for point in debug_points:
+		vertices.append(Vector3(point["godot_left_border"].x, point["godot_left_border"].y, point["godot_left_border"].z))
+		vertices.append(Vector3(point["godot_right_border"].x, point["godot_right_border"].y, point["godot_right_border"].z))
+
+	for index in range(debug_points.size() - 1):
+		var left_a := index * 2
+		var right_a := left_a + 1
+		var left_b := left_a + 2
+		var right_b := left_a + 3
+		indices.append_array([left_a, left_b, right_a, right_a, left_b, right_b])
+
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_INDEX] = indices
+
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.18, 0.18, 0.17)
+	material.roughness = 0.95
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+
+	var road_mesh := MeshInstance3D.new()
+	road_mesh.name = "GeneratedRoadRibbon"
+	road_mesh.mesh = mesh
+	road_mesh.material_override = material
+	_road.add_child(road_mesh)
+	_road_built = true
+
+func _clear_road_mesh() -> void:
+	for child in _road.get_children():
+		_road.remove_child(child)
+		child.queue_free()
+	_road_built = false
 
 func _clear_track_debug_overlay() -> void:
 	for child in _track_debug.get_children():
